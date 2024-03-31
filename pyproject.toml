@@ -179,10 +179,11 @@ module = [
     'config.get_datasets_analytics',
     'config.get_inference_analytics',
     'config.get_references',
+    'config.website_validation.utils',
+    'config.website_validation.website_validator',
     'seminars.seminar_02_06_2024.try_fastapi',
 ]
 disable_error_code = [
-    'import-not-found',
     'no-any-unimported',
     'assignment'
 ]
@@ -195,7 +196,9 @@ module = [
     '*.start_stub',
     '*.service',
     '*.service_stub',
+    '*.scrapper',
     '*.scrapper_stub',
+    '*.pipeline',
     '*.pipeline_stub',
 ]
 disable_error_code = [
