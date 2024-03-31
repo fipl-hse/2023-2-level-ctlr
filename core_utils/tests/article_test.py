@@ -9,15 +9,12 @@ from pathlib import Path
 
 import pytest
 
-from config.test_params import (CORE_UTILS_TEST_FILES_FOLDER, PROJECT_ROOT,
-                                TEST_PATH)
+from config.test_params import CORE_UTILS_TEST_FILES_FOLDER, PROJECT_ROOT, TEST_PATH
 from core_utils.article import article
 from core_utils.article.article import (Article, ArtifactType, date_from_meta,
                                         get_article_id_from_filepath)
-from core_utils.article.io import (from_meta, from_raw, to_cleaned, to_conllu,
-                                   to_meta, to_raw)
-from core_utils.article.ud import (TagConverter,
-                                   extract_sentences_from_raw_conllu)
+from core_utils.article.io import from_meta, from_raw, to_cleaned, to_conllu, to_meta, to_raw
+from core_utils.article.ud import extract_sentences_from_raw_conllu, TagConverter
 from core_utils.tests.utils import universal_setup
 
 

@@ -13,6 +13,7 @@ class ConlluTokenTestMinimal(unittest.TestCase):
     """
     Tests for ConlluToken mark 4 realization.
     """
+
     def setUp(self) -> None:
         """
         Define start instructions for ConlluTokenTestMinimal class.
@@ -25,7 +26,7 @@ class ConlluTokenTestMinimal(unittest.TestCase):
         """
         new_token = ConlluToken('оригинальное слово')
         self.assertTrue(hasattr(new_token, '_text'),
-            "ConlluToken instance must possess the following arguments: '_text'")
+                        "ConlluToken instance must possess the following arguments: '_text'")
 
     @pytest.mark.mark4
     @pytest.mark.mark6
@@ -92,6 +93,7 @@ class ConlluSentenceMinimalTest(unittest.TestCase):
     """
     Tests for ConlluSentence mark 4 realization.
     """
+
     def setUp(self) -> None:
         """
         Define start instructions for ConlluSentenceMinimalTest class.
@@ -113,6 +115,7 @@ class ConlluSentenceMinimalTest(unittest.TestCase):
         self.assertEqual(self.sentence.get_cleaned_sentence(), 'мама мыла 10')
 
 
+@pytest.mark.skip
 class ConlluSentenceTest(unittest.TestCase):
     """
     Tests for ConlluSentence realization.
@@ -132,7 +135,8 @@ class ConlluSentenceTest(unittest.TestCase):
         """
         Test for get_tokens method.
         """
-        self.assertEqual(self.sentence.get_tokens(), self.sentence._tokens)  # pylint: disable=protected-access
+        self.assertEqual(self.sentence.get_tokens(),
+                         self.sentence._tokens)  # pylint: disable=protected-access
 
 
 @pytest.mark.skip

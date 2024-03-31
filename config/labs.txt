@@ -1,2 +1,0 @@
-lab_5_scrapper
-lab_6_pipeline

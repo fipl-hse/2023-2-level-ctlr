@@ -1,5 +1,5 @@
 get_score() {
-  export TARGET_SCORE=$(head -2 $1/target_score.txt | tail -1)
+  export TARGET_SCORE=$(jq -r '.target_score' $1/settings.json)
   echo ${TARGET_SCORE}
 }
 
@@ -9,7 +9,7 @@ get_labs() {
 }
 
 configure_script() {
-  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  if [[ "$OSTYPE" == "linux-gnu"* || "$OSTYPE" == "darwin"* ]]; then
     source venv/bin/activate
     export PYTHONPATH=$(pwd):$PYTHONPATH
     which python

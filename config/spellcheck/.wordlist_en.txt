@@ -622,6 +622,7 @@ kwargs
 lab
 label
 laboratory
+labsettings
 language
 large
 last
@@ -813,6 +814,7 @@ papers
 param
 parameter
 parameters
+parametersmodel
 params
 parent
 parsable

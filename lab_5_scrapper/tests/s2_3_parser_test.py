@@ -34,7 +34,6 @@ class HTMLParserTest(unittest.TestCase):
     @pytest.mark.mark10
     @pytest.mark.stage_2_3_HTML_parser_check
     @pytest.mark.lab_5_scrapper
-    @pytest.mark.skip("#34 - does not work")
     def test_html_parser_instantiation(self) -> None:
         """
         Ensure Parser is instantiated correctly.
@@ -54,7 +53,6 @@ class HTMLParserTest(unittest.TestCase):
     @pytest.mark.mark10
     @pytest.mark.stage_2_3_HTML_parser_check
     @pytest.mark.lab_5_scrapper
-    @pytest.mark.skip("#34 - does not work")
     def test_html_parser_parse_return_value_basic(self) -> None:
         """
         Ensure Parser.parser() returns Article with filled text field.
@@ -73,7 +71,6 @@ class HTMLParserTest(unittest.TestCase):
     @pytest.mark.mark10
     @pytest.mark.stage_2_3_HTML_parser_check
     @pytest.mark.lab_5_scrapper
-    @pytest.mark.skip("#34 - does not work")
     def test_html_parser_parse_return_value_medium(self) -> None:
         """
         Ensure Parser.parser() returns Article with filled title and author.
@@ -89,7 +86,6 @@ class HTMLParserTest(unittest.TestCase):
     @pytest.mark.mark10
     @pytest.mark.stage_2_3_HTML_parser_check
     @pytest.mark.lab_5_scrapper
-    @pytest.mark.skip("#34 - does not work")
     def test_html_parser_parse_method_advanced(self) -> None:
         """
         Ensure Parser.parser() returns Article with filled date field.

@@ -9,8 +9,7 @@ import shutil
 import pytest
 
 from lab_5_scrapper.tests.s2_1_crawler_config_test import ExtendedTestCase
-from lab_6_pipeline.pipeline import (CorpusManager, EmptyDirectoryError,
-                                     InconsistentDatasetError)
+from lab_6_pipeline.pipeline import CorpusManager, EmptyDirectoryError, InconsistentDatasetError
 
 print("Stage 2A: Validating Assets Path")
 print("Starting tests with received assets folder")

@@ -6,10 +6,10 @@ import sys
 from pathlib import Path
 from typing import Iterable, Mapping, Optional
 
-from config.collect_coverage.run_coverage import (CoverageCreateReportError,
-                                                  CoverageRunError,
+from config.collect_coverage.run_coverage import (CoverageCreateReportError, CoverageRunError,
                                                   run_coverage_collection)
 from config.constants import PROJECT_CONFIG_PATH, PROJECT_ROOT
+from config.lab_settings import LabSettings
 from config.project_config import ProjectConfig
 
 CoverageResults = Mapping[str, Optional[int]]
@@ -88,9 +88,17 @@ def main() -> None:
     project_config = ProjectConfig(PROJECT_CONFIG_PATH)
     coverage_thresholds = project_config.get_thresholds()
 
-    all_labs_names = project_config.get_labs_paths()
+    all_labs_names = project_config.get_labs_paths(include_addons=False)
 
-    all_labs_results = collect_coverage(all_labs_names, artifacts_path)
+    not_skipped = []
+    for lab_path in all_labs_names:
+        settings = LabSettings(lab_path / 'settings.json')
+        if settings.target_score == 0:
+            print(f'Skip {lab_path} as target score is 0')
+            continue
+        not_skipped.append(lab_path)
+
+    all_labs_results = collect_coverage(not_skipped, artifacts_path)
 
     any_degradation, labs_with_thresholds = \
         is_decrease_present(all_labs_results, coverage_thresholds)

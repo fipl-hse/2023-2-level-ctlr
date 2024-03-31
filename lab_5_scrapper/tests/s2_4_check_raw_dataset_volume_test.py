@@ -27,7 +27,6 @@ class VolumeCheckTest(unittest.TestCase):
     @pytest.mark.mark10
     @pytest.mark.stage_2_4_dataset_volume_check
     @pytest.mark.lab_5_scrapper
-    @pytest.mark.skip("#34 - does not work")
     def test_folder_is_not_empty(self) -> None:
         """
         Ensure there are collected articles.
@@ -40,7 +39,6 @@ class VolumeCheckTest(unittest.TestCase):
     @pytest.mark.mark10
     @pytest.mark.stage_2_4_dataset_volume_check
     @pytest.mark.lab_5_scrapper
-    @pytest.mark.skip("#34 - does not work")
     def test_folder_has_equal_number_of_files(self) -> None:
         """
         Ensure there are equal number of raw and meta files.

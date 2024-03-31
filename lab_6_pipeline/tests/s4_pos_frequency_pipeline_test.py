@@ -12,8 +12,7 @@ import lab_6_pipeline.pos_frequency_pipeline as pos_freq_pipe
 from config.test_params import PIPE_TEST_FILES_FOLDER, TEST_PATH
 from core_utils.article.article import ArtifactType
 from lab_6_pipeline.pipeline import CorpusManager
-from lab_6_pipeline.pos_frequency_pipeline import (EmptyFileError,
-                                                   POSFrequencyPipeline)
+from lab_6_pipeline.pos_frequency_pipeline import EmptyFileError, POSFrequencyPipeline
 from lab_6_pipeline.tests.utils import pipeline_test_files_setup
 
 UD_TAGS = ['ADJ', 'ADP', 'ADV', 'AUX', 'CCONJ', 'DET', 'INTJ', 'NOUN', 'NUM',

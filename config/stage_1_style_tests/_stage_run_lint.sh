@@ -18,6 +18,17 @@ python config/stage_1_style_tests/lint_level.py \
 
 check_if_failed
 
+if [ -d "core_utils" ]; then
+  echo "core_utils exist"
+  lint_output=$(python -m pylint --exit-zero --rcfile config/stage_1_style_tests/.pylintrc core_utils)
+
+  python config/stage_1_style_tests/lint_level.py \
+    --lint-output "${lint_output}" \
+    --target-score "10"
+
+  check_if_failed
+fi
+
 LABS=$(get_labs)
 
 for LAB_NAME in $LABS; do

@@ -159,8 +159,10 @@ are satisfied:**
 Resources
 ---------
 
-1. Academic performance **TBD**
-2. Media websites list **TBD**
+1. `Academic performance
+   <https://docs.google.com/spreadsheets/d/1ZEMhQy039vf4mCrM6UZF_GnfDWsCTjmbazibuCM_t7s/edit#gid=0>`__
+2. `Media websites list
+   <https://docs.google.com/spreadsheets/d/1ENdfTb7ZOoVMeBcldSJuH4IWMYtHKO8Y94Qqq_e3Q34/edit#gid=0>`__
 3. `Documentation website <https://fipl-hse.github.io/>`__
 4. `Python programming course from previous semester
    <https://github.com/fipl-hse/2023-2-level-labs>`__

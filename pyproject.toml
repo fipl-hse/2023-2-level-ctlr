@@ -27,43 +27,14 @@ norecursedirs = [
 [tool.coverage.run]
 omit = [
     '*/tests/*',
+    '*/start.py',
     '*/ud_validator/*',
     'lab_5_scrapper/scrapper_dynamic.py',
-]
-
-[tool.mypy]
-python_version = "3.10"
-exclude = [
-    'venv*',
-    'tests/',
-    'tools/'
 ]
 
 [tool.black]
 line-length = 100
 target-version = ['py310']
-
-disallow_untyped_defs = true
-disallow_any_unimported = false
-no_implicit_optional = true
-check_untyped_defs = true
-warn_return_any = true
-show_error_codes = true
-warn_unused_ignores = false
-
-# simplifications
-disable_error_code = [
-    'var-annotated',
-    'union-attr',
-
-    # needed for seminars, to this moment not fixed: https://github.com/python/mypy/issues/9440
-    'attr-defined'
-]
-
-[[tool.mypy.overrides]]
-module = ['ghapi.all', 'matplotlib', 'matplotlib.pyplot', 'pydantic',
-'pymorphy2', 'pymorphy2.tagset', 'pymystem3', 'ast_comments']
-ignore_missing_imports = true
 
 [tool.doc8]
 allow-long-titles = true
@@ -92,12 +63,129 @@ application_import_names = ['config']
 select = ['I']
 count = true
 
+[tool.isort]
+py_version = '310'
+skip_gitignore = true
+line_length = 100
+order_by_type = true
+remove_redundant_aliases = true
+group_by_package = true
+force_alphabetical_sort_within_sections = true
+src_paths = [
+    "reference_lab_classification",
+    "reference_lab_summarization",
+    "reference_lab_nmt",
+    "reference_lab_nli",
+    "reference_lab_generation",
+    "reference_lab_open_qa",
+    "core_utils",
+    "config",
+    "lab_5_scrapper",
+    "lab_6_pipeline",
+    "lab_7_llm",
+    "lab_8_llm"
+]
+
+[tool.mypy]
+python_version = "3.10"
+exclude = [
+    'venv*',
+    'test.py',
+    'tests/',
+    'tools/'
+]
+
+disallow_untyped_defs = true
+disallow_any_unimported = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+show_error_codes = true
+warn_unused_ignores = false
+
+# simplifications
+disable_error_code = [
+    'var-annotated',
+    'union-attr',
+
+    # needed for seminars, to this moment not fixed: https://github.com/python/mypy/issues/9440
+    'attr-defined'
+]
+
+[[tool.mypy.overrides]]
+module = [
+    'ast_comments',
+    'datasets',
+    'evaluate',
+    'fastapi',
+    'ghapi.all',
+    'matplotlib',
+    'matplotlib.pyplot',
+    'memory_profiler',
+    'pydantic',
+    'pymorphy2',
+    'pymorphy2.tagset',
+    'pymystem3',
+    'spacy_udpipe',
+    'spacy_conll',
+    'torch.*',
+    'transformers',
+]
+ignore_missing_imports = true
+
 [[tool.mypy.overrides]]
 module = ['seminars.*', ]
 disable_error_code  = [
     'empty-body',
     'call-overload',
     'operator'
+]
+
+[[tool.mypy.overrides]]
+module = ['config.lab_settings', ]
+disable_error_code = [
+    'assignment'
+]
+
+[[tool.mypy.overrides]]
+module = ['seminars.seminar_01_16_2024.try_iter_data', ]
+disable_error_code = [
+    'arg-type'
+]
+
+[[tool.mypy.overrides]]
+module = [
+    'core_utils.llm.llm_pipeline',
+    'lab_7_llm.service',
+    'lab_7_llm.main',
+    'lab_8_llm.service',
+    'lab_8_llm.main',
+]
+disable_error_code = [
+    'no-any-unimported'
+]
+
+[[tool.mypy.overrides]]
+module = [
+    'core_utils.udpipe.tools',
+]
+disable_error_code = [
+    'no-any-unimported',
+    'no-any-return',
+]
+
+[[tool.mypy.overrides]]
+module = [
+    'config.get_datasets_analytics',
+    'config.get_inference_analytics',
+    'config.get_references',
+    'config.website_validation.utils',
+    'config.website_validation.website_validator',
+    'seminars.seminar_02_06_2024.try_fastapi',
+]
+disable_error_code = [
+    'no-any-unimported',
+    'assignment'
 ]
 
 [[tool.mypy.overrides]]
@@ -108,6 +196,10 @@ module = [
     '*.start_stub',
     '*.service',
     '*.service_stub',
+    '*.scrapper',
+    '*.scrapper_stub',
+    '*.pipeline',
+    '*.pipeline_stub',
 ]
 disable_error_code = [
     'empty-body',
@@ -121,6 +213,13 @@ disable_error_code  = [
     'union-attr',
     'operator',
     'import'
+]
+
+[[tool.mypy.overrides]]
+module = ['*.nmt_demo.*', ]
+disable_error_code = [
+    'no-any-unimported',
+    'no-any-return'
 ]
 
 [tool.pylint.main]

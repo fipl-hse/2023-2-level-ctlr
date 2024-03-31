@@ -177,7 +177,7 @@ class Article:
             str: A text in the CONLL-U format
         """
         return '\n'.join([sentence.get_conllu_text(include_morphological_tags) for sentence in
-                          self._conllu_sentences]) + '\n'
+                          self._conllu_sentences])
 
     def set_conllu_sentences(self, sentences: Sequence[SentenceProtocol]) -> None:
         """

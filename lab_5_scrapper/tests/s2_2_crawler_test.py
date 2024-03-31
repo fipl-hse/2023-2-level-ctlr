@@ -9,8 +9,7 @@ import pytest
 
 from config.test_params import TEST_PATH
 from core_utils.constants import CRAWLER_CONFIG_PATH
-from lab_5_scrapper.scrapper import (Config, Crawler, make_request,
-                                     prepare_environment)
+from lab_5_scrapper.scrapper import Config, Crawler, make_request, prepare_environment
 
 
 class CrawlerTest(unittest.TestCase):
@@ -45,7 +44,6 @@ class CrawlerTest(unittest.TestCase):
     @pytest.mark.mark10
     @pytest.mark.stage_2_2_crawler_check
     @pytest.mark.lab_5_scrapper
-    @pytest.mark.skip('#38')
     def test_crawler_instance_is_filled_from_find_articles(self) -> None:
         """
         Ensure find_articles() fills 'urls' field.
@@ -78,7 +76,6 @@ class CrawlerTest(unittest.TestCase):
     @pytest.mark.mark10
     @pytest.mark.stage_2_2_crawler_check
     @pytest.mark.lab_5_scrapper
-    @pytest.mark.skip('#38')
     def test_crawler_finds_required_number_of_articles(self) -> None:
         """
         Ensure Crawler is capable to collect required number of articles.
@@ -112,7 +109,6 @@ class CrawlerTest(unittest.TestCase):
     @pytest.mark.mark10
     @pytest.mark.stage_2_2_crawler_check
     @pytest.mark.lab_5_scrapper
-    @pytest.mark.skip('#38')
     def test_crawler_handles_unavailable_websites(self) -> None:
         """
         Ensure does not fail given unavailable webpage.

@@ -122,7 +122,6 @@ class RawMediumDataValidator(unittest.TestCase):
     @pytest.mark.mark10
     @pytest.mark.stage_2_5_dataset_validation
     @pytest.mark.lab_5_scrapper
-    @pytest.mark.skip("#34 - does not work")
     def test_validate_sort_metadata(self) -> None:
         """
         Ensure meta files numeration is homogeneous.
@@ -138,7 +137,6 @@ class RawMediumDataValidator(unittest.TestCase):
     @pytest.mark.mark10
     @pytest.mark.stage_2_5_dataset_validation
     @pytest.mark.lab_5_scrapper
-    @pytest.mark.skip("#34 - does not work")
     def test_validate_metadata_medium(self) -> None:
         """
         Ensure collected metadata is valid.
@@ -209,7 +207,6 @@ class RawAdvancedDataValidator(unittest.TestCase):
     @pytest.mark.mark10
     @pytest.mark.stage_2_5_dataset_validation
     @pytest.mark.lab_5_scrapper
-    @pytest.mark.skip("#34 - does not work")
     def test_validate_metadata_advanced(self) -> None:
         """
         Ensure that collected data includes correct date and topics.

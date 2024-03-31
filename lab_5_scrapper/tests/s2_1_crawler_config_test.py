@@ -11,15 +11,11 @@ from typing import Any
 import pytest
 
 from config.test_params import TEST_CRAWLER_CONFIG_PATH, TEST_PATH
-from core_utils.constants import (CRAWLER_CONFIG_PATH, TIMEOUT_LOWER_LIMIT,
-                                  TIMEOUT_UPPER_LIMIT)
+from core_utils.constants import CRAWLER_CONFIG_PATH, TIMEOUT_LOWER_LIMIT, TIMEOUT_UPPER_LIMIT
 from lab_5_scrapper import scrapper
-from lab_5_scrapper.scrapper import (IncorrectEncodingError,
-                                     IncorrectHeadersError,
-                                     IncorrectNumberOfArticlesError,
-                                     IncorrectSeedURLError,
-                                     IncorrectTimeoutError,
-                                     IncorrectVerifyError,
+from lab_5_scrapper.scrapper import (IncorrectEncodingError, IncorrectHeadersError,
+                                     IncorrectNumberOfArticlesError, IncorrectSeedURLError,
+                                     IncorrectTimeoutError, IncorrectVerifyError,
                                      NumberOfArticlesOutOfRangeError)
 from lab_5_scrapper.tests.config_generator import generate_config
 

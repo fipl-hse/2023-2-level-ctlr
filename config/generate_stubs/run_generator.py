@@ -6,8 +6,7 @@ import sys
 from pathlib import Path
 
 from config.cli_unifier import _run_console_tool, choose_python_exe
-from config.generate_stubs.generator import (ArgumentParser,
-                                             NoDocStringForAMethodError)
+from config.generate_stubs.generator import ArgumentParser, NoDocStringForAMethodError
 
 
 def remove_implementation(source_code_path: Path, res_stub_path: Path) -> None:

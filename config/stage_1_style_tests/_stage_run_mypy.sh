@@ -11,9 +11,16 @@ configure_script
 FAILED=0
 LABS=$(get_labs)
 
-#mypy config seminars
+mypy config seminars
 
 check_if_failed
+
+if [ -d "core_utils" ]; then
+  echo "core_utils exist"
+  mypy core_utils
+
+  check_if_failed
+fi
 
 for LAB_NAME in $LABS; do
   echo "Running mypy for lab ${LAB_NAME}"
