@@ -11,6 +11,7 @@ from re import Pattern
 # pylint: disable=no-name-in-module
 from pydantic.dataclasses import dataclass
 from pydantic.json import pydantic_encoder
+from pydantic.tools import parse_obj_as
 
 from config.constants import PROJECT_ROOT
 
@@ -67,9 +68,9 @@ class ProjectConfig(ProjectConfigDTO):
         """
         super().__init__()
         with config_path.open(encoding='utf-8', mode='r') as config_file:
-            json_content = config_file.read()
+            json_content = json.load(config_file)
         # pylint: disable=no-member
-        self._dto = ProjectConfigDTO.__pydantic_model__.parse_raw(f"{json_content}") # type: ignore
+        self._dto = parse_obj_as(ProjectConfigDTO, json_content)
 
     def get_thresholds(self) -> dict:
         """

@@ -1,6 +1,7 @@
 """
-Checks dependencies.
+Check dependencies.
 """
+
 import re
 import sys
 from pathlib import Path
@@ -15,11 +16,11 @@ def get_paths() -> list[Path]:
     Returns:
         list[Path]: Paths to non-python files
     """
-    list_with_paths = []
-    for file in PROJECT_ROOT.iterdir():
-        if file.name in ['requirements.txt', 'requirements_qa.txt']:
-            list_with_paths.append(file)
-    return list_with_paths
+    return [
+        path 
+        for path in PROJECT_ROOT.rglob('requirements*.txt')
+        if 'venv' not in str(path)
+    ]
 
 
 def get_requirements(path: Path) -> list:
@@ -44,29 +45,41 @@ def compile_pattern() -> re.Pattern:
     Returns:
         re.Pattern: Compiled pattern
     """
-    return re.compile(r'\w+(-\w+|\[\w+\])*==\d+(\.\d+)+')
+    return re.compile(r'((\w+(-\w+|\[\w+\])*==\d+(\.\d+)+)'
+                      r'|((-r|--extra-index-url)\s.*))', re.MULTILINE)
 
 
-def check_dependencies(lines: list, compiled_pattern: re.Pattern) -> bool:
+def check_dependencies(lines: list, compiled_pattern: re.Pattern, path: Path) -> bool:
     """
     Check that dependencies confirm to the template.
 
     Args:
         lines (list): Dependencies
         compiled_pattern (re.Pattern): Compiled pattern
+        path (Path): Path to file with dependencies
 
     Returns:
         bool: Do dependencies confirm to the template or not
     """
-    expected = list(sorted(map(str.lower, lines)))
-    if expected != list(map(str.lower, lines)):
-        print('Dependencies in requirements.txt do not follow sorting rule.')
+    expected = [
+        i
+        for i in sorted(map(str.lower, lines))
+        if i.split()[0] not in ('--extra-index-url',)
+    ]
+    actual = [
+        i
+        for i in map(str.lower, lines)
+        if i.split()[0] not in ('--extra-index-url',)
+    ]
+    if expected != actual:
+        print(f'Dependencies in {path.relative_to(PROJECT_ROOT)} do not follow sorting rule.')
         print('Expected:')
         print('\n'.join(expected))
         return False
     for line in lines:
         if not re.search(compiled_pattern, line):
-            print('Specific dependency in requirements.txt do not conform to the template.')
+            print(f'Specific dependency in {path.relative_to(PROJECT_ROOT)} '
+                  'do not conform to the template.')
             print(line)
             return False
     return True
@@ -80,10 +93,11 @@ def main() -> None:
     compiled_pattern = compile_pattern()
     for path in paths:
         lines = get_requirements(path)
-        if not check_dependencies(lines, compiled_pattern):
+        if not check_dependencies(lines, compiled_pattern, path):
+            print(f'{path.relative_to(PROJECT_ROOT)} : FAIL')
             sys.exit(1)
         else:
-            print(f'{path.name} : OK.')
+            print(f'{path.relative_to(PROJECT_ROOT)} : OK')
 
 
 if __name__ == '__main__':

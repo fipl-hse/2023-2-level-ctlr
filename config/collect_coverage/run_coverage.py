@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from config.cli_unifier import _run_console_tool, choose_python_exe
+from config.lab_settings import LabSettings
 
 
 class CoverageRunError(Exception):
@@ -30,10 +31,8 @@ def get_target_score(lab_path: Path) -> int:
     Returns:
         int: Desired score
     """
-    target_score_file_path = lab_path.joinpath('target_score.txt')
-    with open(target_score_file_path, 'r', encoding='utf-8') as target_score_file:
-        content = target_score_file.readline()
-    return int(content) if content else 0
+    settings = LabSettings(lab_path / 'settings.json')
+    return settings.target_score
 
 
 def extract_percentage_from_report(report_path: Path) -> int:
@@ -74,7 +73,10 @@ def run_coverage_collection(lab_path: Path, artifacts_path: Path,
 
     args = [
         '-m', 'coverage', 'run',
-        '--include', f'{lab_path.name}/main.py',
+        '--include', f'{lab_path.name}/main.py,'
+                     f'{lab_path.name}/scrapper.py,'
+                     f'{lab_path.name}/pipeline.py,'
+                     f'{lab_path.name}/pos_pipeline.py',
         '-m', 'pytest', '-m', f'{lab_path.name}{mark}'
     ]
     res_process = _run_console_tool(str(python_exe_path), args,

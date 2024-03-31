@@ -7,26 +7,21 @@ import sys
 from pathlib import Path
 
 from config.cli_unifier import _run_console_tool, choose_python_exe
-from config.constants import PROJECT_ROOT
+from config.constants import PROJECT_CONFIG_PATH, PROJECT_ROOT
+from config.project_config import ProjectConfig
 
 
 def get_files() -> list:
     """
-    Get paths to files in config, core_utils and labs packages.
+    Get paths to files in config and core_utils packages.
 
     Returns:
         list: File paths
     """
-    directories = [
-        'config',
-        'core_utils',
-        'lab_5_scrapper',
-        'lab_6_pipeline'
-    ]
-    excluded_files = ['__init__.py', 'validate.py', 'main_stub.py']
+    directories = ['config', 'core_utils']
     file_paths = [file for directory in directories
                   for file in Path(PROJECT_ROOT / directory).glob('**/*.py')
-                  if file.name not in excluded_files]
+                  if file.name != '__init__.py' and 'ud_validator' not in str(file)]
     return file_paths
 
 
@@ -84,15 +79,17 @@ def check_file(path_to_file: Path) -> str:
     pydoctest_config = PROJECT_ROOT / 'config' / 'stage_1_style_tests' / 'pydoctest.json'
     pydoctest_checks = check_with_pydoctest(path_to_file, pydoctest_config)
     if pydoctest_checks.returncode == 0:
-        print(f'All docstrings in {path_to_file} conform to Google-style'
-              f'according to Pydoctest.\n')
+        # print(f'All docstrings in {path_to_file} conform to Google-style'
+        #       f'according to Pydoctest.\n')
+        pass
     else:
         errors += f'Pydoctest errors:\n{pydoctest_checks.stdout}'
 
     pydocstyle_checks = check_with_pydocstyle(path_to_file)
     if pydocstyle_checks.returncode == 0:
-        print(f'All docstrings in {path_to_file} conform to Google-style'
-              f'according to Pydocstyle.\n')
+        # print(f'All docstrings in {path_to_file} conform to Google-style'
+        #       f'according to Pydocstyle.\n')
+        pass
     else:
         errors += f'Pydocstyle errors:\n{pydocstyle_checks.stdout}'
 
@@ -108,15 +105,29 @@ def main() -> None:
     """
     all_errors = []
     check_is_good = True
+    project_config = ProjectConfig(PROJECT_CONFIG_PATH)
+    labs_list = project_config.get_labs_paths()
     files_list = get_files()
 
-    # check docstrings in config, core_utils, lab_5 and lab_6
+    # check docstrings in config and core_utils
     for file in files_list:
-        if not file.exists():
-            print(f'\nIgnoring {file}: it does not exist.')
-            continue
-        print(f'\nChecking {file}')
         all_errors.append(check_file(file))
+
+    # check docstrings in labs
+    for lab_path in labs_list:
+        paths = (
+            lab_path / 'main.py',
+            lab_path / 'scrapper.py',
+            lab_path / 'scrapper_dynamic.py',
+            lab_path / 'pipeline.py',
+            lab_path / 'pos_frequency_pipeline.py',
+        )
+        for path in paths:
+            if not path.exists():
+                print(f'\nIgnoring {path}: it does not exist.')
+                continue
+
+            all_errors.append(check_file(path))
 
     if not all(el == '' for el in all_errors):
         check_is_good = False

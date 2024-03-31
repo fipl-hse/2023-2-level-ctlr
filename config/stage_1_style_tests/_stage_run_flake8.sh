@@ -10,6 +10,11 @@ configure_script
 
 python -m flake8 config seminars
 
+if [ -d "core_utils" ]; then
+  echo "core_utils exist"
+  python -m flake8 core_utils
+fi
+
 FAILED=0
 LABS=$(get_labs)
 

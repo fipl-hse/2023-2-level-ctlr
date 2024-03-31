@@ -1,6 +1,7 @@
 """
-Check newline at the end.
+Check newline at the end of a file.
 """
+
 import sys
 
 from config.constants import PROJECT_ROOT
@@ -13,25 +14,34 @@ def get_paths() -> list:
     Returns:
         list: Paths to non-python files
     """
-    paths_to_exclude = [
+    paths_to_exclude = {
         'venv',
         '.git',
         '.idea',
         '.coverage',
         '.mypy_cache',
         '.pytest_cache',
+        '__pycache__',
         'build',
-        'russian-syntagrus-ud-2.0-170801.udpipe'
-    ]
+        '_build',
+        'intersphinx',
+        'test_tmp',
+        'dist'
+    }
+
+    only_sources = [file for file in PROJECT_ROOT.iterdir() if file.name not in paths_to_exclude]
 
     list_with_paths = []
-    for file in PROJECT_ROOT.iterdir():
-        if file.name in paths_to_exclude or file.name.endswith('.udpipe'):
+    for source_file in only_sources:
+        if not source_file.is_dir():
+            list_with_paths.append(source_file)
             continue
-        if file.is_dir():
-            list_with_paths.extend(sorted(file.rglob('*')))
-        else:
-            list_with_paths.append(file)
+
+        list_with_paths.extend([
+            file
+            for file in source_file.rglob('*')
+            if not set(i.name for i in file.parents) & paths_to_exclude
+        ])
     return list_with_paths
 
 

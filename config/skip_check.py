@@ -1,6 +1,7 @@
 """
 Check whether PR author is admin or not.
 """
+
 import sys
 from pathlib import Path
 from typing import Optional

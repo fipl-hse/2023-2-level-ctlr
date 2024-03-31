@@ -217,6 +217,7 @@ jobs:
           name: raw-dataset
       - name: Run metadata validation
         run: |
+          source venv/bin/activate
           export PYTHONPATH=$(pwd):$PYTHONPATH
           python config/unpack_archived_dataset.py lab_5_scrapper
           bash config/_stage_run_pytest.sh "$PR_NAME" "$PR_AUTHOR" -l lab_5_scrapper -m stage_2_5_dataset_validation
@@ -289,6 +290,7 @@ jobs:
           name: raw-dataset
       - name: Run CorpusManager tests
         run: |
+          source venv/bin/activate  
           export PYTHONPATH=$(pwd):$PYTHONPATH
           python config/unpack_archived_dataset.py lab_6_pipeline
           bash config/_stage_run_pytest.sh "$PR_NAME" "$PR_AUTHOR" -l lab_6_pipeline -m stage_3_2_corpus_manager_checks
@@ -337,6 +339,7 @@ jobs:
           name: raw-dataset
       - name: Run metadata validation
         run: |
+          source venv/bin/activate
           export PYTHONPATH=$(pwd):$PYTHONPATH
           python config/unpack_archived_dataset.py lab_6_pipeline
           bash config/_stage_run_pytest.sh "$PR_NAME" "$PR_AUTHOR" -l lab_6_pipeline -m stage_3_4_admin_data_processing
@@ -394,6 +397,7 @@ jobs:
           name: processed-dataset
       - name: Run validation of `_processed.txt` files
         run: |
+          source venv/bin/activate  
           export PYTHONPATH=$(pwd):$PYTHONPATH
           python config/unpack_archived_dataset.py lab_6_pipeline
           bash config/_stage_run_pytest.sh "$PR_NAME" "$PR_AUTHOR" -l lab_6_pipeline -m stage_3_5_student_dataset_validation
@@ -426,9 +430,8 @@ jobs:
           name: processed-dataset
       - name: Congratulations
         run: |
-          echo "Does not work - #37"
-#          bash config/stage_5_pos_frequency_pipeline_tests/_stage_check_pos_pipeline.sh "$PR_AUTHOR"
-#          bash config/_stage_run_pytest.sh "$PR_NAME" "$PR_AUTHOR" -l lab_6_pipeline -m stage_4_pos_frequency_pipeline_checks
+          bash config/stage_5_pos_frequency_pipeline_tests/_stage_check_pos_pipeline.sh "$PR_AUTHOR"
+          bash config/_stage_run_pytest.sh "$PR_NAME" "$PR_AUTHOR" -l lab_6_pipeline -m stage_4_pos_frequency_pipeline_checks
       - name: Archive processed dataset
         continue-on-error: true
         uses: actions/upload-artifact@v3
