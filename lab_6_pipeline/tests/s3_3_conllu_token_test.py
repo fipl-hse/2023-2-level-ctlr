@@ -4,6 +4,7 @@ Tests for ConlluToken functionality.
 import unittest
 
 import pytest
+
 from lab_6_pipeline.pipeline import ConlluSentence, ConlluToken
 
 

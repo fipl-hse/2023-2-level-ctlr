@@ -7,13 +7,13 @@ import unittest
 from pathlib import Path
 
 import pytest
-from lab_6_pipeline.pipeline import CorpusManager, MorphologicalAnalysisPipeline
-from lab_6_pipeline.tests.utils import pipeline_test_files_setup
 from pymorphy2 import MorphAnalyzer
 
 from config.test_params import PIPE_TEST_FILES_FOLDER, TEST_PATH
 from core_utils.article import article
 from core_utils.article.ud import TagConverter
+from lab_6_pipeline.pipeline import CorpusManager, MorphologicalAnalysisPipeline
+from lab_6_pipeline.tests.utils import pipeline_test_files_setup
 
 
 @pytest.mark.skip

@@ -3,13 +3,12 @@ Utils for lab_5_scrapper tests.
 """
 import random
 
-from lab_5_scrapper.scrapper import Config, Crawler, HTMLParser
-
 from config.test_params import TEST_PATH
 from core_utils.article import article
 from core_utils.article.io import to_meta, to_raw
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 from core_utils.tests.utils import copy_student_data
+from lab_5_scrapper.scrapper import Config, Crawler, HTMLParser
 
 
 def scrapper_setup() -> None:

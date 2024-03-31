@@ -5,9 +5,9 @@ import shutil
 import unittest
 
 import pytest
-from lab_5_scrapper.tests.utils import scrapper_setup
 
 from config.test_params import TEST_PATH
+from lab_5_scrapper.tests.utils import scrapper_setup
 
 
 class VolumeCheckTest(unittest.TestCase):

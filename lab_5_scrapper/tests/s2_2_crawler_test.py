@@ -6,10 +6,10 @@ import shutil
 import unittest
 
 import pytest
-from lab_5_scrapper.scrapper import Config, Crawler, make_request, prepare_environment
 
 from config.test_params import TEST_PATH
 from core_utils.constants import CRAWLER_CONFIG_PATH
+from lab_5_scrapper.scrapper import Config, Crawler, make_request, prepare_environment
 
 
 class CrawlerTest(unittest.TestCase):

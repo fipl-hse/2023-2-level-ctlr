@@ -8,23 +8,19 @@ from copy import deepcopy
 
 import bs4 as bs
 import requests
-from selenium.common.exceptions import (ElementClickInterceptedException,
-                                        NoSuchElementException,
+from selenium.common.exceptions import (ElementClickInterceptedException, NoSuchElementException,
                                         TimeoutException, WebDriverException)
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
 
-from config.website_validation.constants import (BUTTONS_PATH, CONFIG_PATH,
-                                                 DIST_PATH, HEADERS_ATTEMPTS,
-                                                 CheckStatuses)
-from config.website_validation.utils import (SiteCheckResult, SiteCheckStatus,
-                                             create_driver,
-                                             define_blacklist_and_whitelist,
-                                             get_amount_links_selenium,
-                                             save_lists_to_json, save_to_csv,
-                                             save_to_json)
+from config.website_validation.constants import (BUTTONS_PATH, CheckStatuses, CONFIG_PATH,
+                                                 DIST_PATH, HEADERS_ATTEMPTS)
+from config.website_validation.utils import (create_driver, define_blacklist_and_whitelist,
+                                             get_amount_links_selenium, save_lists_to_json,
+                                             save_to_csv, save_to_json, SiteCheckResult,
+                                             SiteCheckStatus)
 from lab_5_scrapper.scrapper import Config, make_request
 
 

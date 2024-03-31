@@ -12,11 +12,9 @@ from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
-from config.website_validation.constants import (CSV_REPORT_PATH, DIST_PATH,
-                                                 JSON_BLACKLIST_PATH,
-                                                 JSON_REPORT_PATH,
-                                                 JSON_WHITELIST_PATH,
-                                                 CheckStatuses)
+from config.website_validation.constants import (CheckStatuses, CSV_REPORT_PATH, DIST_PATH,
+                                                 JSON_BLACKLIST_PATH, JSON_REPORT_PATH,
+                                                 JSON_WHITELIST_PATH)
 from lab_5_scrapper.scrapper import Config
 
 
