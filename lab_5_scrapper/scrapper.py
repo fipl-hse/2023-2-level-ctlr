@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 import requests
 
 from core_utils.article.article import Article
-from core_utils.article.io import to_raw
+from core_utils.article.io import to_meta, to_raw
 from core_utils import constants
 from core_utils.config_dto import ConfigDTO
 
@@ -270,7 +270,7 @@ class Crawler:
 
             article_bs = BeautifulSoup(response.text, "html.parser")
             urls = [self._extract_url(article_bs)
-                             for i in range(1)]
+                             for i in range(10)]
             self.urls.extend(urls)
 
     def get_search_urls(self) -> list:
@@ -285,6 +285,36 @@ class Crawler:
 
 # 10
 # 4, 6, 8, 10
+class CrawlerRecursive(Crawler):
+    """
+    Recursive Crawler is a child of Crawler class.
+    """
+    def __init__(self, config: Config) -> None:
+        super().__init__(config)
+        self.inforced_stop = False
+        self.start_url = self.config.get_seed_urls()[0][:-1]  # without num of ?page=0
+
+    def find_articles(self) -> None:
+        last_page = 0
+
+        response = make_request(self.start_url, self.config)
+        if response.ok:
+            article_bs = BeautifulSoup(response.text, "html.parser")
+            last_page = int(article_bs.find(class_='pager__item pager__item--last')
+                                      .find('a')['href'])
+
+        seed_urls = [f"{self.start_url}{str(num)}"
+                     for num in range(0, last_page)]
+
+        for seed_url in seed_urls:
+            response = make_request(seed_url, self.config)
+            if not response.ok:
+                continue
+
+            article_bs = BeautifulSoup(response.text, "html.parser")
+            urls = [self._extract_url(article_bs)
+                    for i in range(10)]
+            self.urls.extend(urls)
 
 
 class HTMLParser:
@@ -331,6 +361,22 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        self.article.title = article_soup.find(itemprop="headline").string
+
+        date = article_soup.find(itemprop="datePublished")['datetime']
+        self.article.date = self.unify_date_format(date)
+
+        author = article_soup.findAll('strong')[1].string
+        if author:
+            self.article.author = [author]
+        else:
+            self.article.author = ['NOT FOUND']
+
+        topic_fields = article_soup.findAll(class_="field field--name-field-tegi " +
+                                                   "field--type-entity-reference " +
+                                                   "field--label-hidden field__items")
+        topics = topic_fields[0].findAll('a')
+        self.article.topics = [topic.string for topic in topics]
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -342,6 +388,7 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
+        return datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
 
     def parse(self) -> Union[Article, bool, list]:
         """
@@ -354,6 +401,7 @@ class HTMLParser:
         if response.ok:
             article_bs = BeautifulSoup(response.text, 'html.parser')
             self._fill_article_with_text(article_bs)
+            self._fill_article_with_meta_information(article_bs)
 
         return self.article
 
@@ -390,6 +438,7 @@ def main() -> None:
         parser = HTMLParser(full_url=url, article_id=index + 1, config=configuration)
         article = parser.parse()
         to_raw(article)
+        to_meta(article)
     print("It's done!")
 
 
