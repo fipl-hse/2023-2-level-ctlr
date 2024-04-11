@@ -5,12 +5,16 @@ Crawler implementation.
 import pathlib
 from typing import Pattern, Union
 
+import requests
+
+from core_utils.config_dto import ConfigDTO
+from core_utils.constants import CRAWLER_CONFIG_PATH
+
 
 class Config:
     """
     Class for unpacking and validating configurations.
     """
-    print("Hello world")
 
     def __init__(self, path_to_config: pathlib.Path) -> None:
         """
@@ -19,6 +23,17 @@ class Config:
         Args:
             path_to_config (pathlib.Path): Path to configuration.
         """
+        self._path_to_config = path_to_config
+        self._validate_config_content()
+        self.config = self._extract_config_content()
+
+        self._seed_urls = self.config.seed_urls
+        self._num_articles = self.config.total_articles
+        self._headers = self.config.headers
+        self._encoding = self.config.encoding
+        self._timeout = self.config.timeout
+        self._should_verify_certificate = self.config.should_verify_certificate
+        self._headless_mode = self.config.headless_mode
 
     def _extract_config_content(self) -> ConfigDTO:
         """
