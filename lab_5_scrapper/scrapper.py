@@ -111,7 +111,7 @@ class Config:
             conf = json.load(file)
 
         if not (isinstance(conf['seed_urls'], list)
-                and all(re.match(r"https://", seed_url)
+                and all(re.match(r"https://(www.)?", seed_url)
                         for seed_url in conf['seed_urls']
                         )
                 ):
@@ -271,7 +271,7 @@ class Crawler:
             if not response.ok:
                 continue
 
-            article_bs = BeautifulSoup(response.text, "html.parser")
+            article_bs = BeautifulSoup(response.text, "lxml")
             urls = [self._extract_url(article_bs)
                              for i in range(10)]
             self.urls.extend(urls)
@@ -294,30 +294,35 @@ class CrawlerRecursive(Crawler):
     """
     def __init__(self, config: Config) -> None:
         super().__init__(config)
-        self.inforced_stop = False
-        self.start_url = self.config.get_seed_urls()[0][:-1]  # without num of ?page=0
+        self.last_seed = ''
+        self.start_url = self.config.get_seed_urls()[0]
 
     def find_articles(self) -> None:
-        last_page = 0
-
         response = make_request(self.start_url, self.config)
+
         if response.ok:
-            article_bs = BeautifulSoup(response.text, "html.parser")
-            last_page = int(article_bs.find(class_='pager__item pager__item--last')
-                                      .find('a')['href'])
+            article_bs = BeautifulSoup(response.text, "lxml")
 
-        seed_urls = [f"{self.start_url}{str(num)}"
-                     for num in range(0, last_page)]
+            if not self.last_seed:
+                last_page = int(article_bs.find(class_='pager__item pager__item--last')
+                                      .find('a').attrs['href'].split('?page=')[1])
+                self.last_seed = str(last_page + 1)
 
-        for seed_url in seed_urls:
-            response = make_request(seed_url, self.config)
-            if not response.ok:
-                continue
+            if self.last_seed == self.start_url[:-len(self.last_seed)]:
+                print('All the articles for this site are collected.')
+                return  # check if we're not out of seed pages
+            # my site just creates a new blank page,
+            # so it's necessary to stop to not crawl forever
 
-            article_bs = BeautifulSoup(response.text, "html.parser")
             urls = [self._extract_url(article_bs)
                     for i in range(10)]
             self.urls.extend(urls)
+
+        if len(self.urls) < self.config.get_num_articles():
+            seed, num = self.start_url.split('?page=')
+            self.start_url = f'{seed}?page={int(num) + 1}'
+            self.find_articles()  # go to the next seed page
+        return
 
 
 class HTMLParser:
@@ -364,10 +369,11 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        self.article.title = article_soup.find(itemprop="headline").string
+        self.article.title = str(article_soup.find(itemprop="headline").string)
 
-        date = article_soup.find(itemprop="datePublished")['datetime']
-        self.article.date = self.unify_date_format(date)
+        date = article_soup.find(itemprop="datePublished").attrs['datetime']
+        if isinstance(date, str):
+            self.article.date = self.unify_date_format(date)
 
         author = article_soup.findAll('strong')[1].string
         if author:
@@ -416,7 +422,8 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    if not pathlib.Path.is_dir(base_path):
+    if isinstance(base_path, pathlib.Path)\
+            and not pathlib.Path.is_dir(base_path):
         base_path.mkdir(parents=True, exist_ok=True)
 
     for file in base_path.iterdir():
@@ -431,14 +438,19 @@ def main() -> None:
 
     prepare_environment(base_path=constants.ASSETS_PATH)
 
-    crawler = Crawler(config=configuration)
-    crawler.find_articles()
+    crawler = CrawlerRecursive(config=configuration)
+    try:
+        crawler.find_articles()
+    except KeyboardInterrupt:
+        print(f'Crawling is interrupted. '
+              f'Current seed page is {crawler.start_url.split("?page=")[1]}.')
 
     for index, url in enumerate(crawler.urls):
         parser = HTMLParser(full_url=url, article_id=index + 1, config=configuration)
         article = parser.parse()
-        to_raw(article)
-        to_meta(article)
+        if isinstance(article, Article):
+            to_raw(article)
+            to_meta(article)
     print("It's done!")
 
 
