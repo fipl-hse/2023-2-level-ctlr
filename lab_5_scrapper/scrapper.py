@@ -4,9 +4,9 @@ Crawler implementation.
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
 import datetime
 import json
-import os
 import pathlib
 import re
+from time import sleep
 from typing import Pattern, Union
 
 from bs4 import BeautifulSoup
@@ -111,7 +111,7 @@ class Config:
             conf = json.load(file)
 
         if not (isinstance(conf['seed_urls'], list)
-                and all(re.match(r"https?://(www.)?", seed_url)
+                and all(re.match(r"https://", seed_url)
                         for seed_url in conf['seed_urls']
                         )
                 ):
@@ -120,7 +120,7 @@ class Config:
         num = conf['total_articles_to_find_and_parse']
         if not isinstance(num, int) or num < 0 or isinstance(num, bool):
             raise IncorrectNumberOfArticlesError
-        if isinstance(num, int) and not 1 <= num <= 150:
+        if num > 150 or num < 1:
             raise NumberOfArticlesOutOfRangeError
 
         if not isinstance(conf['headers'], dict):
@@ -133,7 +133,8 @@ class Config:
                 or not isinstance(conf['headless_mode'], bool):
             raise IncorrectVerifyError
 
-        if not (isinstance(conf['timeout'], int) and (0 < conf['timeout'] < 60)):
+        if not isinstance(conf['timeout'], int) \
+                or conf['timeout'] >= 60 or conf['timeout'] <= 0:
             raise IncorrectTimeoutError
 
     def get_seed_urls(self) -> list[str]:
@@ -211,6 +212,8 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
+    sleep(config.get_timeout())
+
     return requests.get(
         url=url,
         timeout=config.get_timeout(),
@@ -399,7 +402,7 @@ class HTMLParser:
         """
         response = make_request(self.full_url, self.config)
         if response.ok:
-            article_bs = BeautifulSoup(response.text, 'html.parser')
+            article_bs = BeautifulSoup(response.text, 'lxml')
             self._fill_article_with_text(article_bs)
             self._fill_article_with_meta_information(article_bs)
 
@@ -413,13 +416,11 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    if not os.path.exists(base_path):
-        os.makedirs(base_path)
-    else:
-        files = os.listdir(base_path)
-        for file in files:
-            if os.path.exists(file):
-                os.remove(file)
+    if not pathlib.Path.is_dir(base_path):
+        base_path.mkdir(parents=True, exist_ok=True)
+
+    for file in base_path.iterdir():
+        file.unlink(missing_ok=True)
 
 
 def main() -> None:
@@ -432,9 +433,8 @@ def main() -> None:
 
     crawler = Crawler(config=configuration)
     crawler.find_articles()
-    urls = crawler.urls
 
-    for index, url in enumerate(urls):
+    for index, url in enumerate(crawler.urls):
         parser = HTMLParser(full_url=url, article_id=index + 1, config=configuration)
         article = parser.parse()
         to_raw(article)

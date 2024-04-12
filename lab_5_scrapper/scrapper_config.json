@@ -1,22 +1,25 @@
 {
-    "seed_urls": ["https://www.sbras.info/news?page=0",
-                    "https://www.sbras.info/news?page=1",
-                    "https://www.sbras.info/news?page=2",
-                    "https://www.sbras.info/news?page=3",
-                    "https://www.sbras.info/news?page=4",
-                    "https://www.sbras.info/news?page=5",
-                    "https://www.sbras.info/news?page=6",
-                    "https://www.sbras.info/news?page=7",
-                    "https://www.sbras.info/news?page=8",
-                    "https://www.sbras.info/news?page=9"],
-    "headers": {
-      "Cookie": "_ym_uid=1712571132768781040; _ym_d=1712571132; _ym_isad=2; _gid=GA1.2.1799081327.1712571133; _ym_visorc=w; _gat_gtag_UA_35270830_1=1; _ga_R6JS7TVDTP=GS1.1.1712612311.6.1.1712612322.49.0.0; _ga=GA1.1.1168440230.1712571133",
-      "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"},
-    "total_articles_to_find_and_parse": 100,
-    "encoding": "utf-8",
-    "timeout": 1,
-    "should_verify_certificate": false,
-    "headless_mode": true
+   "seed_urls":[
+      "https://www.sbras.info/news?page=0",
+      "https://www.sbras.info/news?page=1",
+      "https://www.sbras.info/news?page=2",
+      "https://www.sbras.info/news?page=3",
+      "https://www.sbras.info/news?page=4",
+      "https://www.sbras.info/news?page=5",
+      "https://www.sbras.info/news?page=6",
+      "https://www.sbras.info/news?page=7",
+      "https://www.sbras.info/news?page=8",
+      "https://www.sbras.info/news?page=9"
+   ],
+   "headers":{
+      "Cookie":"_ym_uid=1712571132768781040; _ym_d=1712571132; _ym_isad=2; _gid=GA1.2.1799081327.1712571133; _ym_visorc=w; _gat_gtag_UA_35270830_1=1; _ga_R6JS7TVDTP=GS1.1.1712612311.6.1.1712612322.49.0.0; _ga=GA1.1.1168440230.1712571133",
+      "Accept-Language":"en-GB,en-US;q=0.9,en;q=0.8",
+      "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+      "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+   },
+   "total_articles_to_find_and_parse":100,
+   "encoding":"utf-8",
+   "timeout":1,
+   "should_verify_certificate":false,
+   "headless_mode":true
 }
