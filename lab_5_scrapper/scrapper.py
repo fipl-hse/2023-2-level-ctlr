@@ -111,7 +111,7 @@ class Config:
             conf = json.load(file)
 
         if not (isinstance(conf['seed_urls'], list)
-                and all(re.match(r"https://(www.)?", seed_url)
+                and all(re.match(r"https?://(www.)?", seed_url)
                         for seed_url in conf['seed_urls']
                         )
                 ):
