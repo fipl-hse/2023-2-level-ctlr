@@ -6,6 +6,7 @@ import datetime
 import json
 import pathlib
 import re
+from random import randrange
 from time import sleep
 from typing import Pattern, Union
 
@@ -212,7 +213,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-    sleep(config.get_timeout())
+    sleep(randrange(3))
 
     return requests.get(
         url=url,
@@ -251,14 +252,15 @@ class Crawler:
             str: Url from HTML
         """
         url = ''
-        links = article_bs.findAll('a', hreflang='ru')
+        links = article_bs.find_all('a', hreflang='ru')
         for link in links:
             if 'Подробнее' in link.stripped_strings:
-                url = link.get('href')
+                url = self.url_pattern + link.get('href')[len('/news')::]
                 if url not in self.urls:
                     break
-        url = self.url_pattern + url[len('/news')::]
-        return url
+        if url and url not in self.urls:
+            return url
+        return ''
 
     def find_articles(self) -> None:
         """
@@ -272,9 +274,11 @@ class Crawler:
                 continue
 
             article_bs = BeautifulSoup(response.text, "lxml")
-            urls = [self._extract_url(article_bs)
-                             for i in range(10)]
-            self.urls.extend(urls)
+
+            for i in range(10):  # max at my site per seed page
+                extracted_url = self._extract_url(article_bs)
+                if extracted_url:
+                    self.urls.append(extracted_url)
 
     def get_search_urls(self) -> list:
         """
@@ -314,9 +318,10 @@ class CrawlerRecursive(Crawler):
             # my site just creates a new blank page,
             # so it's necessary to stop to not crawl forever
 
-            urls = [self._extract_url(article_bs)
-                    for i in range(10)]
-            self.urls.extend(urls)
+            for i in range(10):  # max at my site per seed page
+                extracted_url = self._extract_url(article_bs)
+                if extracted_url:
+                    self.urls.append(extracted_url)
 
         if len(self.urls) < self.config.get_num_articles():
             seed, num = self.start_url.split('?page=')
@@ -354,7 +359,7 @@ class HTMLParser:
         headline = article_soup.find(itemprop="headline")
         raw_text = f'{headline.string}'
 
-        text_blocks = article_soup.findAll('p')
+        text_blocks = article_soup.find_all('p')
         for text_block in text_blocks:
             if not text_block.string:
                 continue
@@ -375,17 +380,20 @@ class HTMLParser:
         if isinstance(date, str):
             self.article.date = self.unify_date_format(date)
 
-        author = article_soup.findAll('strong')[1].string
-        if author:
-            self.article.author = [author]
-        else:
-            self.article.author = ['NOT FOUND']
+        author = article_soup.find_all('strong')[-1].string
 
-        topic_fields = article_soup.findAll(class_="field field--name-field-tegi " +
+        if not isinstance(author, str) or not author:
+            author = 'NOT FOUND'
+        self.article.author = [author]
+
+        topic_fields = article_soup.find_all(class_="field field--name-field-tegi " +
                                                    "field--type-entity-reference " +
                                                    "field--label-hidden field__items")
-        topics = topic_fields[0].findAll('a')
-        self.article.topics = [topic.string for topic in topics]
+        if topic_fields:
+            topics = topic_fields[0].find_all('a')
+            self.article.topics = [topic.string for topic in topics]
+        else:
+            self.article.topics = []
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -436,22 +444,32 @@ def main() -> None:
     """
     configuration = Config(path_to_config=constants.CRAWLER_CONFIG_PATH)
 
-    prepare_environment(base_path=constants.ASSETS_PATH)
-
     crawler = CrawlerRecursive(config=configuration)
-    try:
-        crawler.find_articles()
-    except KeyboardInterrupt:
-        print(f'Crawling is interrupted. '
-              f'Current seed page is {crawler.start_url.split("?page=")[1]}.')
+
+    base_path = constants.ASSETS_PATH
+    if len(list(base_path.iterdir())) == 2 * configuration.get_num_articles():
+        prepare_environment(base_path)
+    else:
+        for file in base_path.iterdir():
+            if file.suffix == '.json':
+                meta = json.loads(file.read_text(encoding='utf-8'))
+                crawler.urls.append(meta["url"])
+
+    already_crawled = crawler.urls[::]
+    print(f"We already have {len(already_crawled)} articles.")
+
+    crawler.find_articles()
 
     for index, url in enumerate(crawler.urls):
+        if url in already_crawled:
+            continue
         parser = HTMLParser(full_url=url, article_id=index + 1, config=configuration)
         article = parser.parse()
         if isinstance(article, Article):
             to_raw(article)
             to_meta(article)
     print("It's done!")
+    print(len(set(crawler.urls)))
 
 
 if __name__ == "__main__":
