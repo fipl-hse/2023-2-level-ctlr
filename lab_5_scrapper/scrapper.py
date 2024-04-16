@@ -2,8 +2,44 @@
 Crawler implementation.
 """
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
+import json
 import pathlib
+from bs4 import BeautifulSoup
+import requests
+import os
+
 from typing import Pattern, Union
+from core_utils.config_dto import ConfigDTO
+from core_utils.constants import CRAWLER_CONFIG_PATH
+from urllib.parse import urlparse
+
+
+class IncorrectSeedURLError(Exception):
+    pass
+
+
+class NumberOfArticlesOutOfRangeError(Exception):
+    pass
+
+
+class IncorrectNumberOfArticlesError(Exception):
+    pass
+
+
+class IncorrectHeadersError(Exception):
+    pass
+
+
+class IncorrectEncodingError(Exception):
+    pass
+
+
+class IncorrectTimeoutError(Exception):
+    pass
+
+
+class IncorrectVerifyError(Exception):
+    pass
 
 
 class Config:
@@ -18,6 +54,17 @@ class Config:
         Args:
             path_to_config (pathlib.Path): Path to configuration.
         """
+        self.path_to_config = path_to_config
+        self.configdto = self._extract_config_content()
+        self._validate_config_content()
+
+        self._seed_urls = self.configdto.seed_urls
+        self._num_articles = self.configdto.total_articles
+        self._headers = self.configdto.headers
+        self._encoding = self.configdto.encoding
+        self._timeout = self.configdto.timeout
+        self._verify = self.configdto.should_verify_certificate
+        self._headless_mode = self.configdto.headless_mode
 
     def _extract_config_content(self) -> ConfigDTO:
         """
@@ -26,11 +73,42 @@ class Config:
         Returns:
             ConfigDTO: Config values
         """
+        with open(self.path_to_config, encoding='utf-8') as file:
+            config = json.load(file)
+        return ConfigDTO(seed_urls=config['seed_urls'],
+                         total_articles_to_find_and_parse=config['total_articles_to_find_and_parse'],
+                         headers=config['headers'],
+                         encoding=config['encoding'],
+                         timeout=config['timeout'],
+                         should_verify_certificate=config['should_verify_certificate'],
+                         headless_mode=config['headless_mode'])
 
     def _validate_config_content(self) -> None:
         """
         Ensure configuration parameters are not corrupt.
         """
+        for seed_url in self.configdto.seed_urls:
+            parsed_url = urlparse(seed_url)
+            if not parsed_url.scheme or not parsed_url.netloc:
+                raise IncorrectSeedURLError("seed URL does not match standard pattern 'https?://(www.)?'")
+
+        if not isinstance(self.configdto.total_articles, int):
+            raise IncorrectNumberOfArticlesError('total number of articles to parse is not integer')
+
+        if not 0 < self.configdto.total_articles < 150:
+            raise NumberOfArticlesOutOfRangeError('total number of articles is out of range')
+
+        if not isinstance(self.configdto.headers, dict):
+            raise IncorrectHeadersError('headers are not in a form of dictionary')
+
+        if not isinstance(self.configdto.encoding, str):
+            raise IncorrectEncodingError('encoding must be specified as a string')
+
+        if not isinstance(self.configdto.timeout, int) or not 0 < self.configdto.timeout < 60:
+            raise IncorrectTimeoutError('timeout value must be a positive integer less than 60')
+
+        if not isinstance(self.configdto.should_verify_certificate, bool):
+            raise IncorrectVerifyError('verify certificate value must either be True or False')
 
     def get_seed_urls(self) -> list[str]:
         """
@@ -39,6 +117,7 @@ class Config:
         Returns:
             list[str]: Seed urls
         """
+        return self._seed_urls
 
     def get_num_articles(self) -> int:
         """
@@ -47,6 +126,7 @@ class Config:
         Returns:
             int: Total number of articles to scrape
         """
+        return self._num_articles
 
     def get_headers(self) -> dict[str, str]:
         """
@@ -55,6 +135,7 @@ class Config:
         Returns:
             dict[str, str]: Headers
         """
+        return self._headers
 
     def get_encoding(self) -> str:
         """
@@ -63,6 +144,7 @@ class Config:
         Returns:
             str: Encoding
         """
+        return self._encoding
 
     def get_timeout(self) -> int:
         """
@@ -71,6 +153,7 @@ class Config:
         Returns:
             int: Number of seconds to wait for response
         """
+        return self._timeout
 
     def get_verify_certificate(self) -> bool:
         """
@@ -79,6 +162,7 @@ class Config:
         Returns:
             bool: Whether to verify certificate or not
         """
+        return self._verify
 
     def get_headless_mode(self) -> bool:
         """
@@ -87,6 +171,7 @@ class Config:
         Returns:
             bool: Whether to use headless mode or not
         """
+        return self._headless_mode
 
 
 def make_request(url: str, config: Config) -> requests.models.Response:
@@ -100,6 +185,10 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
+    return requests.get(url=url,
+                        headers=config.get_headers(),
+                        timeout=config.get_timeout(),
+                        verify=config.get_verify_certificate())
 
 
 class Crawler:
@@ -116,6 +205,7 @@ class Crawler:
         Args:
             config (Config): Configuration
         """
+        self.config = config
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -132,6 +222,7 @@ class Crawler:
         """
         Find articles.
         """
+
 
     def get_search_urls(self) -> list:
         """
@@ -204,6 +295,10 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
+    if not os.path.exists(base_path):
+        os.makedirs(base_path)
+    for file in os.listdir(base_path):
+        os.remove(os.path.join(base_path, file))
 
 
 def main() -> None:
