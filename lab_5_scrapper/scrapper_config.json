@@ -1,9 +1,24 @@
 {
-    "seed_urls": [],
-    "headers": {},
-    "total_articles_to_find_and_parse": 0,
-    "encoding": "",
-    "timeout": 0,
+    "seed_urls": [
+    "https://www.securitylab.ru/news/page1_1.php",
+    "https://www.securitylab.ru/news/page1_2.php",
+    "https://www.securitylab.ru/news/page1_3.php",
+    "https://www.securitylab.ru/news/page1_4.php",
+    "https://www.securitylab.ru/news/page1_5.php",
+    "https://www.securitylab.ru/news/page1_6.php",
+    "https://www.securitylab.ru/news/page1_7.php"
+    ],
+
+    "headers": {
+        "Cookie" : "wmonitor=60oj130ae6mqdg4j7l37nitj99; language=en; stg_traffic_source_priority=1; twk_idm_key=zFMpTwV4RCeHv3YoK858h; twk_uuid_5c66e79a7f688621d571f5c1=%7B%22uuid%22%3A%221.2U66pnSVsZnzdu4js0uOfaHxGUvKztV3uoMV0PTv4M8uDXOMe9LzIuuxKz7L4ANw98e8gZ8lD1QwDIQ0BMXO4PPlBiSn2VjAKydOhKWSe6JhF0UK8uHqBnMJ7nK6TrH%22%2C%22version%22%3A3%2C%22domain%22%3A%22supermonitoring.com%22%2C%22ts%22%3A1712575167035%7D; ppms_privacy_5175571d-16e9-40c5-9eca-bcb6d5e49f20={%22visitorId%22:%22cc0d8688-8e8c-4783-8e05-d858b498e54b%22%2C%22domain%22:{%22normalized%22:%22www.supermonitoring.com%22%2C%22isWildcard%22:false%2C%22pattern%22:%22www.supermonitoring.com%22}%2C%22consents%22:{%22analytics%22:{%22status%22:0%2C%22updatedAt%22:%222024-04-08T11:20:39.621Z%22}%2C%22user_feedback%22:{%22status%22:0%2C%22updatedAt%22:%222024-04-08T11:20:39.621Z%22}%2C%22marketing_automation%22:{%22status%22:0%2C%22updatedAt%22:%222024-04-08T11:20:39.621Z%22}}%2C%22staleCheckpoint%22:%222024-04-08T11:20:36.807Z%22}; sdata[VisitTime]=2024-04-08%2013%3A20%3A45; sdata[referer]=https%3A%2F%2Fwww.supermonitoring.com%2Fblog%2Fcheck-browser-http-headers%2F; stg_last_interaction=Mon%2C%2008%20Apr%202024%2011:20:48%20GMT; stg_returning_visitor=Mo",
+        "Accept-Language" : "en,en-US;q=0.9",
+        "User-Agent" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36 Edg/123.0.0.0",
+        "Accept" : "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+    },
+
+    "total_articles_to_find_and_parse": 105,
+    "encoding": "utf-8",
+    "timeout": 1,
     "should_verify_certificate": true,
     "headless_mode": true
 }
