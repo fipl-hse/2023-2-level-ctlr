@@ -2,6 +2,7 @@
 Crawler implementation.
 """
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
+import datetime
 import json
 import pathlib
 from typing import Pattern, Union
@@ -295,6 +296,12 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        topics = article_soup.find_all('a', class_='breadcrumbs__link')
+        for t in topics:
+            self.article.topics.append(t.text)
+        self.article.title = article_soup.title
+        date = article_soup.find('div', class_='sb-item__date')
+        self.article.date = date.text
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -306,6 +313,15 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
+        d = ''
+        months = {"января": "Jan", "февраля": "Feb", "марта": "Mar",
+                  "апреля": "Apr", "мая": "May", "июня": "Jun", "июля": "Jul",
+                  "августа": "Aug", "сентября": "Sep", "октября": "Oct", "ноября": "Nov",
+                  "декабря": "Dec"}
+        for k, v in months.items():
+            if k in date_str:
+                d = date_str.replace(k, v)
+        return datetime.datetime.strptime(d, "%d %b, %Y")
 
     def parse(self) -> Union[Article, bool, list]:
         """
