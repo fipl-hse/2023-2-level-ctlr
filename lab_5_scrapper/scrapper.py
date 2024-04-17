@@ -3,6 +3,7 @@ Crawler implementation.
 """
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
 import json
+import datetime
 import pathlib
 import random
 import time
@@ -241,7 +242,7 @@ class Crawler:
         for seed_url in self.get_search_urls():
             response = make_request(seed_url, self.config)
             if response.status_code == 200:
-                article_bs = BeautifulSoup(response.text, 'html.parser')
+                article_bs = BeautifulSoup(response.text, 'lxml')
                 url = self._extract_url(article_bs)
                 self.urls.append(url)
 
@@ -299,12 +300,15 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         self.article.title = article_soup.find('h1').text
-        self.article.date = article_soup.find(class_="blog-date").text
+        date = article_soup.find(class_="blog-date").text
+        self.article.date = self.unify_date_format(date)
         author = [''.join(article_soup.find(class_="article-author").text)]
         if author:
             self.article.author = author
         else:
             self.article.author = ["NOT FOUND"]
+        topics = article_soup.find_all(class_="article-tag-link")
+        self.article.topics = [topic.text for topic in topics]
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -316,6 +320,7 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
+        return datetime.datetime.strptime(date_str, "%Y-%m-%d")
 
     def parse(self) -> Union[Article, bool, list]:
         """
@@ -324,7 +329,12 @@ class HTMLParser:
         Returns:
             Union[Article, bool, list]: Article instance
         """
-
+        response = make_request(self.full_url, self.config)
+        if response.ok:
+            article_soup = BeautifulSoup(response.text, 'lxml')
+            self._fill_article_with_text(article_soup)
+            self._fill_article_with_meta_information(article_soup)
+        return self.article
 
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     """
@@ -333,7 +343,10 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-
+    if not base_path.exists():
+        base_path.mkdir()
+    base_path.rmdir()
+    base_path.mkdir()
 
 def main() -> None:
     """
