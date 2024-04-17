@@ -206,6 +206,8 @@ class Crawler:
             config (Config): Configuration
         """
         self.config = config
+        self.url_pattern = self.config.get_seed_urls()[1].split('/news')[0]
+        self.urls = []
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -217,12 +219,24 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
+        url = ''
+        for div in article_bs.find_all('div', class_='items-list-inner__item-title switcher-title font_20'):
+            for link in div.select('a'):
+                url = link['href']
+        return self.url_pattern + url
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
-
+        urls = []
+        for url in self.get_search_urls():
+            response = make_request(url, self.config)
+            if not response.ok:
+                continue
+            article_bs = BeautifulSoup(response.text, 'lxml')
+            urls.append(self._extract_url(article_bs))
+        self.urls.extend(urls)
 
     def get_search_urls(self) -> list:
         """
@@ -231,6 +245,7 @@ class Crawler:
         Returns:
             list: seed_urls param
         """
+        return self.config.get_seed_urls()
 
 
 # 10
