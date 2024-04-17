@@ -9,6 +9,7 @@ import requests
 import os
 
 from typing import Pattern, Union
+from core_utils.article.article import Article
 from core_utils.config_dto import ConfigDTO
 from core_utils.constants import CRAWLER_CONFIG_PATH
 from urllib.parse import urlparse
@@ -266,6 +267,10 @@ class HTMLParser:
             article_id (int): Article id
             config (Config): Configuration
         """
+        self.full_url = full_url
+        self.article_id = article_id
+        self.config = config
+        self.article = Article(self.full_url, self.article_id)
 
     def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
         """
@@ -274,6 +279,12 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        intro = article_soup.find('div', class_='introtext')
+        div_blocks = article_soup.find('div', class_='content')
+        full_text_from_div = intro.text
+        for div_tag in div_blocks:
+            full_text_from_div += div_tag.text
+        self.article.text = full_text_from_div
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -301,6 +312,10 @@ class HTMLParser:
         Returns:
             Union[Article, bool, list]: Article instance
         """
+        response = make_request(self.full_url, self.config)
+        article_bs = BeautifulSoup(response.text, 'lxml')
+        self._fill_article_with_text(article_bs)
+        return self.article
 
 
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
