@@ -94,10 +94,12 @@ class Config:
         with open(self.path_to_config, 'r', encoding='utf-8') as file:
             config_data = json.load(file)
 
-        if not (isinstance(config_data['seed_urls'], list)
-                and all(re.match('"https?://(www.)?"', url)
-                        for url in config_data['seed_urls'])):
+        if not (isinstance(config_data['seed_urls'], list)):
             raise IncorrectSeedURLError
+
+        for url in config_data.seed_urls:
+            if not re.match("https?://(www.)?", url):
+                raise IncorrectSeedURLError
 
         number = config_data["total_articles_to_find_and_parse"]
         if not isinstance(number, int) or number < 0:
@@ -112,12 +114,12 @@ class Config:
         if not isinstance(config_data['encoding'], str):
             raise IncorrectEncodingError
 
-        time = config_data['timeout']
-        if not isinstance(time, int) and not 0 <= time < 60:
+        timeout = config_data['timeout']
+        if not isinstance(time, int) and not 0 <= timeout < 60:
             raise IncorrectTimeoutError
 
-        if (not isinstance(config_data['should_verify_certificate'], bool) or
-                not isinstance(config_data['headless_mode'], bool)):
+        if not isinstance(config_data['should_verify_certificate'], bool) \
+                or not isinstance(config_data['headless_mode'], bool):
             raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
