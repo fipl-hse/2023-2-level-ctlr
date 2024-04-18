@@ -341,7 +341,7 @@ class HTMLParser:
             datetime.datetime: Datetime object
         """
         date = str(datetime.datetime.strptime(date_str, '%d %m %Y'))
-        return datetime.datetime.strptime(date, '%Y-%m-%d')
+        return datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
 
     def parse(self) -> Union[Article, bool, list]:
         """
