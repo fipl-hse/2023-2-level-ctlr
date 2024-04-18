@@ -97,7 +97,7 @@ class Config:
         if not (isinstance(config_data['seed_urls'], list)):
             raise IncorrectSeedURLError
 
-        for url in config_data.seed_urls:
+        for url in config_data['seed_urls']:
             if not re.match("https?://(www.)?", url):
                 raise IncorrectSeedURLError
 
