@@ -115,7 +115,7 @@ class Config:
             raise IncorrectEncodingError
 
         timeout = config_data['timeout']
-        if not (isinstance(time, int) and 0 <= timeout < 60):
+        if not (isinstance(timeout, int) and (0 < timeout < 60)):
             raise IncorrectTimeoutError
 
         if not isinstance(config_data['should_verify_certificate'], bool) \
