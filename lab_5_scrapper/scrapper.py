@@ -102,10 +102,10 @@ class Config:
                 raise IncorrectSeedURLError
 
         number = config_data["total_articles_to_find_and_parse"]
-        if not isinstance(number, int) or number < 0:
+        if not isinstance(number, int) or number <= 0:
             raise IncorrectNumberOfArticlesError
 
-        if not isinstance(number, int) and not 1 <= number <= 150:
+        if not 0 < number < 150:
             raise NumberOfArticlesOutOfRangeError
 
         if not isinstance(config_data['headers'], dict):
@@ -115,7 +115,7 @@ class Config:
             raise IncorrectEncodingError
 
         timeout = config_data['timeout']
-        if not isinstance(time, int) and not 0 <= timeout < 60:
+        if not (isinstance(time, int) and 0 <= timeout < 60):
             raise IncorrectTimeoutError
 
         if not isinstance(config_data['should_verify_certificate'], bool) \
@@ -306,6 +306,21 @@ class HTMLParser:
         """
         self.article.title = article_soup.find('h1').text
         date = article_soup.find(class_="blog-date").text
+        months = {'января': '01',
+                  'февраля': '02',
+                  'марта': '03',
+                  'апреля': '04',
+                  'мая': '05',
+                  'июня': '06',
+                  'июля': '07',
+                  'августа': '08',
+                  'сентября': '09',
+                  'октября': '10',
+                  'ноября': '11',
+                  'декабря': '12'}
+        for month, num in months.items():
+            if month in date:
+                date = date.replace(month, num)
         self.article.date = self.unify_date_format(date)
         author = article_soup.find(class_="article-author").string
         if author:
