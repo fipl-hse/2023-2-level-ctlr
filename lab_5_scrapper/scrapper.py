@@ -305,7 +305,7 @@ class HTMLParser:
         self.article.title = article_soup.find('h1').text
         date = article_soup.find(class_="blog-date").text
         self.article.date = self.unify_date_format(date)
-        author = article_soup.find(class_="article-author").text
+        author = article_soup.find(class_="article-author").string
         if author:
             self.article.author = [author]
         else:
