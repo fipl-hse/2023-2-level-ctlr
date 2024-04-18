@@ -2,17 +2,20 @@
 Crawler implementation.
 """
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
-import json
 import datetime
+import json
 import pathlib
 import random
+import re
 import time
 from typing import Pattern, Union
-import re
+
 import requests
+from bs4 import BeautifulSoup
+
 from core_utils.article.article import Article
 from core_utils.config_dto import ConfigDTO
-from bs4 import BeautifulSoup
+
 
 class IncorrectSeedURLError(Exception):
     """
@@ -302,9 +305,9 @@ class HTMLParser:
         self.article.title = article_soup.find('h1').text
         date = article_soup.find(class_="blog-date").text
         self.article.date = self.unify_date_format(date)
-        author = [''.join(article_soup.find(class_="article-author").text)]
+        author = article_soup.find(class_="article-author").text
         if author:
-            self.article.author = author
+            self.article.author = [author]
         else:
             self.article.author = ["NOT FOUND"]
         topics = article_soup.find_all(class_="article-tag-link")
