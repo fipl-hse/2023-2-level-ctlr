@@ -108,34 +108,33 @@ class Config:
         """
         Ensure configuration parameters are not corrupt.
         """
-        with open(self.path_to_config, 'r', encoding='utf-8') as file:
-            conf = json.load(file)
+        config = self._extract_config_content()
 
-        if not (isinstance(conf['seed_urls'], list)
-                and all(re.match(r"https?://(www.)?", seed_url)
-                        for seed_url in conf['seed_urls']
+        if not (isinstance(config.seed_urls, list)
+                and all(re.match(r"https?://(www)?\.sbras\.info/news+", seed_url)
+                        for seed_url in config.seed_urls
                         )
                 ):
             raise IncorrectSeedURLError
 
-        num = conf['total_articles_to_find_and_parse']
+        num = config.total_articles
         if not isinstance(num, int) or num < 0 or isinstance(num, bool):
             raise IncorrectNumberOfArticlesError
         if num > 150 or num < 1:
             raise NumberOfArticlesOutOfRangeError
 
-        if not isinstance(conf['headers'], dict):
+        if not isinstance(config.headers, dict):
             raise IncorrectHeadersError
 
-        if not isinstance(conf['encoding'], str):
+        if not isinstance(config.encoding, str):
             raise IncorrectEncodingError
 
-        if not isinstance(conf['should_verify_certificate'], bool) \
-                or not isinstance(conf['headless_mode'], bool):
+        if not isinstance(config.should_verify_certificate, bool) \
+                or not isinstance(config.headless_mode, bool):
             raise IncorrectVerifyError
 
-        if not isinstance(conf['timeout'], int) \
-                or conf['timeout'] >= 60 or conf['timeout'] <= 0:
+        if not isinstance(config.timeout, int) \
+                or config.timeout >= 60 or config.timeout <= 0:
             raise IncorrectTimeoutError
 
     def get_seed_urls(self) -> list[str]:
@@ -239,7 +238,7 @@ class Crawler:
         """
         self.config = config
         self.urls = []
-        self.url_pattern = self.config.get_seed_urls()[0].split('?')[0]
+        self.base_url = "https://www.sbras.info/news"
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -251,16 +250,15 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        url = ''
         links = article_bs.find_all('a', hreflang='ru')
         for link in links:
             if 'Подробнее' in link.stripped_strings:
-                url = self.url_pattern + link.get('href')[len('/news')::]
+                url = str(self.base_url + link.get('href')[len('/news')::])
                 if url not in self.urls:
                     break
-        if url and url not in self.urls:
-            return url
-        return ''
+        else:
+            url = ''  # for the last link if it didn't reach break
+        return url
 
     def find_articles(self) -> None:
         """
@@ -275,10 +273,15 @@ class Crawler:
 
             article_bs = BeautifulSoup(response.text, "lxml")
 
-            for i in range(10):  # max at my site per seed page
+            extracted_url = self._extract_url(article_bs)
+            while extracted_url:
+                if len(self.urls) == self.config.get_num_articles():
+                    break
+                self.urls.append(extracted_url)
                 extracted_url = self._extract_url(article_bs)
-                if extracted_url:
-                    self.urls.append(extracted_url)
+
+            if len(self.urls) == self.config.get_num_articles():
+                break
 
     def get_search_urls(self) -> list:
         """
@@ -318,10 +321,12 @@ class CrawlerRecursive(Crawler):
             # my site just creates a new blank page,
             # so it's necessary to stop to not crawl forever
 
-            for i in range(10):  # max at my site per seed page
+            extracted_url = self._extract_url(article_bs)
+            while extracted_url:
+                if len(self.urls) == self.config.get_num_articles():
+                    break
+                self.urls.append(extracted_url)
                 extracted_url = self._extract_url(article_bs)
-                if extracted_url:
-                    self.urls.append(extracted_url)
 
         if len(self.urls) < self.config.get_num_articles():
             seed, num = self.start_url.split('?page=')
@@ -356,16 +361,10 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        headline = article_soup.find(itemprop="headline")
-        raw_text = f'{headline.string}'
-
         text_blocks = article_soup.find_all('p')
-        for text_block in text_blocks:
-            if not text_block.string:
-                continue
-            raw_text += f'\n{text_block.string}'
-
-        self.article.text = raw_text
+        raw_text = [text_block.string for text_block in text_blocks
+                    if text_block.string]
+        self.article.text = '\n'.join(raw_text)
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -377,21 +376,17 @@ class HTMLParser:
         self.article.title = str(article_soup.find(itemprop="headline").string)
 
         date = article_soup.find(itemprop="datePublished").attrs['datetime']
-        if isinstance(date, str):
+        if date:
             self.article.date = self.unify_date_format(date)
 
         author = article_soup.find_all('strong')[-1].string
-
         if not isinstance(author, str) or not author:
             author = 'NOT FOUND'
         self.article.author = [author]
 
-        topic_fields = article_soup.find_all(class_="field field--name-field-tegi " +
-                                                   "field--type-entity-reference " +
-                                                   "field--label-hidden field__items")
+        topic_fields = article_soup.find_all('a', {'href': re.compile('/tags/+')})
         if topic_fields:
-            topics = topic_fields[0].find_all('a')
-            self.article.topics = [topic.string for topic in topics]
+            self.article.topics = [topic.string for topic in topic_fields]
         else:
             self.article.topics = []
 
@@ -430,9 +425,7 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    if isinstance(base_path, pathlib.Path)\
-            and not pathlib.Path.is_dir(base_path):
-        base_path.mkdir(parents=True, exist_ok=True)
+    base_path.mkdir(parents=True, exist_ok=True)
 
     for file in base_path.iterdir():
         file.unlink(missing_ok=True)
@@ -444,21 +437,31 @@ def main() -> None:
     """
     configuration = Config(path_to_config=constants.CRAWLER_CONFIG_PATH)
 
-    crawler = CrawlerRecursive(config=configuration)
+    prepare_environment(base_path=constants.ASSETS_PATH)
 
-    base_path = constants.ASSETS_PATH
-    if len(list(base_path.iterdir())) == 2 * configuration.get_num_articles():
-        prepare_environment(base_path)
-    else:
-        for file in base_path.iterdir():
-            if file.suffix == '.json':
-                meta = json.loads(file.read_text(encoding='utf-8'))
-                crawler.urls.append(meta["url"])
+    crawler = Crawler(config=configuration)
+    crawler.find_articles()
+
+    for index, url in enumerate(crawler.urls):
+        parser = HTMLParser(full_url=url, article_id=index + 1, config=configuration)
+        article = parser.parse()
+        to_raw(article)
+        to_meta(article)
+    print("It's done!")
+
+
+def main_recursive() -> None:
+    """
+    Entrypoint for recursive scrapper module.
+    """
+    configuration = Config(path_to_config=constants.CRAWLER_CONFIG_PATH)
+
+    prepare_environment(constants.ASSETS_PATH)
+
+    crawler = Crawler(config=configuration)
 
     already_crawled = crawler.urls[::]
     print(f"We already have {len(already_crawled)} articles.")
-
-    crawler.find_articles()
 
     for index, url in enumerate(crawler.urls):
         if url in already_crawled:
@@ -469,8 +472,8 @@ def main() -> None:
             to_raw(article)
             to_meta(article)
     print("It's done!")
-    print(len(set(crawler.urls)))
 
 
 if __name__ == "__main__":
     main()
+    # main_recursive()
