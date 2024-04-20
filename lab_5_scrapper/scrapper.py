@@ -385,8 +385,9 @@ def main() -> None:
     for i, url in enumerate(crawler.urls):
         parser = HTMLParser(full_url=url, article_id=i + 1, config=config)
         article = parser.parse()
-        to_raw(article)
-        to_meta(article)
+        if isinstance(article, Article):
+            to_raw(article)
+            to_meta(article)
 
 
 if __name__ == "__main__":
