@@ -14,6 +14,8 @@ import requests
 from bs4 import BeautifulSoup
 
 from core_utils.article.article import Article
+from core_utils.article.io import to_meta, to_raw
+from core_utils import constants
 from core_utils.config_dto import ConfigDTO
 
 
@@ -374,6 +376,16 @@ def main() -> None:
     """
     Entrypoint for scrapper module.
     """
+    config = Config(path_to_config=constants.CRAWLER_CONFIG_PATH)
+    prepare_environment(base_path=constants.ASSETS_PATH)
+    crawler = Crawler(config)
+    crawler.find_articles()
+
+    for i, url in enumerate(crawler.urls):
+        parser = HTMLParser(full_url=url, article_id=i + 1, config=config)
+        article = parser.parse()
+        to_raw(article)
+        to_meta(article)
 
 
 if __name__ == "__main__":
