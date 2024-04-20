@@ -294,10 +294,8 @@ class HTMLParser:
         """
         article = ''
         texts = article_soup.find('div', class_="blog-article__content")
-        if texts is not None:
-            article_texts = texts.find_all('p', class_=False)
-            for text in article_texts:
-                article += text.text + '\n'
+        for text in texts:
+            article += text.text + '\n'
         self.article.text = article
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
