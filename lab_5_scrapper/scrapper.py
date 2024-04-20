@@ -13,9 +13,9 @@ from typing import Pattern, Union
 import requests
 from bs4 import BeautifulSoup
 
+from core_utils import constants
 from core_utils.article.article import Article
 from core_utils.article.io import to_meta, to_raw
-from core_utils import constants
 from core_utils.config_dto import ConfigDTO
 
 
