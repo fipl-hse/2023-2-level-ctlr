@@ -248,10 +248,11 @@ class Crawler:
         """
         for seed_url in self.get_search_urls():
             response = make_request(seed_url, self.config)
-            if response.status_code == 200:
+            if response.ok:
                 article_bs = BeautifulSoup(response.text, 'lxml')
-                url = self._extract_url(article_bs)
-                self.urls.append(url)
+                for i in range(12):
+                    url = self._extract_url(article_bs)
+                    self.urls.append(url)
 
     def get_search_urls(self) -> list:
         """
