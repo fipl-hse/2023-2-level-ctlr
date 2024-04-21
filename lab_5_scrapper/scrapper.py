@@ -79,9 +79,8 @@ class Config:
         Ensure configuration parameters are not corrupt.
         """
         config = self._extract_config_content()
-        for url in config.seed_urls:
-            if url[:8] != "https?://":
-                raise IncorrectSeedURLError
+        if not all(seed.startswith('https://2051.vision/') for seed in config.seed_urls):
+            raise IncorrectSeedURLError
         if config.total_articles < 1 or config.total_articles > 150:
             raise NumberOfArticlesOutOfRangeError
         if not isinstance(config.total_articles, int):
