@@ -63,6 +63,7 @@ class Config:
         Args:
             path_to_config (pathlib.Path): Path to configuration.
         """
+
         self.path_to_config = path_to_config
         self._validate_config_content()
 
@@ -232,6 +233,7 @@ class Crawler:
         """
         self.config = config
         self.urls = []
+        self.url_pattern = "https://www.vokrugsveta.ru"
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -243,13 +245,32 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-
+        url = " "
+        links = article_bs.find_all("a", class_="announce-inline-tile")
+        for link in links:
+            url = link["href"]
+            if url not in self.urls:
+                break
+        url = self.url_pattern + url
+        return url
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
+        urls = []
+        while len(urls) < self.config.get_num_articles():
+            for url in self.get_search_urls():
+                response = make_request(url, self.config)
 
+                if not response.ok:
+                    continue
+
+                src = response.text
+                soup = BeautifulSoup(src, 'lxml')
+                urls.append(self._extract_url(soup))
+
+        self.urls.extend(urls)
 
     def get_search_urls(self) -> list:
         """
@@ -259,7 +280,7 @@ class Crawler:
             list: seed_urls param
         """
 
-
+        return self.config.get_seed_urls()
 
 # 10
 # 4, 6, 8, 10
@@ -279,6 +300,9 @@ class HTMLParser:
             article_id (int): Article id
             config (Config): Configuration
         """
+        self.full_url = full_url
+        self.article_id = article_id
+        self.config = config
 
     def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
         """
