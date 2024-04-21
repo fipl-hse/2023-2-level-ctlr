@@ -5,6 +5,7 @@ import json
 from core_utils.config_dto import ConfigDTO
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
 import pathlib
+from bs4 import BeautifulSoup
 from typing import Pattern, Union
 import requests
 
