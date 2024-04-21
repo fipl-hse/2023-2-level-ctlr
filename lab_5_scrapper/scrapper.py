@@ -5,7 +5,7 @@ Crawler implementation.
 import datetime
 import json
 import pathlib
-import os
+import shutil
 import re
 from random import randrange
 from time import sleep
@@ -360,13 +360,12 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    if not os.path.exists(base_path):
-        os.makedirs(base_path)
-    else:
-        files = os.listdir(base_path)
-        for file in files:
-            if os.path.exists(file):
-                os.remove(file)
+    if not base_path.is_dir():
+        base_path.mkdir(parents=True, exist_ok=True)
+
+    if any(base_path.iterdir()):
+        shutil.rmtree(base_path)
+        base_path.mkdir(parents=True, exist_ok=True)
 
 
 def main() -> None:
