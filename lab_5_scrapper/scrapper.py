@@ -223,8 +223,6 @@ class Crawler:
     Crawler implementation.
     """
 
-    url_pattern: Union[Pattern, str]
-
     def __init__(self, config: Config) -> None:
         """
         Initialize an instance of the Crawler class.
@@ -245,29 +243,13 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        links = article_bs.find_all(class_='news-teaser__link')
-        url = ''
-        for link in links:
-            url = self.url_pattern + link['href']
-            if url and url not in self.urls:
-                break
 
-        return url
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
-        seed_urls = self.get_search_urls()
 
-        for seed_url in seed_urls:
-            response = make_request(seed_url, self.config)
-            if response.ok:
-                article_soap = BeautifulSoup(response.text, features='html.parser')
-                new_url = self._extract_url(article_soap)
-
-                if new_url:
-                    self.urls.append(new_url)
 
     def get_search_urls(self) -> list:
         """
@@ -276,7 +258,7 @@ class Crawler:
         Returns:
             list: seed_urls param
         """
-        return self.config.seed_urls
+
 
 
 # 10
