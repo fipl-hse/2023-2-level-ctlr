@@ -110,9 +110,9 @@ class Config:
             raise IncorrectSeedURLError
 
         num = config.total_articles
-        if not isinstance(num, int) or num < 0 or isinstance(num, bool):
+        if not isinstance(num, int) or num <= 0:
             raise IncorrectNumberOfArticlesError
-        if num > 150 or num < 1:
+        if num > 150:
             raise NumberOfArticlesOutOfRangeError
 
         if not isinstance(config.headers, dict):
