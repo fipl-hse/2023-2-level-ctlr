@@ -7,6 +7,10 @@ from typing import Pattern, Union
 from core_utils.config_dto import ConfigDTO
 import json
 import re
+from bs4 import BeautifulSoup
+from pathlib import Path
+import shutil
+import requests
 
 
 class IncorrectSeedURLError(Exception):
@@ -25,6 +29,7 @@ class IncorrectNumberOfArticlesError(Exception):
     """
         Total number of articles to parse is not integer.
     """
+
 
 class IncorrectHeadersError(Exception):
     """
@@ -65,9 +70,6 @@ class Config:
         self._path_to_config = path_to_config
         self._validate = self._validate_config_content()
         self._config = self._extract_config_content()
-        # self._seed_urls = self._config.seed_urls
-
-
 
     def _extract_config_content(self) -> ConfigDTO:
         """
@@ -77,15 +79,7 @@ class Config:
             ConfigDTO: Config values
         """
         file_config = json.load(open(self._path_to_config))
-        config = ConfigDTO(
-            seed_urls=file_config['seed_urls'],
-            total_articles_to_find_and_parse=file_config['total_articles_to_find_and_parse'],
-            headers=file_config['headers'],
-            encoding=file_config['encoding'],
-            timeout=file_config['timeout'],
-            should_verify_certificate=file_config['should_verify_certificate'],
-            headless_mode=file_config['headless_mode']
-        )
+        config = ConfigDTO(**file_config)
         return config
 
     def _validate_config_content(self) -> None:
@@ -117,7 +111,6 @@ class Config:
         if not isinstance(config['should_verify_certificate'], bool):
             raise IncorrectVerifyError
 
-
     def get_seed_urls(self) -> list[str]:
         """
         Retrieve seed urls.
@@ -126,7 +119,6 @@ class Config:
             list[str]: Seed urls
         """
         return self._config.seed_urls
-
 
     def get_num_articles(self) -> int:
         """
@@ -137,7 +129,6 @@ class Config:
         """
         return self._config.total_articles
 
-
     def get_headers(self) -> dict[str, str]:
         """
         Retrieve headers to use during requesting.
@@ -146,7 +137,6 @@ class Config:
             dict[str, str]: Headers
         """
         return self._config.headers
-
 
     def get_encoding(self) -> str:
         """
@@ -157,7 +147,6 @@ class Config:
         """
         return self._config.encoding
 
-
     def get_timeout(self) -> int:
         """
         Retrieve number of seconds to wait for response.
@@ -166,7 +155,6 @@ class Config:
             int: Number of seconds to wait for response
         """
         return self._config.timeout
-
 
     def get_verify_certificate(self) -> bool:
         """
@@ -177,7 +165,6 @@ class Config:
         """
         return self._config.should_verify_certificate
 
-
     def get_headless_mode(self) -> bool:
         """
         Retrieve whether to use headless mode.
@@ -186,7 +173,6 @@ class Config:
             bool: Whether to use headless mode or not
         """
         return self._config.headless_mode
-
 
 
 def make_request(url: str, config: Config) -> requests.models.Response:
@@ -200,6 +186,12 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
+    reqs = requests.get(
+        url=url,
+        headers=config.get_headers(),
+        timeout=config.get_timeout(),
+        verify=config.get_verify_certificate())
+    return reqs
 
 
 class Crawler:
@@ -216,6 +208,8 @@ class Crawler:
         Args:
             config (Config): Configuration
         """
+        self.urls = []
+        self.config = config
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -304,6 +298,10 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
+    if not base_path.exists():
+        base_path.mkdir(exist_ok=True,
+                        parents=True)
+    shutil.rmtree(base_path)
 
 
 def main() -> None:
