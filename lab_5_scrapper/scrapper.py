@@ -5,17 +5,18 @@ Crawler implementation.
 import datetime
 import json
 import pathlib
+import shutil
 from typing import Pattern, Union
+from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
-import shutil
+
 
 from core_utils.article.article import Article
 from core_utils.article.io import to_raw
 from core_utils.config_dto import ConfigDTO
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
-from urllib.parse import urlparse
 
 
 class IncorrectSeedURLError(Exception):
