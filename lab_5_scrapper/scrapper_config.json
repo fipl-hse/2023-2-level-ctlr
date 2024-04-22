@@ -1,9 +1,20 @@
 {
-    "seed_urls": [],
-    "headers": {},
-    "total_articles_to_find_and_parse": 0,
-    "encoding": "",
-    "timeout": 0,
+    "seed_urls": ["https://www.hij.ru/read/articles/?PAGEN_1=2",
+        "https://www.hij.ru/read/articles/?PAGEN_1=3",
+        "https://www.hij.ru/read/articles/?PAGEN_1=4",
+        "https://www.hij.ru/read/articles/?PAGEN_1=5",
+        "https://www.hij.ru/read/articles/?PAGEN_1=6",
+        "https://www.hij.ru/read/articles/?PAGEN_1=7",
+        "https://www.hij.ru/read/articles/?PAGEN_1=8"],
+    "headers": {
+        "Accept-Language":  "ru-RU,ru;q=0.9,ko-KR;q=0.8,ko;q=0.7,en-US;q=0.6,en;q=0.5",
+        "Cookie":  "__utmc=126800916; BX_USER_ID=95c6ead8c6501585395e0b547b90026e; _ym_uid=1713175655557784428; _ym_d=1713175655; PHPSESSID=vJayxnawgTukz2bDHO19W7hTN1SA6BEf; __utma=126800916.1265305141.1713175627.1713175627.1713762994.2; __utmz=126800916.1713762994.2.2.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided); __utmt=1; __utmb=126800916.2.10.1713762994; _ym_visorc=w; _ym_isad=2",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+    },
+    "total_articles_to_find_and_parse": 100,
+    "encoding": "utf-8",
+    "timeout": 6,
     "should_verify_certificate": true,
     "headless_mode": true
 }
