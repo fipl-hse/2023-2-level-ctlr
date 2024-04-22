@@ -12,7 +12,6 @@ from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 
-
 from core_utils.article.article import Article
 from core_utils.article.io import to_raw
 from core_utils.config_dto import ConfigDTO
