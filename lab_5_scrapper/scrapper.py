@@ -94,7 +94,15 @@ class Config:
         """
         with open(self.path_to_config, 'r', encoding='utf-8') as file:
             config = json.load(file)
-        return ConfigDTO(**config)
+        return ConfigDTO(
+            seed_urls=config["seed_urls"],
+            total_articles_to_find_and_parse=config["total_articles_to_find_and_parse"],
+            headers=config["headers"],
+            encoding=config["encoding"],
+            timeout=config["timeout"],
+            should_verify_certificate=config["should_verify_certificate"],
+            headless_mode=config["headless_mode"]
+        )
 
     def _validate_config_content(self) -> None:
         """
@@ -126,7 +134,7 @@ class Config:
             raise IncorrectVerifyError
 
         if not isinstance(config.timeout, int) \
-                or config.timeout >= 60 or config.timeout <= 0:
+                or config.timeout > 60 or config.timeout < 0:
             raise IncorrectTimeoutError
 
     def get_seed_urls(self) -> list[str]:
@@ -309,7 +317,8 @@ class CrawlerRecursive(Crawler):
 
         article_bs = BeautifulSoup(response.text, "lxml")
 
-        all_urls.extend(self.base_url[:-len('/news'):] + link.get('href') for link in article_bs.find_all(href=True))
+        all_urls.extend(self.base_url[:-len('/news'):] + link.get('href')
+                        for link in article_bs.find_all(href=True))
 
         for url in all_urls:
             if url in self.already_crawled:
