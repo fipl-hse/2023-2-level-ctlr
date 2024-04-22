@@ -9,7 +9,7 @@ from typing import Pattern, Union
 
 import requests
 from bs4 import BeautifulSoup
-import os
+import shutil
 
 from core_utils.article.article import Article
 from core_utils.article.io import to_raw
@@ -302,6 +302,7 @@ class HTMLParser:
         self.article.title = article_soup.title
         date = article_soup.find('div', class_='sb-item__date')
         self.article.date = date.text
+        self.article.author = 'NOT FOUND'
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -343,10 +344,10 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    if not os.path.exists(base_path):
-        os.makedirs(base_path)
-    for file in os.listdir(base_path):
-        os.remove(os.path.join(base_path, file))
+    if not base_path.exists():
+        base_path.mkdir()
+    shutil.rmtree(base_path)
+    base_path.mkdir()
 
 
 def main() -> None:
