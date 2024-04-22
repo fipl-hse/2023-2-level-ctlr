@@ -40,33 +40,25 @@ class Config:
         """
         with open(self.path_to_config) as config_file:
             config = json.load(config_file)
-        return ConfigDTO(seed_urls=config['seed_urls'],
-                         total_articles_to_find_and_parse=config['total_articles_to_find_and_parse'],
-                         headers=config['headers'],
-                         encoding=config['encoding'],
-                         timeout=config['timeout'],
-                         should_verify_certificate=config['should_verify_certificate'],
-                         headless_mode=config['headless_mode']
-                         )
+        return ConfigDTO(**config)
 
     def _validate_config_content(self) -> None:
         """
         Ensure configuration parameters are not corrupt.
         """
-        config = self._extract_config_content()
-        if not all(seed.startswith(('https://www.', 'http://www.')) for seed in config.seed_urls):
+        if not all(seed.startswith('https://www.fontanka.ru/') for seed in self.config.seed_urls):
             raise Exception('IncorrectSeedURLError')
-        if config.total_articles < 1 or config.total_articles > 150:
+        if self.config.total_articles < 1 or self.config.total_articles > 150:
             raise Exception('NumberOfArticlesOutOfRangeError')
-        if not isinstance(config.total_articles, int):
+        if not isinstance(self.config.total_articles, int):
             raise Exception('IncorrectNumberOfArticlesError')
-        if not isinstance(config.headers, dict):
+        if not isinstance(self.config.headers, dict):
             raise Exception('IncorrectHeadersError')
-        if not isinstance(config.encoding, str):
+        if not isinstance(self.config.encoding, str):
             raise Exception('IncorrectEncodingError')
-        if config.timeout < 1 or config.timeout > 60:
+        if self.config.timeout < 1 or self.config.timeout > 60:
             raise Exception('IncorrectTimeoutError')
-        if not isinstance(config.headless_mode, bool):
+        if not isinstance(self.config.headless_mode, bool):
             raise Exception('IncorrectVerifyError')
 
     def get_seed_urls(self) -> list[str]:
