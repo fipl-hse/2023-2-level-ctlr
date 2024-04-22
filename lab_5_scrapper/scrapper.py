@@ -94,15 +94,7 @@ class Config:
         """
         with open(self.path_to_config, 'r', encoding='utf-8') as file:
             config = json.load(file)
-        return ConfigDTO(
-            seed_urls=config["seed_urls"],
-            total_articles_to_find_and_parse=config["total_articles_to_find_and_parse"],
-            headers=config["headers"],
-            encoding=config["encoding"],
-            timeout=config["timeout"],
-            should_verify_certificate=config["should_verify_certificate"],
-            headless_mode=config["headless_mode"]
-        )
+        return ConfigDTO(**config)
 
     def _validate_config_content(self) -> None:
         """
@@ -301,38 +293,50 @@ class CrawlerRecursive(Crawler):
     """
     def __init__(self, config: Config) -> None:
         super().__init__(config)
-        self.last_seed = ''
-        self.start_url = self.config.get_seed_urls()[0]
+
+        self.start_url = self.base_url
+
+        self.already_crawled_path = constants.ASSETS_PATH.parent / 'already_crawled_urls.txt'
+        with open(self.already_crawled_path, 'r', encoding='utf-8') as f:
+            self.already_crawled = f.readlines()
 
     def find_articles(self) -> None:
-        response = make_request(self.start_url, self.config)
+        response = make_request(self.base_url, self.config)
 
-        if response.ok:
-            article_bs = BeautifulSoup(response.text, "lxml")
+        all_urls = [self.base_url]
+        if not response.ok:
+            return
 
-            if not self.last_seed:
-                last_page = int(article_bs.find(class_='pager__item pager__item--last')
-                                      .find('a').attrs['href'].split('?page=')[1])
-                self.last_seed = str(last_page + 1)
+        article_bs = BeautifulSoup(response.text, "lxml")
 
-            if self.last_seed == self.start_url[:-len(self.last_seed)]:
-                print('All the articles for this site are collected.')
-                return  # check if we're not out of seed pages
-            # my site just creates a new blank page,
-            # so it's necessary to stop to not crawl forever
+        all_urls.extend(self.base_url + link.get('href') for link in article_bs.find_all(href=True))
 
+        for url in all_urls:
+            if url in self.already_crawled:
+                continue
+
+            counter = 0
             extracted_url = self._extract_url(article_bs)
             while extracted_url:
                 if len(self.urls) == self.config.get_num_articles():
-                    break
+                    return
                 self.urls.append(extracted_url)
+                self.already_crawled.append(extracted_url)
+                counter += 1
                 extracted_url = self._extract_url(article_bs)
 
-        if len(self.urls) < self.config.get_num_articles():
-            seed, num = self.start_url.split('?page=')
-            self.start_url = f'{seed}?page={int(num) + 1}'
-            self.find_articles()  # go to the next seed page
+            if counter > 0:
+                continue
+            self.find_articles()
+
         return
+
+    def save_urls(self, urls: set) -> None:
+        """
+        Add crawled urls.
+        """
+        with open(self.already_crawled_path, 'a', encoding='utf-8') as f:
+            f.write('\n'.join(urls))
 
 
 class HTMLParser:
@@ -431,6 +435,20 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
         file.unlink(missing_ok=True)
 
 
+def clear_recursive_crawler(base_path: Union[pathlib.Path, str]) -> None:
+    """
+        Create ASSETS_PATH folder if no created and create a file for crawled links.
+
+        Args:
+            base_path (Union[pathlib.Path, str]): Path where articles stores
+        """
+    prepare_environment(base_path)
+
+    crawled_path = base_path.parent / 'already_crawled_urls.txt'
+    with open(crawled_path, 'w', encoding='utf-8'):
+        pass
+
+
 def main() -> None:
     """
     Entrypoint for scrapper module.
@@ -445,8 +463,9 @@ def main() -> None:
     for index, url in enumerate(crawler.urls):
         parser = HTMLParser(full_url=url, article_id=index + 1, config=configuration)
         article = parser.parse()
-        to_raw(article)
-        to_meta(article)
+        if isinstance(article, Article):
+            to_raw(article)
+            to_meta(article)
     print("It's done!")
 
 
@@ -456,16 +475,19 @@ def main_recursive() -> None:
     """
     configuration = Config(path_to_config=constants.CRAWLER_CONFIG_PATH)
 
-    prepare_environment(constants.ASSETS_PATH)
+    # clear_recursive_crawler(constants.ASSETS_PATH)
+    # if I want to start all over again
 
-    crawler = Crawler(config=configuration)
+    crawler = CrawlerRecursive(config=configuration)
 
-    already_crawled = crawler.urls[::]
-    print(f"We already have {len(already_crawled)} articles.")
+    try:
+        crawler.find_articles()
+    except KeyboardInterrupt:
+        with open(constants.ASSETS_PATH.parent / 'already_crawled_urls.txt',
+                  'w', encoding='utf-8') as f:
+            f.write("\n".join(crawler.urls))
 
     for index, url in enumerate(crawler.urls):
-        if url in already_crawled:
-            continue
         parser = HTMLParser(full_url=url, article_id=index + 1, config=configuration)
         article = parser.parse()
         if isinstance(article, Article):
