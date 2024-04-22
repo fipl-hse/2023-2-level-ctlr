@@ -4,9 +4,11 @@ Crawler implementation.
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
 import pathlib
 from typing import Pattern, Union
-from core_utils.config_dto import ConfigDTO
+import requests
 import json
 import re
+from core_utils.config_dto import ConfigDTO
+from bs4 import BeautifulSoup
 
 
 class IncorrectSeedURLError(Exception):
@@ -191,6 +193,12 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
+    return requests.get(
+        url=url,
+        timeout=config.get_timeout(),
+        headers=config.get_headers(),
+        verify=config.get_verify_certificate()
+    )
 
 
 class Crawler:
@@ -207,6 +215,8 @@ class Crawler:
         Args:
             config (Config): Configuration
         """
+        self.config = config
+        self.urls = []
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -295,6 +305,13 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
+    assets_path = pathlib.Path(base_path) / 'ASSETS_PATH'
+    if not assets_path.exists():
+        assets_path.mkdir(parents=True, exist_ok=True)
+    else:
+        for file in assets_path.iterdir():
+            file.unlink()
+            file.rmdir()
 
 
 def main() -> None:
