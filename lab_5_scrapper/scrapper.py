@@ -6,8 +6,15 @@ import json
 import pathlib
 from typing import Pattern, Union
 import re
+import requests
+from time import sleep
+from random import randrange
 
+from bs4 import BeautifulSoup
+
+from core_utils.article.article import Article
 from core_utils.config_dto import ConfigDTO
+import datetime
 
 
 class IncorrectSeedURLError(Exception):
@@ -190,6 +197,14 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
+    sleep(randrange(3))
+
+    return requests.get(
+        url=url,
+        timeout=config.get_timeout(),
+        headers=config.get_headers(),
+        verify=config.get_verify_certificate()
+    )
 
 
 class Crawler:
@@ -206,6 +221,8 @@ class Crawler:
         Args:
             config (Config): Configuration
         """
+        self.config = config
+        self.urls = []
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
