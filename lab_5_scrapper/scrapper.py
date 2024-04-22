@@ -301,19 +301,20 @@ class CrawlerRecursive(Crawler):
             self.already_crawled = f.readlines()
 
     def find_articles(self) -> None:
-        response = make_request(self.base_url, self.config)
+        response = make_request(self.start_url, self.config)
 
-        all_urls = [self.base_url]
+        all_urls = [self.start_url]
         if not response.ok:
             return
 
         article_bs = BeautifulSoup(response.text, "lxml")
 
-        all_urls.extend(self.base_url + link.get('href') for link in article_bs.find_all(href=True))
+        all_urls.extend(self.base_url[:-len('/news'):] + link.get('href') for link in article_bs.find_all(href=True))
 
         for url in all_urls:
             if url in self.already_crawled:
                 continue
+            self.start_url = url
 
             counter = 0
             extracted_url = self._extract_url(article_bs)
