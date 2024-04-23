@@ -317,9 +317,9 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         self.article.title = article_soup.find('h1').text
-        date = article_soup.find(class_="blog-date")
+        date = str(article_soup.find(class_="blog-date"))
         if date:
-            date = date.text
+            date = date
             months = {'января': '01',
                       'февраля': '02',
                       'марта': '03',
