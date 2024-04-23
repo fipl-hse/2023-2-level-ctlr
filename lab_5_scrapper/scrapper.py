@@ -212,6 +212,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
+    sleep(randrange(5))
 
     return requests.get(
         url=url,
@@ -327,6 +328,28 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        author = article_soup.find(class_="ds-article-footer-authors__author")
+
+        if not author:
+            self.article.author.append('NOT FOUND')
+        else:
+            self.article.author.append(author.text)
+
+        title = article_soup.find(itemprop="headline").text.strip()
+
+        if title:
+            self.article.title = title
+
+        date = article_soup.find(class_='ds-article-header-date-and-stats__date').text.strip()
+        self.article.date = self.unify_date_format(date)
+
+        list_of_keywords = []
+        keywords = article_soup.find_all(itemprop="articleSection")
+
+        for i in keywords:
+            list_of_keywords.append(i.text)
+
+        self.article.topics = list_of_keywords
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -338,6 +361,7 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
+        return datetime.datetime.strptime(date_str, '%d.%m.%Y')
 
     def parse(self) -> Union[Article, bool, list]:
         """
