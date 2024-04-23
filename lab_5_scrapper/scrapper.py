@@ -11,6 +11,8 @@ from bs4 import BeautifulSoup
 from pathlib import Path
 import shutil
 import requests
+import datetime
+from core_utils.article.article import Article
 
 
 class IncorrectSeedURLError(Exception):
@@ -67,9 +69,15 @@ class Config:
         Args:
             path_to_config (pathlib.Path): Path to configuration.
         """
-        self._path_to_config = path_to_config
-        self._validate = self._validate_config_content()
+        self.path_to_config = path_to_config
+        self._validate_config_content()
         self._config = self._extract_config_content()
+        self._seed_urls = self._config.seed_urls
+        self._num_articles = self._config.total_articles
+        self._headers = self._config.headers
+        self._encoding = self._config.encoding
+        self._timeout = self._config.timeout
+        self._should_verify_certificate = self._config.should_verify_certificate
 
     def _extract_config_content(self) -> ConfigDTO:
         """
@@ -78,7 +86,7 @@ class Config:
         Returns:
             ConfigDTO: Config values
         """
-        file_config = json.load(open(self._path_to_config))
+        file_config = json.load(open(self.path_to_config))
         config = ConfigDTO(**file_config)
         return config
 
@@ -86,18 +94,18 @@ class Config:
         """
         Ensure configuration parameters are not corrupt.
         """
-        config = json.load(open(self._path_to_config))
+        config = json.load(open(self.path_to_config))
         pattern = 'https?://(www.)?'
 
         if not(isinstance(config['seed_urls'], list) and
                all(re.match(pattern, x) for x in config['seed_urls'])):
             raise IncorrectSeedURLError
 
-        if config['total_articles'] < 1 or config['total_articles'] > 150:
-            raise NumberOfArticlesOutOfRangeError
-
-        if not isinstance(config['total_articles'], int):
+        if not isinstance(config['total_articles_to_find_and_parse'], int) or config['total_articles_to_find_and_parse'] <= 0:
             raise IncorrectNumberOfArticlesError
+
+        if config['total_articles_to_find_and_parse'] > 150:
+            raise NumberOfArticlesOutOfRangeError
 
         if not isinstance(config['headers'], dict):
             raise IncorrectHeadersError
@@ -109,6 +117,9 @@ class Config:
             raise IncorrectTimeoutError
 
         if not isinstance(config['should_verify_certificate'], bool):
+            raise IncorrectVerifyError
+
+        if not isinstance(config['headless_mode'], bool):
             raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
@@ -210,6 +221,7 @@ class Crawler:
         """
         self.urls = []
         self.config = config
+        self.url = 'https://newsorel.ru/'
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -221,11 +233,29 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
+        all_div = article_bs.find('div', class_="big-news-list-block")
+        h2_tags = all_div.find_all('h2')
+        for h2 in h2_tags:
+            link = h2.find('a')
+            href = link.get('href')
+            print(href)
+            url = self.url + href
+            if url not in self.urls:
+                return url
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
+        seed_urls = self.get_search_urls()
+
+        for seed_url in seed_urls:
+            response = make_request(seed_url, self.config)
+            if response.status_code < 400:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                for i in range(10):
+                    urls = self._extract_url(soup)
+                    self.urls.append(urls)
 
     def get_search_urls(self) -> list:
         """
@@ -234,7 +264,7 @@ class Crawler:
         Returns:
             list: seed_urls param
         """
-
+        return self.config.get_seed_urls()
 
 # 10
 # 4, 6, 8, 10
