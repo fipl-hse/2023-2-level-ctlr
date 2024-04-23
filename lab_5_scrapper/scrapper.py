@@ -334,7 +334,7 @@ class HTMLParser:
             if month in date:
                 date = date.replace(month, num)
         self.article.date = self.unify_date_format(date)
-        author = article_soup.find('p', class_="article-author").text
+        author = article_soup.find(target="_blank").text
         if author:
             self.article.author = [author]
         else:
