@@ -236,11 +236,10 @@ class Crawler:
             str: Url from HTML
         """
         url = ''
-        links = article_bs.find_all('a', class_='post-item-link')
+        links = article_bs.find_all(class_='post-item__title')
         for link in links:
-            url = str(self.url_pattern + link.get('href'))
-            if url not in self.urls:
-                break
+            url = link.find('a').get('href')
+            url = self.url_pattern + url
         return url
 
     def find_articles(self) -> None:
@@ -317,7 +316,9 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         self.article.title = article_soup.find('h1').text
-        date = article_soup.find("time").get('datetime')
+        date = article_soup.find("time")
+        if date:
+            date = date.get('datetime')
         self.article.date = self.unify_date_format(str(date))
         author = article_soup.find(target="_blank").text
         if author:
@@ -337,8 +338,7 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
-        date = str(datetime.datetime.strptime(date_str, '%Y-%m-%d'))
-        return datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+        return datetime.datetime.strptime(date_str, '%Y-%m-%d')
 
     def parse(self) -> Union[Article, bool, list]:
         """
