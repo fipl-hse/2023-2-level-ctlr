@@ -341,7 +341,29 @@ class HTMLParser:
             self.article.title = title
 
         date = article_soup.find(class_='ds-article-header-date-and-stats__date').text.strip()
-        self.article.date = self.unify_date_format(date)
+        parts = date.split()
+        month = parts[1].capitalize()
+        formatted_date = f"{parts[0]} {month} {parts[2]}"
+
+        months_dict = {
+            'Января': 'January',
+            'Февраля': 'February',
+            'Марта': 'March',
+            'Апреля': 'April',
+            'Мая': 'May',
+            'Июня': 'June',
+            'Июля': 'July',
+            'Августа': 'August',
+            'Сентября': 'September',
+            'Октября': 'October',
+            'Ноября': 'November',
+            'Декабря': 'December'
+        }
+
+        for month_ru, month_en in months_dict.items():
+            formatted_date = formatted_date.replace(month_ru, month_en)
+
+        self.article.formatted_date = self.unify_date_format(formatted_date)
 
         list_of_keywords = []
         keywords = article_soup.find_all(itemprop="articleSection")
@@ -361,6 +383,7 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
+
         return datetime.datetime.strptime(date_str, '%d %B %Y')
 
     def parse(self) -> Union[Article, bool, list]:
