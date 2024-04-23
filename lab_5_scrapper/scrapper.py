@@ -317,25 +317,8 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         self.article.title = article_soup.find('h1').text
-        date = str(article_soup.find(class_="blog-date"))
-        if date:
-            date = date
-            months = {'января': '01',
-                      'февраля': '02',
-                      'марта': '03',
-                      'апреля': '04',
-                      'мая': '05',
-                      'июня': '06',
-                      'июля': '07',
-                      'августа': '08',
-                      'сентября': '09',
-                      'октября': '10',
-                      'ноября': '11',
-                      'декабря': '12'}
-            for month, num in months.items():
-                if month in date:
-                    date = date.replace(month, num)
-            self.article.date = self.unify_date_format(date)
+        date = article_soup.find("time").get('datetime')
+        self.article.date = self.unify_date_format(date)
         author = article_soup.find(target="_blank").text
         if author:
             self.article.author = [author]
@@ -354,8 +337,7 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
-        date = str(datetime.datetime.strptime(date_str, '%d %m %Y'))
-        return datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+        return datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
 
     def parse(self) -> Union[Article, bool, list]:
         """
