@@ -7,18 +7,18 @@ import json
 import pathlib
 import re
 import shutil
+from random import randrange
+from time import sleep
 from pathlib import Path
 from typing import Pattern, Union
 
 import requests
 from bs4 import BeautifulSoup
 
+from core_utils import constants
 from core_utils.article.article import Article
 from core_utils.article.io import to_meta, to_raw
 from core_utils.config_dto import ConfigDTO
-from core_utils.constants import (ASSETS_PATH, CRAWLER_CONFIG_PATH,
-                                  NUM_ARTICLES_UPPER_LIMIT,
-                                  TIMEOUT_LOWER_LIMIT, TIMEOUT_UPPER_LIMIT)
 
 class IncorrectSeedURLError(Exception):
     pass
@@ -64,6 +64,7 @@ class Config:
         self.path_to_config = path_to_config
         self._validate_config_content()
         self._config_dto = self._extract_config_content()
+
         self._seed_urls = self._config_dto.seed_urls
         self._num_articles = self._config_dto.total_articles
         self._headers = self._config_dto.headers
@@ -97,35 +98,36 @@ class Config:
         """
         Ensure configuration parameters are not corrupt.
         """
-        config_dto = self._extract_config_content()
-        if not isinstance(config_dto.seed_urls, list):
-            raise IncorrectSeedURLError
+        with open(self.path_to_config, 'r', encoding='utf-8') as f:
+            config = json.load(f)
 
-        for url in config_dto.seed_urls:
-            if not re.match(r"https?://(www.)?", url) or not isinstance(url, str):
+            if not isinstance(config['seed_urls'], list):
                 raise IncorrectSeedURLError
 
-        total_articles = config_dto.total_articles
-        if not isinstance(total_articles, int) \
-                or total_articles < 1:
-            raise IncorrectNumberOfArticlesError
+            for seed_url in config['seed_urls']:
+                if not re.match("https?://(www.)?", seed_url):
+                    raise IncorrectSeedURLError
 
-        if total_articles > NUM_ARTICLES_UPPER_LIMIT:
-            raise NumberOfArticlesOutOfRangeError
+            if (not isinstance(config['total_articles_to_find_and_parse'], int) or
+                    config['total_articles_to_find_and_parse'] <= 0):
+                raise IncorrectNumberOfArticlesError
 
-        if not isinstance(config_dto.headers, dict):
-            raise IncorrectHeadersError
+            if not 1 < config['total_articles_to_find_and_parse'] <= 150:
+                raise NumberOfArticlesOutOfRangeError
 
-        if not isinstance(config_dto.encoding, str):
-            raise IncorrectEncodingError
+            if not isinstance(config['headers'], dict):
+                raise IncorrectHeadersError
 
-        timeout = config_dto.timeout
-        if not isinstance(timeout, int) or timeout <= TIMEOUT_LOWER_LIMIT or timeout >= TIMEOUT_UPPER_LIMIT:
-            raise IncorrectTimeoutError
+            if not isinstance(config['encoding'], str):
+                raise IncorrectEncodingError
 
-        should_verify = config_dto.should_verify_certificate
-        if not isinstance(should_verify, bool) or not isinstance(config_dto.headless_mode, bool):
-            raise IncorrectVerifyError
+            if not isinstance(config['timeout'], int) or not 0 < config['timeout'] < 60:
+                raise IncorrectTimeoutError
+
+            if (not isinstance(config['should_verify_certificate'], bool) or
+                    not isinstance(config['headless_mode'], bool)):
+                raise IncorrectVerifyError
+
 
     def get_seed_urls(self) -> list[str]:
         """
@@ -152,7 +154,7 @@ class Config:
         Returns:
             dict[str, str]: Headers
         """
-        return self._config_dto.headers
+        return self._headers
 
     def get_encoding(self) -> str:
         """
@@ -202,7 +204,9 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-    response = requests.get(url, headers=config.get_headers(), timeout=config.get_timeout(),
+    sleep(randrange(5))
+    response = requests.get(url=url, headers=config.get_headers(),
+                            timeout=config.get_timeout(),
                             verify=config.get_verify_certificate())
     response.encoding = config.get_encoding()
     return response
@@ -222,8 +226,8 @@ class Crawler:
         Args:
             config (Config): Configuration
         """
-        self._config = config
-        self._seed_urls = config.get_seed_urls()
+        self.config = config
+        self.url_pattern = 'https://www.comnews.ru/news'
         self.urls = []
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
@@ -236,12 +240,14 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        href = article_bs.get("href")
-
-        if href and href.startswith("https://www.comnews.ru/") and 'longreads' not in href \
-                and '__site/about/' not in href:
-            return str(href)
-        return ""
+        url = ''
+        links = article_bs.find_all('a', class_="/content")
+        for link in links:
+            url = link.get('href')
+            if url not in self.urls:
+                break
+        url = self.url_pattern + url[len("/news")::]
+        return url
 
     def find_articles(self) -> None:
         """
