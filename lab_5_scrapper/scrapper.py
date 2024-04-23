@@ -320,22 +320,22 @@ class HTMLParser:
         date = article_soup.find(class_="blog-date")
         if date:
             date = date.text
-        months = {'января': '01',
-                  'февраля': '02',
-                  'марта': '03',
-                  'апреля': '04',
-                  'мая': '05',
-                  'июня': '06',
-                  'июля': '07',
-                  'августа': '08',
-                  'сентября': '09',
-                  'октября': '10',
-                  'ноября': '11',
-                  'декабря': '12'}
-        for month, num in months.items():
-            if month in date:
-                date = date.replace(month, num)
-        self.article.date = self.unify_date_format(date)
+            months = {'января': '01',
+                      'февраля': '02',
+                      'марта': '03',
+                      'апреля': '04',
+                      'мая': '05',
+                      'июня': '06',
+                      'июля': '07',
+                      'августа': '08',
+                      'сентября': '09',
+                      'октября': '10',
+                      'ноября': '11',
+                      'декабря': '12'}
+            for month, num in months.items():
+                if month in date:
+                    date = date.replace(month, num)
+            self.article.date = self.unify_date_format(date)
         author = article_soup.find(target="_blank").text
         if author:
             self.article.author = [author]
