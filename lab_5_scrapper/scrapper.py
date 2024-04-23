@@ -246,17 +246,20 @@ class Crawler:
         """
         Find articles.
         """
-        urls = []
-        while len(urls) < self.config.get_num_articles():
-            for url in self.get_search_urls():
-                response = make_request(url, self.config)
-                if not response.ok:
-                    continue
-                soup = BeautifulSoup(response.text, 'lxml')
+        seed_urls = self.get_search_urls()
+        for seed_url in seed_urls:
+            response = make_request(seed_url, self.config)
+            if not response.ok:
+                continue
+            soup = BeautifulSoup(response.text, 'lxml')
+            extracted_url = self._extract_url(soup)
+            while extracted_url:
+                if len(self.urls) == self.config.get_num_articles():
+                    break
+                self.urls.append(extracted_url)
                 extracted_url = self._extract_url(soup)
-                if extracted_url not in urls:
-                    urls.append(extracted_url)
-            self.urls.extend(list(urls))
+            if len(self.urls) == self.config.get_num_articles():
+                break
 
     def get_search_urls(self) -> list:
         """
