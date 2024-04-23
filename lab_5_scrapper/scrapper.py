@@ -498,6 +498,7 @@ def main_recursive() -> None:
 
     clear_recursive_crawler(constants.ASSETS_PATH)
     # if I want to start all over again
+    # else: comment it
 
     crawler = CrawlerRecursive(config=configuration)
 
