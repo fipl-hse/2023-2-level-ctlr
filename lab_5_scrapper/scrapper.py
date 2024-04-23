@@ -503,6 +503,9 @@ def main_recursive() -> None:
 
     try:
         crawler.find_articles()
+        raise KeyboardInterrupt
+        # to save urls in case we want to add more
+        # to the current max amount of articles
     except KeyboardInterrupt:
         with open(constants.ASSETS_PATH.parent / 'already_crawled_urls.txt',
                   'w', encoding='utf-8', newline='\n') as f:
