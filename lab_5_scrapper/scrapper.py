@@ -337,7 +337,8 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
-        return datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+        date = str(datetime.datetime.strptime(date_str, '%Y-%m-%d'))
+        return datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
 
     def parse(self) -> Union[Article, bool, list]:
         """
