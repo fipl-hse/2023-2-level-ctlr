@@ -306,7 +306,12 @@ class CrawlerRecursive(Crawler):
 
         self.already_crawled_path = constants.ASSETS_PATH.parent / 'already_crawled_urls.txt'
         with open(self.already_crawled_path, 'r', encoding='utf-8') as f:
-            self.already_crawled = f.readlines()
+            self.already_crawled = set(f.readlines())
+
+        self.article_tag = 'ARTICLE URL: '
+        self.urls = [url[len(self.article_tag)+1::]
+                     for url in self.already_crawled
+                     if self.article_tag in url]
 
     def find_articles(self) -> None:
         response = make_request(self.start_url, self.config)
@@ -318,20 +323,33 @@ class CrawlerRecursive(Crawler):
         article_bs = BeautifulSoup(response.text, "lxml")
 
         all_urls.extend(self.base_url[:-len('/news'):] + link.get('href')
-                        for link in article_bs.find_all(href=True))
+                        for link in article_bs.find_all(href=True)
+                        if 'http' not in link.get('href'))
+        # all urls to my site pages are put into the html code as
+        # /something/..., but not the full link like
+        # https://www.sbras.info/news/something/...,
+        # so everything that refers to other https pages will break requests.get
+        # because it will be https://www.sbras.infohttp/...
 
         for url in all_urls:
-            if url in self.already_crawled:
+            if url in self.already_crawled and url != self.base_url:
                 continue
+            elif url != self.base_url:
+                self.already_crawled.update(url)
             self.start_url = url
 
             counter = 0
             extracted_url = self._extract_url(article_bs)
             while extracted_url:
+                if self.article_tag + extracted_url in self.urls:
+                    extracted_url = self._extract_url(article_bs)
+                    continue
+
                 if len(self.urls) == self.config.get_num_articles():
-                    return
+                    raise KeyboardInterrupt
+
                 self.urls.append(extracted_url)
-                self.already_crawled.append(extracted_url)
+                self.already_crawled.update(self.article_tag + extracted_url)
                 counter += 1
                 extracted_url = self._extract_url(article_bs)
 
@@ -340,13 +358,6 @@ class CrawlerRecursive(Crawler):
             self.find_articles()
 
         return
-
-    def save_urls(self, urls: set) -> None:
-        """
-        Add crawled urls.
-        """
-        with open(self.already_crawled_path, 'a', encoding='utf-8') as f:
-            f.write('\n'.join(urls))
 
 
 class HTMLParser:
@@ -494,18 +505,19 @@ def main_recursive() -> None:
         crawler.find_articles()
     except KeyboardInterrupt:
         with open(constants.ASSETS_PATH.parent / 'already_crawled_urls.txt',
-                  'w', encoding='utf-8') as f:
-            f.write("\n".join(crawler.urls))
+                  'w', encoding='utf-8', newline='\n') as f:
+            f.write("\n".join(crawler.already_crawled))
 
-    for index, url in enumerate(crawler.urls):
-        parser = HTMLParser(full_url=url, article_id=index + 1, config=configuration)
-        article = parser.parse()
-        if isinstance(article, Article):
-            to_raw(article)
-            to_meta(article)
+    if len(crawler.urls) == configuration.get_num_articles():
+        for index, url in enumerate(crawler.urls):
+            parser = HTMLParser(full_url=url, article_id=index + 1, config=configuration)
+            article = parser.parse()
+            if isinstance(article, Article):
+                to_raw(article)
+                to_meta(article)
     print("It's done!")
 
 
 if __name__ == "__main__":
     main()
-    # main_recursive()
+    main_recursive()
