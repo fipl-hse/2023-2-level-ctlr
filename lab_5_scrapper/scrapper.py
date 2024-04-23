@@ -496,7 +496,7 @@ def main_recursive() -> None:
     """
     configuration = Config(path_to_config=constants.CRAWLER_CONFIG_PATH)
 
-    # clear_recursive_crawler(constants.ASSETS_PATH)
+    clear_recursive_crawler(constants.ASSETS_PATH)
     # if I want to start all over again
 
     crawler = CrawlerRecursive(config=configuration)
