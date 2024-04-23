@@ -122,6 +122,7 @@ class Config:
         if not isinstance(config['headless_mode'], bool):
             raise IncorrectVerifyError
 
+
     def get_seed_urls(self) -> list[str]:
         """
         Retrieve seed urls.
