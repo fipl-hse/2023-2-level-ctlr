@@ -6,7 +6,11 @@ import datetime
 import json
 import pathlib
 import requests
+import shutil
+from random import randrange
+from time import sleep
 from bs4 import BeautifulSoup
+from core_utils import constants
 from core_utils.article.io import to_meta, to_raw
 from core_utils.constants import CRAWLER_CONFIG_PATH, ASSETS_PATH
 from core_utils.article.article import Article
@@ -190,6 +194,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
+    sleep(randrange(5))
     return requests.get(url=url, headers=config.get_headers(),
                         timeout=config.get_timeout(), verify=config.get_verify_certificate())
 
@@ -342,17 +347,24 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    if not base_path.exists():
-        base_path.mkdir()
-    base_path.rmdir()
-    base_path.mkdir()
+    if base_path.exists():
+        shutil.rmtree(base_path)
+    base_path.mkdir(parents=True)
 
 
 def main() -> None:
     """
     Entrypoint for scrapper module.
     """
-
+    prepare_environment(base_path=constants.ASSETS_PATH)
+    configuration = Config(path_to_config=constants.CRAWLER_CONFIG_PATH)
+    crawler = Crawler(config=configuration)
+    crawler.find_articles()
+    urls = crawler.urls
+    for i, url in enumerate(urls):
+        parser = HTMLParser(full_url=url, article_id=i + 1, config=configuration)
+        article = parser.parse()
+        to_raw(article)
 
 
 if __name__ == "__main__":
