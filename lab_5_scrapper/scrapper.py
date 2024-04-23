@@ -322,7 +322,6 @@ class HTMLParser:
         Returns:
             Union[Article, bool, list]: Article instance
         """
-
         response = make_request(self.full_url, self.config)
         if response is None or not response.ok:
             return False
