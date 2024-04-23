@@ -1,9 +1,18 @@
 {
-    "seed_urls": [],
-    "headers": {},
-    "total_articles_to_find_and_parse": 0,
-    "encoding": "",
-    "timeout": 0,
+    "seed_urls": [
+        "https://komigor.com/news/",
+        "https://komigor.com/news/page/2/",
+        "https://komigor.com/news/page/3/",
+        "https://komigor.com/news/page/4/"
+    ],
+    "headers": {"cookie": "yandexuid=3409520591695716616; yuidss=3409520591695716616; ymex=2011076625.yrts.1695716625; _ym_uid=1695716626770458192; gdpr=0; yashr=5560208241696332970; my=YwA=; amcuid=839404881703542992; yandex_login=ann422; bh=Ek8iTm90X0EgQnJhbmQiO3Y9IjgiLCAiQ2hyb21pdW0iO3Y9IjEyMCIsICJZYUJyb3dzZXIiO3Y9IjI0LjEiLCAiWW93c2VyIjt2PSIyLjUiGgUieDg2IiIMIjI0LjEuNS43MzYiKgI/MDoJIldpbmRvd3MiQggiMTAuMC4wIkoEIjY0IlJmIk5vdF9BIEJyYW5kIjt2PSI4LjAuMC4wIiwgIkNocm9taXVtIjt2PSIxMjAuMC42MDk5LjI5MSIsICJZYUJyb3dzZXIiO3Y9IjI0LjEuNS43MzYiLCAiWW93c2VyIjt2PSIyLjUiWgI/MA==; i=fqiUwHyg9S1pv9b7f15ZXYwjq5G93xYdl+cZh8SJzLO91NVC4ZJ4K0BdrhEEfhodbBruCbFVe7KFX8MX7Tm6ScS6Jc4=; Session_id=3:1712753225.5.2.1695717054515:ABTVsA:35.1.2:1|1219204511.-1.2.2:1296574.3:1697013628|1130000061404093.-1.0.2:2167.3:1695719221|25827054.6595553.2.2:6595553.3:1702312607|3:10285817.60138.kjdRw5R8WaOGD3-smHgADXVQHDs; sessar=1.1188.CiCJB-iU53NdDAtdDZf57TzoAHY_Po93K0wNDJ02YxOEjg.OwxUc1xennd2Y315drifeQHgcCU0K01RO8VYmGE_kUk; sessionid2=3:1712753225.5.2.1695717054515:ABTVsA:35.1.2:1|1219204511.-1.2.2:1296574.3:1697013628|1130000061404093.-1.0.2:2167.3:1695719221|25827054.6595553.2.2:6595553.3:1702312607|3:10285817.60138.fakesign0000000000000000000; is_gdpr=0; is_gdpr_b=CMSlJhDb9QEoAg==; isa=RDFXrQzv8A31xMlXAXGvorYPHO0ShZ/C8vDEoUnBMCREkSe0err2vG0bXS4I2mpY5zi7OnkS0Qv0glWZF3BZ7RLQ/2k=; sae=0:7C51CE14-B34F-476E-A33E-302DCD3E628D:p:24.1.5.736:w:d:RU:20230926; yabs-sid=2330872281713001516; _ym_isad=1; yabs-vdrf=RFXbctm27lnK0iXPc5G18TXC0wn9cAm0iGrW0nn9cK01gH000Embc3W37sCO19_DbvW7ems01J-XbF03xVLm01Dzb301FBOe0vTLbPG2TL781jzDbEm1qfyq0zhbbdm3Jfem1dxPbn054-S81QBPb8m1l4YS1ywnb9m3l18O10u9b9m0_JG001dfb2W2RPc81xtPb401QGm000; _ym_d=1713003926; yabs-udb=RcLqTszoQo1ePM5aPN9p8D2zqB3GkT62qBWWqBFGjD2r; bh=EkwiTm90X0EgQnJhbmQiO3Y9IjgiLCJDaHJvbWl1bSI7dj0iMTIwIiwiWWFCcm93c2VyIjt2PSIyNC4xIiwiWW93c2VyIjt2PSIyLjUiGgUieDg2IiIMIjI0LjEuNS43MzYiKgI/MDoJIldpbmRvd3MiQggiMTAuMC4wIkoEIjY0IlJkIk5vdF9BIEJyYW5kIjt2PSI4LjAuMC4wIiwiQ2hyb21pdW0iO3Y9IjEyMC4wLjYwOTkuMjkxIiwiWWFCcm93c2VyIjt2PSIyNC4xLjUuNzM2IiwiWW93c2VyIjt2PSIyLjUiIloCPzA=; cycada=31yTHxHzXMbo7eMYmc0ZhpcVLZSXmVyW1gBSQswFMLw=; ys=svt.1#def_bro.1#wprid.1713004224363458-13585432427157460703-balancer-l7leveler-kubr-yp-vla-119-BAL#ybzcc.ru#newsca.native_cache; yp=1713086930.uc.ru#1713086930.duc.ru#1733848610.cld.2500758#2025730610.udn.cDrQkNC90L3QsCDQnNCw0LvQvtCy0LA%3D#2011079221.multib.1#2028364227.pcs.1#1724639574.szm.1_5:1280x720:1215x643#1715185884.hdrc.1#1741032261.stltp.serp_bk-map_1_1709496261#1713011930.gpauto.56_342411:43_948627:140:1:1713004730",
+           "accept-Language": "ru,en;q=0.9",
+           "accept": "*/*",
+           "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36"},
+    "total_articles_to_find_and_parse": 100,
+    "encoding": "utf-8",
+    "timeout": 1,
     "should_verify_certificate": true,
     "headless_mode": true
 }
+
