@@ -352,17 +352,7 @@ def main() -> None:
     """
     Entrypoint for scrapper module.
     """
-    conf = Config(CRAWLER_CONFIG_PATH)
-    crawler = Crawler(conf)
-    crawler.find_articles()
-    prepare_environment(ASSETS_PATH)
 
-    for id_num, url in enumerate(crawler.urls, 1):
-        parser = HTMLParser(url, id_num, conf)
-        article = parser.parse()
-        if isinstance(article, Article):
-            to_raw(article)
-            to_meta(article)
 
 
 if __name__ == "__main__":
