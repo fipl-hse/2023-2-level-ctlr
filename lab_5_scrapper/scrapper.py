@@ -246,13 +246,17 @@ class Crawler:
         """
         Find articles.
         """
-        for seed_url in self.get_search_urls():
-            response = make_request(seed_url, self.config)
-            if response.ok:
-                article_bs = BeautifulSoup(response.text, 'lxml')
-                for i in range(12):
-                    url = self._extract_url(article_bs)
-                    self.urls.append(url)
+        urls = []
+        while len(urls) < self.config.get_num_articles():
+            for url in self.get_search_urls():
+                response = make_request(url, self.config)
+                if not response.ok:
+                    continue
+                soup = BeautifulSoup(response.text, 'lxml')
+                extracted_url = self._extract_url(soup)
+                if extracted_url not in urls:
+                    urls.append(extracted_url)
+            self.urls.extend(list(urls))
 
     def get_search_urls(self) -> list:
         """
@@ -326,7 +330,7 @@ class HTMLParser:
             if month in date:
                 date = date.replace(month, num)
         self.article.date = self.unify_date_format(date)
-        author = article_soup.find(class_="article-author").string
+        author = article_soup.find(class_="article-author").text
         if author:
             self.article.author = [author]
         else:
@@ -368,10 +372,9 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    if not base_path.exists():
-        base_path.mkdir()
-    base_path.rmdir()
-    base_path.mkdir()
+    base_path.mkdir(parents=True, exist_ok=True)
+    for file in base_path.iterdir():
+        file.unlink(missing_ok=True)
 
 def main() -> None:
     """
