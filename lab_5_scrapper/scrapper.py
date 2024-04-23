@@ -316,10 +316,8 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         self.article.title = article_soup.find('h1').text
-        date = article_soup.find("time")
-        if date:
-            date = date.get('datetime')
-            self.article.date = self.unify_date_format(str(date))
+        date = article_soup.find("time").get('datetime')
+        self.article.date = self.unify_date_format(str(date))
         author = article_soup.find(target="_blank").text
         if author:
             self.article.author = [author]
