@@ -215,7 +215,7 @@ class Crawler:
         """
         self.config = config
         self.urls = []
-        self.url_pattern = "https://komigor.com"
+        self.url_pattern = "https://komigor.com/news/"
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -229,7 +229,7 @@ class Crawler:
         """
         url = ""
 
-        entry_content = article_bs.find("div", class_="news-card")
+        entry_content = article_bs.find("div", class_="second-news large-12 columns padding-left-0")
         if entry_content:
             url_element = entry_content.find("a")
             if url_element:
@@ -248,7 +248,7 @@ class Crawler:
                 continue
 
             article_bs = BeautifulSoup(response.text, "html.parser")
-            urls = [self._extract_url(article_bs) for _ in range(10)]
+            urls = [self._extract_url(article_bs) for _ in range(1)]
             self.urls.extend(urls)
 
     def get_search_urls(self) -> list:
@@ -291,10 +291,10 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         raw_text = ""
-        headline = article_soup.find("h1", class_="news-title")
+        headline = article_soup.find("h2", class_="headline")
         if headline:
             raw_text += f"{headline.text.strip()}\n\n"
-        for element in article_soup.find_all(["p", "div.news-title"]):
+        for element in article_soup.find_all(["p", "div.headline"]):
             text = element.get_text(separator=" ", strip=True)
             if text:
                 raw_text += f"{text}\n\n"
@@ -356,15 +356,19 @@ def main() -> None:
     """
     Entrypoint for scrapper module.
     """
-    prepare_environment(base_path=constants.ASSETS_PATH)
     configuration = Config(path_to_config=constants.CRAWLER_CONFIG_PATH)
+
+    prepare_environment(base_path=constants.ASSETS_PATH)
+
     crawler = Crawler(config=configuration)
     crawler.find_articles()
     urls = crawler.urls
-    for i, url in enumerate(urls):
-        parser = HTMLParser(full_url=url, article_id=i + 1, config=configuration)
+
+    for index, url in enumerate(urls):
+        parser = HTMLParser(full_url=url, article_id=index + 1, config=configuration)
         article = parser.parse()
         to_raw(article)
+
 
 
 if __name__ == "__main__":
