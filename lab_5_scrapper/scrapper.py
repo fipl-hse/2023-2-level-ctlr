@@ -361,7 +361,7 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
-        return datetime.datetime.strptime(date_str, '%d.%m.%Y')
+        return datetime.datetime.strptime(date_str, '%d %B %Y')
 
     def parse(self) -> Union[Article, bool, list]:
         """
