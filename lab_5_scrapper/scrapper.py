@@ -335,7 +335,7 @@ class HTMLParser:
         article_bs = BeautifulSoup(src, 'lxml')
 
         self._fill_article_with_text(article_bs)
-        self._fill_article_with_meta_information(article_bs)  # Implement this method as discussed before
+        self._fill_article_with_meta_information(article_bs)
 
         return self.article
 
@@ -356,15 +356,17 @@ def main() -> None:
     """
     Entrypoint for scrapper module.
     """
-    prepare_environment(base_path=constants.ASSETS_PATH)
-    configuration = Config(path_to_config=constants.CRAWLER_CONFIG_PATH)
-    crawler = Crawler(config=configuration)
+    conf = Config(CRAWLER_CONFIG_PATH)
+    crawler = Crawler(conf)
     crawler.find_articles()
-    urls = crawler.urls
-    for i, url in enumerate(urls):
-        parser = HTMLParser(full_url=url, article_id=i + 1, config=configuration)
+    prepare_environment(ASSETS_PATH)
+
+    for id_num, url in enumerate(crawler.urls, 1):
+        parser = HTMLParser(url, id_num, conf)
         article = parser.parse()
-        to_raw(article)
+        if isinstance(article, Article):
+            to_raw(article)
+            to_meta(article)
 
 
 if __name__ == "__main__":
