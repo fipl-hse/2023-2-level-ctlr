@@ -7,7 +7,7 @@ import json
 import pathlib
 import requests
 from bs4 import BeautifulSoup
-from core_utils.article.io import to_raw
+from core_utils.article.io import to_meta, to_raw
 from core_utils.constants import CRAWLER_CONFIG_PATH, ASSETS_PATH
 from core_utils.article.article import Article
 from core_utils.config_dto import ConfigDTO
@@ -353,6 +353,17 @@ def main() -> None:
     """
     Entrypoint for scrapper module.
     """
+    conf = Config(CRAWLER_CONFIG_PATH)
+    crawler = Crawler(conf)
+    crawler.find_articles()
+    prepare_environment(ASSETS_PATH)
+
+    for id_num, url in enumerate(crawler.urls, 1):
+        parser = HTMLParser(url, id_num, conf)
+        article = parser.parse()
+        if isinstance(article, Article):
+            to_raw(article)
+            to_meta(article)
 
 
 if __name__ == "__main__":
