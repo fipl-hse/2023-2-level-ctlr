@@ -5,7 +5,9 @@ Crawler implementation.
 import datetime
 import json
 import pathlib
+import random
 import shutil
+import time
 from typing import Pattern, Union
 from urllib.parse import urlparse
 
@@ -13,7 +15,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from core_utils.article.article import Article
-from core_utils.article.io import to_raw
+from core_utils.article.io import to_raw, to_meta
 from core_utils.config_dto import ConfigDTO
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 
@@ -189,6 +191,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
+    time.sleep(random.randrange(4))
     return requests.get(url=url,
                         headers=config.get_headers(),
                         timeout=config.get_timeout(),
@@ -210,7 +213,7 @@ class Crawler:
             config (Config): Configuration
         """
         self.config = config
-        self.url_pattern = self.config.get_seed_urls()[1].split('/news')[0]
+        self.url_pattern = self.config.get_seed_urls()[0].split('/news')[0]
         self.urls = []
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
@@ -234,12 +237,13 @@ class Crawler:
         Find articles.
         """
         urls = []
-        for url in self.get_search_urls():
-            response = make_request(url, self.config)
-            if not response.ok:
-                continue
-            article_bs = BeautifulSoup(response.text, 'lxml')
-            urls.append(self._extract_url(article_bs))
+        while len(urls) != self.config.get_num_articles():
+            for url in self.get_search_urls():
+                response = make_request(url, self.config)
+                if not response.ok:
+                    continue
+                article_bs = BeautifulSoup(response.text, 'lxml')
+                urls.append(self._extract_url(article_bs))
         self.urls.extend(urls)
 
     def get_search_urls(self) -> list:
@@ -282,6 +286,7 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        # full_text_from_div = ''
         intro = article_soup.find('div', class_='introtext')
         div_blocks = article_soup.find('div', class_='content')
         full_text_from_div = intro.text
@@ -299,9 +304,9 @@ class HTMLParser:
         topics = article_soup.find_all('a', class_='breadcrumbs__link')
         for t in topics:
             self.article.topics.append(t.text)
-        self.article.title = article_soup.title
+        self.article.title = article_soup.title.text
         date = article_soup.find('div', class_='sb-item__date')
-        self.article.date = date.text
+        self.article.date = self.unify_date_format(date.text)
         self.article.author = 'NOT FOUND'
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
@@ -334,6 +339,7 @@ class HTMLParser:
         response = make_request(self.full_url, self.config)
         article_bs = BeautifulSoup(response.text, 'lxml')
         self._fill_article_with_text(article_bs)
+        self._fill_article_with_meta_information(article_bs)
         return self.article
 
 
@@ -344,10 +350,13 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    if not base_path.exists():
+    if base_path.exists():
+        shutil.rmtree(base_path.parent)
+        base_path.parent.mkdir()
         base_path.mkdir()
-    shutil.rmtree(base_path)
-    base_path.mkdir()
+    else:
+        base_path.parent.mkdir()
+        base_path.mkdir()
 
 
 def main() -> None:
@@ -359,10 +368,12 @@ def main() -> None:
     crawler = Crawler(config=configuration)
     crawler.find_articles()
 
-    for i, full_url in enumerate(crawler.get_search_urls()):
+    for i, full_url in enumerate(crawler.urls, 1):
         parser = HTMLParser(full_url=full_url, article_id=i, config=configuration)
         article = parser.parse()
-        to_raw(article)
+        if isinstance(article, Article):
+            to_raw(article)
+            to_meta(article)
 
 
 if __name__ == "__main__":
