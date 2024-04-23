@@ -4,9 +4,8 @@ Crawler implementation.
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
 import datetime
 import json
-import os
-
 import pathlib
+import shutil
 from core_utils.config_dto import ConfigDTO
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 
@@ -14,6 +13,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from typing import Pattern, Union
+
 
 class Config:
     """
@@ -155,6 +155,7 @@ class Crawler:
         Args:
             config (Config): Configuration
         """
+        self.config = config
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -243,9 +244,9 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    if not (os.path.isdir(ASSETS_PATH) and os.listdir(ASSETS_PATH)):
-        os.rmdir(ASSETS_PATH)
-    os.mkdir(ASSETS_PATH)
+    if not ASSETS_PATH.exists():
+        shutil.rmtree(ASSETS_PATH)
+    ASSETS_PATH.mkdir(exist_ok=True, parents=True)
 
 
 def main() -> None:
