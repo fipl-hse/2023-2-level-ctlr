@@ -221,9 +221,9 @@ class Crawler:
             url = el.get('href')
             if url.split('/')[2] == 'servernews.ru':
                 continue
+            url = self.url_pattern + url
             if url not in self.urls:
                 break
-        url = self.url_pattern + url
         return url
 
     def find_articles(self) -> None:
@@ -231,15 +231,14 @@ class Crawler:
         Find articles.
         """
         seeds = self.get_search_urls()
-        for seed in seeds:
-            response = make_request(seed, self.config)
-            if not response.ok:
-                continue
-            article_bs = BeautifulSoup(response.text, 'html.parser')
-            urls = []
-            for i in range(25):
-                urls.append(self._extract_url(article_bs))
-            self.urls.extend(urls)
+        while len(self.urls) < self.config.get_num_articles():
+            for seed in seeds:
+                response = make_request(seed, self.config)
+                if not response.ok:
+                    continue
+                article_bs = BeautifulSoup(response.text, 'html.parser')
+                url = self._extract_url(article_bs)
+                self.urls.append(url)
 
     def get_search_urls(self) -> list:
         """
@@ -287,7 +286,7 @@ class HTMLParser:
         for el in texts:
             if not el.string:
                 continue
-            text += f'{texts}'
+            text += f'\n{el.string}'
         self.article.text = text
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
