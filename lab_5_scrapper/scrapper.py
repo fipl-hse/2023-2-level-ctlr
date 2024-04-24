@@ -15,7 +15,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from core_utils.article.article import Article
-from core_utils.article.io import to_raw, to_meta
+from core_utils.article.io import to_meta, to_raw
 from core_utils.config_dto import ConfigDTO
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 
@@ -81,13 +81,14 @@ class Config:
         """
         with open(self.path_to_config, encoding='utf-8') as file:
             config = json.load(file)
-        return ConfigDTO(seed_urls=config['seed_urls'],
-                         total_articles_to_find_and_parse=config['total_articles_to_find_and_parse'],
-                         headers=config['headers'],
-                         encoding=config['encoding'],
-                         timeout=config['timeout'],
-                         should_verify_certificate=config['should_verify_certificate'],
-                         headless_mode=config['headless_mode'])
+        return ConfigDTO(**config)
+    # seed_urls=config['seed_urls'],
+    #                          total_articles_to_find_and_parse=config['total_articles_to_find_and_parse'],
+    #                          headers=config['headers'],
+    #                          encoding=config['encoding'],
+    #                          timeout=config['timeout'],
+    #                          should_verify_certificate=config['should_verify_certificate'],
+    #                          headless_mode=config['headless_mode']
 
     def _validate_config_content(self) -> None:
         """
@@ -227,9 +228,8 @@ class Crawler:
             str: Url from HTML
         """
         url = ''
-        for div in article_bs.find_all('div', class_='items-list-inner__item-title switcher-title font_20'):
-            for link in div.select('a'):
-                url = link['href']
+        for a in article_bs.find_all('a', class_='dark_link color-theme-target'):
+            url = a['href']
         return self.url_pattern + url
 
     def find_articles(self) -> None:
@@ -237,13 +237,13 @@ class Crawler:
         Find articles.
         """
         urls = []
-        while len(urls) != self.config.get_num_articles():
-            for url in self.get_search_urls():
-                response = make_request(url, self.config)
-                if not response.ok:
-                    continue
-                article_bs = BeautifulSoup(response.text, 'lxml')
-                urls.append(self._extract_url(article_bs))
+        # while len(self.urls) < self.config.get_num_articles():
+        for url in self.get_search_urls():
+            response = make_request(url, self.config)
+            if not response.ok:
+                continue
+            article_bs = BeautifulSoup(response.text, 'lxml')
+            urls.append(self._extract_url(article_bs))
         self.urls.extend(urls)
 
     def get_search_urls(self) -> list:
@@ -307,7 +307,7 @@ class HTMLParser:
         self.article.title = article_soup.title.text
         date = article_soup.find('div', class_='sb-item__date')
         self.article.date = self.unify_date_format(date.text)
-        self.article.author = 'NOT FOUND'
+        self.article.author = ['NOT FOUND']
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
