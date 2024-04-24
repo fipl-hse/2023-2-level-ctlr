@@ -320,7 +320,7 @@ class HTMLParser:
         self.article.title = article_soup.find('h1').text
         date = article_soup.find("time").get('datetime')
         self.article.date = self.unify_date_format(str(date))
-        author = article_soup.find('p', class_='article-author').text.strip()
+        author = article_soup.find(target="_blank").text.strip()
         if author:
             self.article.author = [author]
         else:
