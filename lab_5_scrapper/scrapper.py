@@ -13,7 +13,7 @@ import shutil
 
 from bs4 import BeautifulSoup
 from core_utils.article.article import Article
-from core_utils.article.io import to_raw
+from core_utils.article.io import to_raw, to_meta
 from core_utils import constants
 from core_utils.config_dto import ConfigDTO
 from time import sleep 
@@ -248,24 +248,24 @@ class Crawler:
             link = link.get('href')
             if link.startswith('/news/') and link.endswith('php'):
                 url = 'https://www.securitylab.ru' + link
-                return url
+                if url not in self.urls:
+                    return url
         return url
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
-        urls = []
-        while len(urls) < self.config.get_num_articles():
-            for url in self.get_search_urls():
-                response = make_request(url, self.config)
+        for url in self.get_search_urls():
+            response = make_request(url, self.config)
 
-                if not response.ok:
-                    continue
-
-                soup = BeautifulSoup(response.text, 'lxml')
-                urls.append(self._extract_url(soup))
-        self.urls.extend(urls)           
+            if not response.ok:
+                continue
+            soup = BeautifulSoup(response.text, 'lxml')
+            extr = self._extract_url(soup)
+            while extr and len(self.urls) < self.config.get_num_articles():
+                self.urls.append(extr)
+                extr = self._extract_url(soup)        
 
     def get_search_urls(self) -> list:
         """
@@ -306,11 +306,10 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        headline = article_soup.title.text
         description = article_soup.find('p').text
-        text = article_soup.find('div', itemprop='description').text
+        text = article_soup.find('div', itemprop='description').stripped_strings
 
-        self.article = headline + "\n" + description + "\n" + text
+        self.article.text = description.strip() + "\n" + '\n'.join(text)
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -319,7 +318,18 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        title = article_soup.title.text.strip()
+        self.article.title = title
 
+        author = article_soup.find('div', itemprop='author').text
+        self.article.author = author
+
+        date = article_soup.find('time')
+        date = date.get('datetime')
+        # date = datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S%z")
+
+        self.article.date = self.unify_date_format(date)
+        
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
         Unify date format.
@@ -330,6 +340,9 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
+        date_str = date_str[:-6].replace('T', ' ')
+        formatted_date = datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+        return formatted_date
 
     def parse(self) -> Union[Article, bool, list]:
         """
@@ -339,9 +352,10 @@ class HTMLParser:
             Union[Article, bool, list]: Article instance
         """
         response = make_request(self.full_url, self.config)
-        article_bs = BeautifulSoup(response.text, 'lxml')
-        self._fill_article_with_text(article_bs)
-        self._fill_article_with_meta_information(article_bs)
+        if response.ok:
+            article_bs = BeautifulSoup(response.text, 'lxml')
+            self._fill_article_with_text(article_bs)
+            self._fill_article_with_meta_information(article_bs)
 
         return self.article
 
@@ -364,7 +378,13 @@ def main() -> None:
     configuration = Config(constants.CRAWLER_CONFIG_PATH)
     crawler = Crawler(configuration)
     crawler.find_articles()
-    print(crawler.urls)
+
+    for i, url in enumerate(crawler.urls):
+        parser = HTMLParser(url, i, configuration)
+        article = parser.parse()
+        if isinstance(article, Article):
+            to_raw(article)
+            to_meta(article)
 
 if __name__ == "__main__":
     main()
