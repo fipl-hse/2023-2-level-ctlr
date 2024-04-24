@@ -99,10 +99,11 @@ class Config:
             if not parsed_url.scheme or not parsed_url.netloc:
                 raise IncorrectSeedURLError("seed URL does not match standard pattern 'https?://(www.)?'")
 
-        if not isinstance(self.configdto.total_articles, int):
+        if not isinstance(self.configdto.total_articles, int) or \
+                self.configdto.total_articles <= 0:
             raise IncorrectNumberOfArticlesError('total number of articles to parse is not integer')
 
-        if not 0 < self.configdto.total_articles < 150:
+        if not 0 < self.configdto.total_articles <= 150:
             raise NumberOfArticlesOutOfRangeError('total number of articles is out of range')
 
         if not isinstance(self.configdto.headers, dict):
@@ -114,7 +115,8 @@ class Config:
         if not isinstance(self.configdto.timeout, int) or not 0 < self.configdto.timeout < 60:
             raise IncorrectTimeoutError('timeout value must be a positive integer less than 60')
 
-        if not isinstance(self.configdto.should_verify_certificate, bool):
+        if not isinstance(self.configdto.should_verify_certificate, bool) or not \
+                isinstance(self.configdto.headless_mode, bool):
             raise IncorrectVerifyError('verify certificate value must either be True or False')
 
     def get_seed_urls(self) -> list[str]:
@@ -286,7 +288,6 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        # full_text_from_div = ''
         intro = article_soup.find('div', class_='introtext')
         div_blocks = article_soup.find('div', class_='content')
         full_text_from_div = intro.text
