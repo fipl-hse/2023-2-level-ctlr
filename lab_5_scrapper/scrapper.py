@@ -320,7 +320,7 @@ class HTMLParser:
         self.article.title = article_soup.find('h1').text
         date = article_soup.find("time").get('datetime')
         self.article.date = self.unify_date_format(str(date))
-        author = article_soup.find('p', class_="article-author")
+        author = article_soup.find('p', class_="article-author", encoding='utf-8')
         if (author is None or not isinstance(author, str)
                 or not author):
             self.article.author = ["NOT FOUND"]
