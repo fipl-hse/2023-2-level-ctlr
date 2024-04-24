@@ -7,6 +7,8 @@ import os.path
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
 import pathlib
 import re
+import shutil
+
 from bs4 import BeautifulSoup
 import requests
 from typing import Pattern, Union
@@ -60,13 +62,13 @@ class Config:
         self.path_to_config = path_to_config
         self._validate_config_content()
         self.config = self._extract_config_content()
-        self.seed_urls = self.config.seed_urls
-        self.headers = self.config.headers
-        self.total_articles = self.config.total_articles
-        self.encoding = self.config.encoding
-        self.timeout = self.config.timeout
-        self.should_verify_certificate = self.config.should_verify_certificate
-        self.headless_mode = self.config.headless_mode
+        self._seed_urls = self.config.seed_urls
+        self._headers = self.config.headers
+        self._num_articles = self.config.total_articles
+        self._encoding = self.config.encoding
+        self._timeout = self.config.timeout
+        self._should_verify_certificate = self.config.should_verify_certificate
+        self._headless_mode = self.config.headless_mode
 
     def _extract_config_content(self) -> ConfigDTO:
         """
@@ -75,7 +77,7 @@ class Config:
         Returns:
             ConfigDTO: Config values
         """
-        with open(self.path_to_config, "r", "utf-8") as f:
+        with open(file=self.path_to_config, mode="r", encoding="utf-8") as f:
             conf = json.load(f)
             return ConfigDTO(seed_urls=conf["seed_urls"], headers=conf['headers'],
                              total_articles_to_find_and_parse=conf['total_articles_to_find_and_parse'],
@@ -87,25 +89,24 @@ class Config:
         """
         Ensure configuration parameters are not corrupt.
         """
-        with open(self.path_to_config, 'r', 'utf-8') as f:
+        with open(file=self.path_to_config, mode="r", encoding="utf-8") as f:
             conf = json.load(f)
         if not (isinstance(conf['seed_urls'], list)
                 and all(re.match(r"https?://(www.)?", seed_url) for seed_url in conf['seed_urls'])):
             raise IncorrectSeedURLError
         number = conf['total_articles_to_find_and_parse']
-        if not 0 < number <= 150:
-            raise NumberOfArticlesOutOfRangeError
-        if not isinstance(number, int):
+        if not isinstance(number, int) or number <= 0:
             raise IncorrectNumberOfArticlesError
+        if not 1 <= number <= 150:
+            raise NumberOfArticlesOutOfRangeError
         if not isinstance(conf['headers'], dict):
             raise IncorrectHeadersError
         if not isinstance(conf['encoding'], str):
             raise IncorrectEncodingError
-        if not isinstance(conf['timeout'], int) and 0 < conf['timeout'] < 60:
+        if not (isinstance(conf['timeout'], int) and 0 < conf['timeout'] < 60):
             raise IncorrectTimeoutError
-        if not isinstance(conf['should_verify_certificate'], bool):
+        if not isinstance(conf['should_verify_certificate'], bool) or not isinstance(conf['headless_mode'], bool):
             raise IncorrectVerifyError
-
 
     def get_seed_urls(self) -> list[str]:
         """
@@ -114,7 +115,7 @@ class Config:
         Returns:
             list[str]: Seed urls
         """
-        return self.seed_urls
+        return self._seed_urls
 
     def get_num_articles(self) -> int:
         """
@@ -123,7 +124,7 @@ class Config:
         Returns:
             int: Total number of articles to scrape
         """
-        return self.total_articles
+        return self._num_articles
 
     def get_headers(self) -> dict[str, str]:
         """
@@ -132,7 +133,7 @@ class Config:
         Returns:
             dict[str, str]: Headers
         """
-        return self.headers
+        return self._headers
 
     def get_encoding(self) -> str:
         """
@@ -141,7 +142,7 @@ class Config:
         Returns:
             str: Encoding
         """
-        return self.encoding
+        return self._encoding
 
     def get_timeout(self) -> int:
         """
@@ -150,7 +151,7 @@ class Config:
         Returns:
             int: Number of seconds to wait for response
         """
-        return self.timeout
+        return self._timeout
 
     def get_verify_certificate(self) -> bool:
         """
@@ -159,7 +160,7 @@ class Config:
         Returns:
             bool: Whether to verify certificate or not
         """
-        return self.should_verify_certificate
+        return self._should_verify_certificate
 
     def get_headless_mode(self) -> bool:
         """
@@ -168,7 +169,7 @@ class Config:
         Returns:
             bool: Whether to use headless mode or not
         """
-        return self.get_headless_mode()
+        return self._headless_mode
 
 
 def make_request(url: str, config: Config) -> requests.models.Response:
@@ -329,13 +330,9 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    if not os.path.exists(base_path):
-        os.makedirs(base_path)
-    else:
-        files = os.listdir(base_path)
-        for file in files:
-            if os.path.exists(file):
-                os.remove(file)
+    if base_path.exists():
+        shutil.rmtree(base_path)
+    base_path.mkdir(parents=True)
 
 
 def main() -> None:
