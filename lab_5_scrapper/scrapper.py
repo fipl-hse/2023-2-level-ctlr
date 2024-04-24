@@ -323,7 +323,7 @@ class HTMLParser:
         author = article_soup.find('p', class_="article-author").text
         if (author is None or not isinstance(author, str)
                 or not author):
-            self.article.author = "NOT FOUND"
+            self.article.author = ["NOT FOUND"]
         self.article.author = [author]
         topics = article_soup.find_all(class_="article-tag-link")
         self.article.topics = [topic.text for topic in topics]
