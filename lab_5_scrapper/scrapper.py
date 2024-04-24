@@ -335,7 +335,7 @@ class CrawlerRecursive(Crawler):
             if url in self.already_crawled and url != self.base_url:
                 continue
             elif url != self.base_url:
-                self.already_crawled.update(url)
+                self.already_crawled.add(url)
             self.start_url = url
 
             counter = 0
@@ -349,7 +349,7 @@ class CrawlerRecursive(Crawler):
                     raise KeyboardInterrupt
 
                 self.urls.append(extracted_url)
-                self.already_crawled.update(self.article_tag + extracted_url)
+                self.already_crawled.add(self.article_tag + extracted_url)
                 counter += 1
                 extracted_url = self._extract_url(article_bs)
 
@@ -456,7 +456,7 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
         file.unlink(missing_ok=True)
 
 
-def clear_recursive_crawler(base_path: Union[pathlib.Path, str]) -> None:
+def clear_recursive_crawler(base_path: pathlib.Path | str) -> None:
     """
         Create ASSETS_PATH folder if no created and create a file for crawled links.
 
@@ -487,7 +487,6 @@ def main() -> None:
         if isinstance(article, Article):
             to_raw(article)
             to_meta(article)
-    print("It's done!")
 
 
 def main_recursive() -> None:
@@ -519,9 +518,7 @@ def main_recursive() -> None:
             if isinstance(article, Article):
                 to_raw(article)
                 to_meta(article)
-    print("It's done!")
 
 
 if __name__ == "__main__":
     main()
-    main_recursive()
