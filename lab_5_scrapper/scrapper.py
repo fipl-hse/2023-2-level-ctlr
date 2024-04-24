@@ -234,11 +234,10 @@ class Crawler:
             str: Url from HTML
         """
         tags = article_bs.find_all('a', class_='listing-preview__content')
+        url = ''
         for element in tags:
-            url = element.get('href')
-            if url:
-                return url
-            return ''
+            url = element['href']
+        return url
 
     def find_articles(self) -> None:
         """
