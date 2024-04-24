@@ -10,8 +10,53 @@ import requests
 from bs4 import BeautifulSoup
 from core_utils.article.article import Article
 from core_utils.config_dto import ConfigDTO
+from core_utils.article.io import to_raw
+from core_utils.constants import CRAWLER_CONFIG_PATH, ASSETS_PATH
 from random import randrange
 from time import sleep
+import datetime
+
+
+class IncorrectSeedURLError(Exception):
+    """
+    The seed url does not match standard pattern.
+    """
+
+
+class NumberOfArticlesOutOfRangeError(Exception):
+    """
+    Total number of articles is out of range from 1 to 150.
+    """
+
+
+class IncorrectNumberOfArticlesError(Exception):
+    """
+    Total number of articles to parse is not integer.
+    """
+
+
+class IncorrectHeadersError(Exception):
+    """
+    The headers are not in a form of dictionary.
+    """
+
+
+class IncorrectEncodingError(Exception):
+    """
+    The encoding is not a string.
+    """
+
+
+class IncorrectTimeoutError(Exception):
+    """
+    The timeout value must be a positive integer less than 60.
+    """
+
+
+class IncorrectVerifyError(Exception):
+    """
+    Verify certificate value must either be True or False.
+    """
 
 
 class Config:
@@ -54,19 +99,26 @@ class Config:
         """
         if not isinstance(self.config.seed_urls, list):
             raise IncorrectSeedURLError("Seed URL does not match standard pattern 'https?://(www.)?'")
+
         for seed_url in self.config.seed_urls:
             if not re.match(r"https?://(www.)?", seed_url):
                 raise IncorrectSeedURLError("Seed URL does not match standard pattern 'https?://(www.)?'")
+
         if not isinstance(self.config.total_articles, int) or self.config.total_articles <= 0:
             raise IncorrectNumberOfArticlesError("Total number of articles to parse is not an integer")
+
         if not 0 < self.config.total_articles < 150:
             raise NumberOfArticlesOutOfRangeError("Total number of articles is out of range from 1 to 150")
+
         if not isinstance(self.config.headers, dict):
             raise IncorrectHeadersError("Headers are not in the form of a dictionary")
+
         if not isinstance(self.config.encoding, str):
             raise IncorrectEncodingError("Encoding must be specified as a string")
+
         if not isinstance(self.config.timeout, int) or not 0 <= self.config.timeout < 60:
             raise IncorrectTimeoutError("Timeout value must be a positive integer less than 60")
+
         if (not isinstance(self.config.should_verify_certificate, bool) or
                 not isinstance(self.config.headless_mode, bool)):
             raise IncorrectVerifyError("Verify certificate value must be either True or False")
@@ -230,6 +282,10 @@ class HTMLParser:
             article_id (int): Article id
             config (Config): Configuration
         """
+        self.full_url = full_url
+        self.article_id = article_id
+        self.config = config
+        self.article = Article(self.full_url, self.article_id)
 
     def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
         """
@@ -238,6 +294,11 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        text = article_soup.find_all(itemprop="articleBody")
+        article = ''
+        for paragraph in text:
+            article += paragraph.text
+        self.article.text = article
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -246,6 +307,23 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        author = article_soup.find("li", itemprop="author").text.strip()
+        if isinstance(author, str) and author:
+            self.article.author = [author]
+        else:
+            self.article.author = ["NOT FOUND"]
+
+        self.article.title = article_soup.find(itemprop="headline").text.strip()
+
+        date = article_soup.find('time', class_='meta__text')
+        if date:
+            article_date = date.text
+            formatted_date = ''.join(article_date.split(' в '))
+            self.article.date = self.unify_date_format(formatted_date)
+
+        tags = article_soup.find_all('a', class_='article__tag-item')
+        for tag in tags:
+            self.article.topics.append(tag.text)
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -257,6 +335,7 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
+        return datetime.datetime.strptime(date_str, "%d.%m.%Y %H:%M")
 
     def parse(self) -> Union[Article, bool, list]:
         """
@@ -265,6 +344,12 @@ class HTMLParser:
         Returns:
             Union[Article, bool, list]: Article instance
         """
+        response = make_request(self.full_url, self.config)
+        if response.ok:
+            article_bs = BeautifulSoup(response.text, 'lxml')
+            self._fill_article_with_text(article_bs)
+            self._fill_article_with_meta_information(article_bs)
+        return self.article
 
 
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
@@ -280,6 +365,16 @@ def main() -> None:
     """
     Entrypoint for scrapper module.
     """
+    config = Config(CRAWLER_CONFIG_PATH)
+    crawler = Crawler(config)
+    crawler.find_articles()
+    prepare_environment(ASSETS_PATH)
+
+    for index, url in enumerate(crawler.get_search_urls()):
+        parser = HTMLParser(url, index, config)
+        article = parser.parse()
+        if isinstance(article, Article):
+            to_raw(article)
 
 
 if __name__ == "__main__":
