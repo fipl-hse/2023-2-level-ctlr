@@ -318,9 +318,9 @@ class HTMLParser:
         self.article.title = article_soup.find('h1').text
         date = article_soup.find("time").get('datetime')
         self.article.date = self.unify_date_format(str(date))
-        author = article_soup.find(target="_blank").text
+        author = article_soup.find(target="_blank")
         if author:
-            self.article.author = [author]
+            self.article.author = [author.text.strip()]
         else:
             self.article.author = ["NOT FOUND"]
         topics = article_soup.find_all(class_="article-tag-link")
