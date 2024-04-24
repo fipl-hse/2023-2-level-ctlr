@@ -235,10 +235,12 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
+        url = ''
         links = article_bs.find_all(class_="post-item__title")
         for link in links:
-            url = self.url_pattern + link.find('a').get('href')
-            return url
+            url = link.find('a').get('href')
+        url = self.url_pattern + url
+        return url
 
     def find_articles(self) -> None:
         """
