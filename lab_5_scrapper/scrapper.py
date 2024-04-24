@@ -8,6 +8,7 @@ import pathlib
 import random 
 import re
 import requests
+import shutil
 
 
 from bs4 import BeautifulSoup
@@ -241,28 +242,30 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        urls = article_bs.find_all('a')
-        for link in urls:
+        url = ""
+        links = article_bs.find_all('a')
+        for link in links:
             link = link.get('href')
-            if link.startswith('/news/') and link.endswith('php') :
-                return 'https://www.securitylab.ru' + link
-            return ''
+            if link.startswith('/news/') and link.endswith('php'):
+                url = 'https://www.securitylab.ru' + link
+                return url
+        return url
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
-        seeds = self.get_search_urls()
+        urls = []
+        while len(urls) < self.config.get_num_articles():
+            for url in self.get_search_urls():
+                response = make_request(url, self.config)
 
-        while len(self.urls) < self.config.get_num_articles():
-            for seed in seeds:
-                response = make_request(seed, self.config)
+                if not response.ok:
+                    continue
 
-            if not response.ok:
-                continue
-            article_bs = BeautifulSoup(response.text, "lxml")
-            extracted_url = self._extract_url(article_bs)
-            self.urls.append(extracted_url)            
+                soup = BeautifulSoup(response.text, 'lxml')
+                urls.append(self._extract_url(soup))
+        self.urls.extend(urls)           
 
     def get_search_urls(self) -> list:
         """
@@ -349,10 +352,9 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    if not base_path.exists():
-        base_path.mkdir()
-    base_path.rmdir()
-    base_path.mkdir()
+    if base_path.exists():
+        shutil.rmtree(base_path)
+    base_path.mkdir(parents=True)
 
 def main() -> None:
     """
@@ -362,13 +364,7 @@ def main() -> None:
     configuration = Config(constants.CRAWLER_CONFIG_PATH)
     crawler = Crawler(configuration)
     crawler.find_articles()
-
-    for i, url in enumerate(crawler.urls):
-        parser = HTMLParser(url, i, configuration)
-        article = parser.parse()
-        if isinstance(article, Article):
-            to_raw(article)
-
+    print(crawler.urls)
 
 if __name__ == "__main__":
     main()
