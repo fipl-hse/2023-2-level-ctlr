@@ -235,12 +235,10 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        url = ''
-        links = article_bs.find_all(class_='post-item__title')
+        links = article_bs.find_all(class_="post-item__title")
         for link in links:
-            url = link.find('a').get('href')
-            url = self.url_pattern + url
-        return url
+            url = self.url_pattern + link.find('a').get('href')
+            return url
 
     def find_articles(self) -> None:
         """
@@ -318,7 +316,7 @@ class HTMLParser:
         self.article.title = article_soup.find('h1').text
         date = article_soup.find("time").get('datetime')
         self.article.date = self.unify_date_format(str(date))
-        author = article_soup.find(class_="article-author")
+        author = article_soup.find('p', class_="article-author")
         if author:
             self.article.author = [author.text.strip()]
         else:
