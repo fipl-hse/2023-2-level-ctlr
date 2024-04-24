@@ -256,6 +256,7 @@ class Crawler:
                     break
                 self.urls.append(extracted_url)
                 extracted_url = self._extract_url(soup)
+
             if len(self.urls) == self.config.get_num_articles():
                 break
 
