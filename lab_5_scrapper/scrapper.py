@@ -106,39 +106,39 @@ class Config:
         config = self._extract_config_content()
 
         if not (isinstance(config.seed_urls, list)
-                and all(re.match(r"https://www\.vokrugsveta\.ru/news/page-\d+/", seed_url) for seed_url in config.seed_urls)):
-            raise IncorrectSeedURLError("Seed URL does not match standard pattern.")
+                and all(re.match(r'https://www\.vokrugsveta\.ru/news/page-\d+/', seed_url) for seed_url in config.seed_urls)):
+            raise IncorrectSeedURLError
 
         if not (
                 isinstance(config.total_articles, int)
                 and config.total_articles > 0
         ) or isinstance(config.total_articles, bool):
-            raise IncorrectNumberOfArticlesError("Total number of articles to parse is not integer.")
+            raise IncorrectNumberOfArticlesError
 
         if config.total_articles not in range(1, 151):
-            raise NumberOfArticlesOutOfRangeError("Total number of articles is out of range.")
+            raise NumberOfArticlesOutOfRangeError
 
         if not (
             isinstance(config.headers, dict)
             and all(isinstance(key, str) and isinstance(value, str)
                     for key, value in config.headers.items())
         ):
-            raise IncorrectHeadersError("Headers are not in a form of dictionary.")
+            raise IncorrectHeadersError
 
         if not isinstance(config.encoding, str):
-            raise IncorrectEncodingError("Encoding must be specified as a string.")
+            raise IncorrectEncodingError
 
         if not (
                 isinstance(config.timeout, int)
                 or (0 <= config.timeout <= 60)
         ):
-            raise IncorrectTimeoutError("Timeout value must be a positive integer less than 60.")
+            raise IncorrectTimeoutError
 
         if not (
             isinstance(config.should_verify_certificate, bool)
             and isinstance(config.headless_mode, bool)
         ):
-            raise IncorrectVerifyError("Verify certificate and Headless mode values must be boolean.")
+            raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
         """
