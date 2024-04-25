@@ -21,35 +21,45 @@ from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 
 
 class NumberOfArticlesOutOfRangeError(Exception):
-    pass
+    """
+    Total number of articles is out of range.
+    """
 
 
 class IncorrectNumberOfArticlesError(Exception):
-    pass
+    """
+    Total number of articles to parse is not integer.
+    """
 
 
 class IncorrectHeadersError(Exception):
-    pass
+    """
+    Headers are not in a form of dictionary.
+    """
 
 
 class IncorrectEncodingError(Exception):
-    pass
+    """
+    Encoding must be specified as a string.
+    """
 
 
 class IncorrectTimeoutError(Exception):
-    pass
+    """
+    Timeout value must be a positive integer less than 60.
+    """
 
 
 class IncorrectVerifyError(Exception):
-    pass
+    """
+    Verify certificate and Headless mode values must be boolean.
+    """
 
 
 class IncorrectSeedURLError(Exception):
-    pass
-
-
-class IncorrectHeadlessError(Exception):
-    pass
+    """
+    Seed URL does not match standard pattern.
+    """
 
 
 class Config:
@@ -77,7 +87,6 @@ class Config:
         self._should_verify_certificate = self.config.should_verify_certificate
         self._timeout = self.config.timeout
 
-    @property
     def _extract_config_content(self) -> ConfigDTO:
         """
         Get config values.
@@ -87,16 +96,16 @@ class Config:
         """
 
         with open(self.path_to_config, "r", encoding="utf-8") as config_file:
-            conf = json.load(config_file)
+            config = json.load(config_file)
 
         return ConfigDTO(
-             seed_urls=conf['seed_urls'],
-             total_articles_to_find_and_parse=conf['total_articles_to_find_and_parse'],
-             headers=conf['headers'],
-             encoding=conf['encoding'],
-             timeout=conf['timeout'],
-             should_verify_certificate=conf['should_verify_certificate'],
-             headless_mode=conf['headless_mode']
+             seed_urls=config['seed_urls'],
+             total_articles_to_find_and_parse=config['total_articles_to_find_and_parse'],
+             headers=config['headers'],
+             encoding=config['encoding'],
+             timeout=config['timeout'],
+             should_verify_certificate=config['should_verify_certificate'],
+             headless_mode=config['headless_mode']
           )
 
     def _validate_config_content(self) -> None:
@@ -105,32 +114,32 @@ class Config:
         """
 
         with open(self.path_to_config, 'r', encoding='utf-8') as file:
-            conf = json.load(file)
+            config = json.load(file)
 
-        if not (isinstance(conf['seed_urls'], list)
-                and all(re.match(r'https?://(www.)?', seed_url) for seed_url in conf['seed_urls'])):
+        if not (isinstance(config['seed_urls'], list)
+                and all(re.match(r'https?://(www.)?', seed_url) for seed_url in config['seed_urls'])):
             raise IncorrectSeedURLError
 
-        num_of_a = conf['total_articles_to_find_and_parse']
+        num_of_a = config['total_articles_to_find_and_parse']
         if not isinstance(num_of_a, int) or not num_of_a > 0:
             raise IncorrectNumberOfArticlesError
 
         if not 0 < num_of_a < 150:
             raise NumberOfArticlesOutOfRangeError
 
-        if not isinstance(conf['headers'], dict):
+        if not isinstance(config['headers'], dict):
             raise IncorrectHeadersError
 
-        if not isinstance(conf['encoding'], str):
+        if not isinstance(config['encoding'], str):
             raise IncorrectEncodingError
 
-        if not isinstance(conf['timeout'], int) or not (0 <= conf['timeout'] < 60):
+        if not isinstance(config['timeout'], int) or not (0 <= config['timeout'] < 60):
             raise IncorrectTimeoutError
 
-        if not isinstance(conf['should_verify_certificate'], bool):
+        if not isinstance(config['should_verify_certificate'], bool):
             raise IncorrectVerifyError
 
-        if not isinstance(conf['headless_mode'], bool):
+        if not isinstance(config['headless_mode'], bool):
             raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
