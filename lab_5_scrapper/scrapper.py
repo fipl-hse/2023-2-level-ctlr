@@ -6,10 +6,8 @@ import datetime
 import json
 import pathlib
 import re
-import shutil
 from random import randrange
 from time import sleep
-from pathlib import Path
 from typing import Pattern, Union
 
 import requests
@@ -204,7 +202,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-    sleep(randrange(5))
+    sleep(randrange(3))
     response = requests.get(url=url, headers=config.get_headers(),
                             timeout=config.get_timeout(),
                             verify=config.get_verify_certificate())
@@ -253,17 +251,22 @@ class Crawler:
         """
         Find articles.
         """
-        for seed_url in self._seed_urls:
-            response = make_request(seed_url, self._config)
-            soup = BeautifulSoup(response.text, "lxml")
-            for paragraph in soup.find_all('a'):
-                if len(self.urls) >= self._config.get_num_articles():
-                    return
-                url = self._extract_url(paragraph)
-                if not url or url in self.urls:
-                    continue
+        seed_urls = self.get_search_urls()
+        for seed_url in seed_urls:
+            response = make_request(seed_url, self.config)
 
-                self.urls.append(url)
+            if not response.ok:
+                continue
+
+            article_bs = BeautifulSoup(response.text, 'html.parser')
+            article_url = self._extract_url(article_bs)
+            while article_url:
+                if len(self.urls) == self.config.get_num_articles():
+                    break
+                self.urls.append(article_url)
+                article_url = self._extract_url(article_bs)
+            if len(self.urls) == self.config.get_num_articles():
+                break
 
     def get_search_urls(self) -> list:
         """
@@ -272,7 +275,7 @@ class Crawler:
         Returns:
             list: seed_urls param
         """
-        return self._seed_urls
+        return self.config.get_seed_urls()
 
 
 # 10
@@ -295,7 +298,7 @@ class HTMLParser:
         """
         self.full_url = full_url
         self.article_id = article_id
-        self._config = config
+        self.config = config
         self.article = Article(self.full_url, self.article_id)
 
     def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
@@ -305,6 +308,7 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+
 
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
