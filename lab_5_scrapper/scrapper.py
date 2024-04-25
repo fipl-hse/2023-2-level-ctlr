@@ -239,7 +239,6 @@ class Crawler:
         """
         Find articles.
         """
-        urls = []
         for url in self.get_search_urls():
             response = make_request(url, self.config)
             if not response.ok:
@@ -248,7 +247,7 @@ class Crawler:
             for a in article_bs.find_all('a', class_='dark_link color-theme-target'):
                 if len(self.urls) == self.config.get_num_articles():
                     break
-                if self._extract_url(a) not in urls:
+                if self._extract_url(a) not in self.urls:
                     self.urls.append(self._extract_url(a))
 
     def get_search_urls(self) -> list:
