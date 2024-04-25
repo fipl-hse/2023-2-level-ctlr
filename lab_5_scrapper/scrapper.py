@@ -82,12 +82,12 @@ class Config:
         with open(self.path_to_config, encoding='utf-8') as file:
             config = json.load(file)
         return ConfigDTO(seed_urls=config['seed_urls'],
-                             total_articles_to_find_and_parse=config['total_articles_to_find_and_parse'],
-                             headers=config['headers'],
-                             encoding=config['encoding'],
-                             timeout=config['timeout'],
-                             should_verify_certificate=config['should_verify_certificate'],
-                             headless_mode=config['headless_mode'])
+                         total_articles_to_find_and_parse=config['total_articles_to_find_and_parse'],
+                         headers=config['headers'],
+                         encoding=config['encoding'],
+                         timeout=config['timeout'],
+                         should_verify_certificate=config['should_verify_certificate'],
+                         headless_mode=config['headless_mode'])
 
     def _validate_config_content(self) -> None:
         """
