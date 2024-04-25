@@ -301,7 +301,7 @@ class HTMLParser:
         self.full_url = full_url
         self.article_id = article_id
         self.config = config
-        self.article = Article(self.full_url, self.article_id)
+        self.article = Article(full_url, article_id)
 
     def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
         """
@@ -358,7 +358,7 @@ class HTMLParser:
         for month_ru, month_en in months_dict.items():
             formatted_date = formatted_date.replace(month_ru, month_en)
 
-        self.article.formatted_date = self.unify_date_format(formatted_date)
+        self.article.date = self.unify_date_format(formatted_date)
 
         list_of_keywords = []
         keywords = article_soup.find_all(itemprop="articleSection")
