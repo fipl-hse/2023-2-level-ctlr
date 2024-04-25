@@ -67,7 +67,7 @@ class Config:
 
         self.path_to_config = path_to_config
         self._validate_config_content()
-        self.config = self._extract_config_content()
+        self.config = self._extract_config_content
 
         self._encoding = self.config.encoding
         self._headers = self.config.headers
@@ -77,6 +77,7 @@ class Config:
         self._should_verify_certificate = self.config.should_verify_certificate
         self._timeout = self.config.timeout
 
+    @property
     def _extract_config_content(self) -> ConfigDTO:
         """
         Get config values.
@@ -86,58 +87,50 @@ class Config:
         """
 
         with open(self.path_to_config, "r", encoding="utf-8") as config_file:
-            configuration = json.load(config_file)
+            conf = json.load(config_file)
 
         return ConfigDTO(
-            seed_urls=configuration["seed_urls"],
-            total_articles_to_find_and_parse=configuration["total_articles_to_find_and_parse"],
-            headers=configuration["headers"],
-            encoding=configuration["encoding"],
-            timeout=configuration["timeout"],
-            should_verify_certificate=configuration["should_verify_certificate"],
-            headless_mode=configuration["headless_mode"]
-        )
+             seed_urls=conf['seed_urls'],
+             total_articles_to_find_and_parse=conf['total_articles_to_find_and_parse'],
+             headers=conf['headers'],
+             encoding=conf['encoding'],
+             timeout=conf['timeout'],
+             should_verify_certificate=conf['should_verify_certificate'],
+             headless_mode=conf['headless_mode']
+          )
 
     def _validate_config_content(self) -> None:
         """
         Ensure configuration parameters are not corrupt.
         """
 
-        config = self._extract_config_content()
+        with open(self.path_to_config, 'r', encoding='utf-8') as file:
+            conf = json.load(file)
 
-        if not (isinstance(config.seed_urls, list)
-                and all(re.match(r'https://www\.vokrugsveta\.ru/news/page-\d+/', seed_url) for seed_url in config.seed_urls)):
+        if not (isinstance(conf['seed_urls'], list)
+                and all(re.match(r'https?://(www.)?', seed_url) for seed_url in conf['seed_urls'])):
             raise IncorrectSeedURLError
 
-        if not (
-                isinstance(config.total_articles, int)
-                and config.total_articles > 0
-        ) or isinstance(config.total_articles, bool):
+        num_of_a = conf['total_articles_to_find_and_parse']
+        if not isinstance(num_of_a, int) or not num_of_a > 0:
             raise IncorrectNumberOfArticlesError
 
-        if config.total_articles not in range(1, 151):
+        if num_of_a not in range(1, 151):
             raise NumberOfArticlesOutOfRangeError
 
-        if not (
-            isinstance(config.headers, dict)
-            and all(isinstance(key, str) and isinstance(value, str)
-                    for key, value in config.headers.items())
-        ):
+        if not isinstance(conf['headers'], dict):
             raise IncorrectHeadersError
 
-        if not isinstance(config.encoding, str):
+        if not isinstance(conf['encoding'], str):
             raise IncorrectEncodingError
 
-        if not (
-                isinstance(config.timeout, int)
-                or (0 <= config.timeout <= 60)
-        ):
+        if not isinstance(conf['timeout'], int) or not (0 <= conf['timeout'] < 60):
             raise IncorrectTimeoutError
 
-        if not (
-            isinstance(config.should_verify_certificate, bool)
-            and isinstance(config.headless_mode, bool)
-        ):
+        if not isinstance(conf['should_verify_certificate'], bool):
+            raise IncorrectVerifyError
+
+        if not isinstance(conf['headless_mode'], bool):
             raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
