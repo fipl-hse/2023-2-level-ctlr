@@ -81,14 +81,13 @@ class Config:
         """
         with open(self.path_to_config, encoding='utf-8') as file:
             config = json.load(file)
-        return ConfigDTO(**config)
-    # seed_urls=config['seed_urls'],
-    #                          total_articles_to_find_and_parse=config['total_articles_to_find_and_parse'],
-    #                          headers=config['headers'],
-    #                          encoding=config['encoding'],
-    #                          timeout=config['timeout'],
-    #                          should_verify_certificate=config['should_verify_certificate'],
-    #                          headless_mode=config['headless_mode']
+        return ConfigDTO(seed_urls=config['seed_urls'],
+                             total_articles_to_find_and_parse=config['total_articles_to_find_and_parse'],
+                             headers=config['headers'],
+                             encoding=config['encoding'],
+                             timeout=config['timeout'],
+                             should_verify_certificate=config['should_verify_certificate'],
+                             headless_mode=config['headless_mode'])
 
     def _validate_config_content(self) -> None:
         """
@@ -218,7 +217,8 @@ class Crawler:
             config (Config): Configuration
         """
         self.config = config
-        self.url_pattern = self.config.get_seed_urls()[0].split('/news')[0]
+        self.url_pattern = 'https://academ.info'
+            # self.config.get_seed_urls()[0].split('/news')[0]
         self.urls = []
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
