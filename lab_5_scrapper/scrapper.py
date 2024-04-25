@@ -94,6 +94,8 @@ class Config:
         """
         Ensure configuration parameters are not corrupt.
         """
+        if not isinstance(self.configdto.seed_urls, list):
+            raise IncorrectSeedURLError("seed URL should be a list")
         for seed_url in self.configdto.seed_urls:
             parsed_url = urlparse(seed_url)
             if not parsed_url.scheme or not parsed_url.netloc:
@@ -194,7 +196,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-    time.sleep(random.randrange(4))
+    time.sleep(random.randrange(5))
     return requests.get(url=url,
                         headers=config.get_headers(),
                         timeout=config.get_timeout(),
@@ -372,9 +374,9 @@ def main() -> None:
     for i, full_url in enumerate(crawler.urls, 1):
         parser = HTMLParser(full_url=full_url, article_id=i, config=configuration)
         article = parser.parse()
-        if isinstance(article, Article):
-            to_raw(article)
-            to_meta(article)
+        # if isinstance(article, Article):
+        to_raw(article)
+        to_meta(article)
 
 
 if __name__ == "__main__":
