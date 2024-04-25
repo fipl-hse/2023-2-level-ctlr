@@ -232,24 +232,24 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        url = ''
-        for a in article_bs.find_all('a', class_='dark_link color-theme-target'):
-            url = a['href']
-        return self.url_pattern + url
+        a_tag = article_bs['href']
+        return self.url_pattern + a_tag
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
         urls = []
-        # while len(self.urls) < self.config.get_num_articles():
         for url in self.get_search_urls():
             response = make_request(url, self.config)
             if not response.ok:
                 continue
             article_bs = BeautifulSoup(response.text, 'lxml')
-            urls.append(self._extract_url(article_bs))
-        self.urls.extend(urls)
+            for a in article_bs.find_all('a', class_='dark_link color-theme-target'):
+                if len(self.urls) == self.config.get_num_articles():
+                    break
+                if self._extract_url(a) not in urls:
+                    self.urls.append(self._extract_url(a))
 
     def get_search_urls(self) -> list:
         """
@@ -293,9 +293,9 @@ class HTMLParser:
         """
         intro = article_soup.find('div', class_='introtext')
         div_blocks = article_soup.find('div', class_='content')
-        full_text_from_div = intro.text
+        full_text_from_div = intro.text.strip()
         for div_tag in div_blocks:
-            full_text_from_div += div_tag.text
+            full_text_from_div += div_tag.text.strip()
         self.article.text = full_text_from_div
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:

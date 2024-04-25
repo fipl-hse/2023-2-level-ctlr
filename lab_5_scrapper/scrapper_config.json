@@ -1,5 +1,5 @@
 {
-    "seed_urls": ["https://academ.info/news/",
+    "seed_urls": [
     "https://academ.info/news/?PAGEN_1=2",
     "https://academ.info/news/?PAGEN_1=3",
     "https://academ.info/news/?PAGEN_1=4",
@@ -8,13 +8,16 @@
     "https://academ.info/news/?PAGEN_1=7",
     "https://academ.info/news/?PAGEN_1=8",
     "https://academ.info/news/?PAGEN_1=9",
-    "https://academ.info/news/?PAGEN_1=10"],
+    "https://academ.info/news/?PAGEN_1=10",
+    "https://academ.info/news/?PAGEN_1=2"
+    ],
     "headers": {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
         "User-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
         "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
-        "Cookie": "stg_traffic_source_priority=4; stg_externalReferrer=https://www.google.com/; stg_last_interaction=Mon%2C%2008%20Apr%202024%2009:20:48%20GMT; stg_returning_visitor=Mon%2C%2008%20Apr%202024%2009:20:48%20GMT"},
-    "total_articles_to_find_and_parse": 10,
+        "Cookie": "stg_traffic_source_priority=4; stg_externalReferrer=https://www.google.com/; stg_last_interaction=Mon%2C%2008%20Apr%202024%2009:20:48%20GMT; stg_returning_visitor=Mon%2C%2008%20Apr%202024%2009:20:48%20GMT"
+    },
+    "total_articles_to_find_and_parse": 13,
     "encoding": "utf-8",
     "timeout": 5,
     "should_verify_certificate": true,
