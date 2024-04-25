@@ -115,7 +115,7 @@ class Config:
         if not isinstance(num_of_a, int) or not num_of_a > 0:
             raise IncorrectNumberOfArticlesError
 
-        if num_of_a not in range(1, 151):
+        if not 0 < num_of_a < 150:
             raise NumberOfArticlesOutOfRangeError
 
         if not isinstance(conf['headers'], dict):
