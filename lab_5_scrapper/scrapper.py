@@ -103,34 +103,42 @@ class Config:
         Ensure configuration parameters are not corrupt.
         """
 
-        with open(self.path_to_config, 'r', encoding='utf-8') as file:
-            conf = json.load(file)
+        config = self._extract_config_content()
 
-        if not (isinstance(conf['seed_urls'], list)
-                and all(re.match(r'https?://(www.)?', seed_url) for seed_url in conf['seed_urls'])):
-            raise IncorrectSeedURLError
+        if not (isinstance(config.seed_urls, list)
+                and all(re.match(r"https://www\.vokrugsveta\.ru/news/page-\d+/", seed_url) for seed_url in config.seed_urls)):
+            raise IncorrectSeedURLError("Seed URL does not match standard pattern.")
 
-        num_of_a = conf['total_articles_to_find_and_parse']
-        if not isinstance(num_of_a, int) or not num_of_a > 0:
-            raise IncorrectNumberOfArticlesError
+        if not (
+                isinstance(config.total_articles, int)
+                and config.total_articles > 0
+        ) or isinstance(config.total_articles, bool):
+            raise IncorrectNumberOfArticlesError("Total number of articles to parse is not integer.")
 
-        if num_of_a not in range(1, 151):
-            raise NumberOfArticlesOutOfRangeError
+        if config.total_articles not in range(1, 151):
+            raise NumberOfArticlesOutOfRangeError("Total number of articles is out of range.")
 
-        if not isinstance(conf['headers'], dict):
-            raise IncorrectHeadersError
+        if not (
+            isinstance(config.headers, dict)
+            and all(isinstance(key, str) and isinstance(value, str)
+                    for key, value in config.headers.items())
+        ):
+            raise IncorrectHeadersError("Headers are not in a form of dictionary.")
 
-        if not isinstance(conf['encoding'], str):
-            raise IncorrectEncodingError
+        if not isinstance(config.encoding, str):
+            raise IncorrectEncodingError("Encoding must be specified as a string.")
 
-        if not isinstance(conf['timeout'], int) or not (0 <= conf['timeout'] < 60):
-            raise IncorrectTimeoutError
+        if not (
+                isinstance(config.timeout, int)
+                or (0 <= config.timeout <= 60)
+        ):
+            raise IncorrectTimeoutError("Timeout value must be a positive integer less than 60.")
 
-        if not isinstance(conf['should_verify_certificate'], bool):
-            raise IncorrectVerifyError
-
-        if not isinstance(conf['headless_mode'], bool):
-            raise IncorrectVerifyError
+        if not (
+            isinstance(config.should_verify_certificate, bool)
+            and isinstance(config.headless_mode, bool)
+        ):
+            raise IncorrectVerifyError("Verify certificate and Headless mode values must be boolean.")
 
     def get_seed_urls(self) -> list[str]:
         """
