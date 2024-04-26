@@ -6,10 +6,11 @@ import datetime
 import json
 import pathlib
 import re
-import signal
 import shutil
+import signal
 from random import randrange
 from time import sleep
+from types import FrameType
 from typing import Pattern, Union
 
 import requests
@@ -477,12 +478,12 @@ class Killer:
     """
     Class to see if the system is shut down or script is interrupted.
     """
-    def __init__(self):
+    def __init__(self) -> None:
         signals = [signal.SIGINT, signal.SIGTERM, signal.SIGBREAK]
         for sig in signals:
             signal.signal(sig, self.handler)
 
-    def handler(self, signum, frame):
+    def handler(self, signum: int, frame: FrameType | None) -> None:
         raise ProgramKilledException
 
 
