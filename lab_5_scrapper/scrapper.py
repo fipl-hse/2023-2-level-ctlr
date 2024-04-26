@@ -518,7 +518,6 @@ def main_recursive() -> None:
     configuration = Config(path_to_config=constants.CRAWLER_CONFIG_PATH)
 
     prepare_environment(constants.ASSETS_PATH)
-    # if I want to start all over again
     crawler = CrawlerRecursive(config=configuration)
 
     try:
@@ -527,16 +526,16 @@ def main_recursive() -> None:
     except ProgramKilledException:
         save_all_urls(crawler)
     except EnoughArticlesException:
-        print('Ok, start parsing.')
         for index, url in enumerate(crawler.urls):
             parser = HTMLParser(full_url=url, article_id=index + 1, config=configuration)
             article = parser.parse()
             if isinstance(article, Article):
                 to_raw(article)
                 to_meta(article)
-        print('Yass!')
+
+        crawled = pathlib.Path('already_crawled_urls.txt')
+        crawled.unlink()  # clear crawler for the next run.
 
 
 if __name__ == "__main__":
     main()
-    # main_recursive()
