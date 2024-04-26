@@ -227,29 +227,32 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        url = ""
-
-        entry_content = article_bs.find("div", class_="second-news large-12 columns padding-left-0")
-        if entry_content:
-            url_element = entry_content.find("a")
-            if url_element:
-                url = url_element.get("href")
-            return url
+        link = article_bs.get('href')
+        if link and '/news/' in link:
+            if 'https' in link:
+                return link
+            else:
+                return self.url_pattern + str(article_bs.get('href'))
+        return ''
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
-        seed_urls = self.get_search_urls()
+        for url in self.get_search_urls():
+            response = make_request(url, self.config)
 
-        for seed_url in seed_urls:
-            response = make_request(seed_url, self.config)
-            if not response.status_code == 200:
+            if not response.ok:
                 continue
 
-            article_bs = BeautifulSoup(response.text, "html.parser")
-            urls = [self._extract_url(article_bs) for _ in range(1)]
-            self.urls.extend(urls)
+            soup = BeautifulSoup(response.text, 'lxml')
+
+            for div in soup.find(class_="second-news large-12 columns padding-left-0").find_all("a"):
+                if self._extract_url(div) and self._extract_url(div) not in self.urls:
+                    self.urls.append(self._extract_url(div))
+
+                if len(self.urls) >= self.config.get_num_articles():
+                    return
 
     def get_search_urls(self) -> list:
         """
@@ -291,13 +294,10 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         raw_text = ""
-        headline = article_soup.find("h2", class_="headline")
+        headline = article_soup.find(
+            class_="large-9 large-offset-1 medium-10 medium-offset-1 small-12 columns news-text js-mediator-article")
         if headline:
             raw_text += f"{headline.text.strip()}\n\n"
-        for element in article_soup.find_all(["p", "div.headline"]):
-            text = element.get_text(separator=" ", strip=True)
-            if text:
-                raw_text += f"{text}\n\n"
 
         self.article.text = raw_text
 
@@ -308,6 +308,15 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        self.article.author = ["NOT FOUND"]  # there are not any authors in the articles in my web-site,
+        # at least I didn't find any
+        # What should I do in this case?
+        post_titles = article_soup.find(class_='news-title')
+        if post_titles:
+            self.article.title = post_titles.text.strip()
+        date = article_soup.find(class_='meta-date')
+        if date:
+            self.article.date = date
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -328,6 +337,7 @@ class HTMLParser:
             Union[Article, bool, list]: Article instance
         """
         response = make_request(self.full_url, self.config)
+
         if response is None or not response.ok:
             return False
 
@@ -335,7 +345,7 @@ class HTMLParser:
         article_bs = BeautifulSoup(src, 'lxml')
 
         self._fill_article_with_text(article_bs)
-        self._fill_article_with_meta_information(article_bs)  # Implement this method as discussed before
+        self._fill_article_with_meta_information(article_bs)
 
         return self.article
 
@@ -368,7 +378,7 @@ def main() -> None:
         parser = HTMLParser(full_url=url, article_id=index + 1, config=configuration)
         article = parser.parse()
         to_raw(article)
-
+        to_meta(article)
 
 
 if __name__ == "__main__":
