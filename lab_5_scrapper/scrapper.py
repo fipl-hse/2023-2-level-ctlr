@@ -104,7 +104,7 @@ class Config:
             raise IncorrectSeedURLError("Seed URL does not match standard pattern 'https?://(www.)?'")
 
         for seed_url in self.config.seed_urls:
-            if not re.match(r"https?://(www.)?", seed_url):
+            if not re.match(r"https?://(www.)mk.ru/news/", seed_url):
                 raise IncorrectSeedURLError("Seed URL does not match standard pattern 'https?://(www.)?'")
 
         if not isinstance(self.config.total_articles, int) or self.config.total_articles <= 0:
