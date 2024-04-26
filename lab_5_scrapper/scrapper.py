@@ -380,39 +380,24 @@ class CrawlerRecursive(Crawler):
     def __init__(self, configuration: Config) -> None:
         super().__init__(configuration)
         self.start_url = 'https://www.securitylab.ru/news/547738.php' #self.config.get_seed_urls()[0]
-        self.urls = []
         self.driver = webdriver.Edge()
-        self.texts = []
-        self.scroll_timeout = 5
+        self.scroll_timeout = self.config.config_dto.timeout
 
 
-    #def find_articles(self) -> None:
-
-        #return super().find_articles()
-
-
-    def scroll(self) -> None: 
+    def find_articles(self) -> None:
         page_count = 0
         domain = 'https://www.securitylab.ru'
         url = self.start_url
 
-        while page_count < self.scroll_timeout:
+        while page_count < self.self.config.get_num_articles():
             response = requests.get(domain + url, self.config.config_dto.headers)
-            print(self.config.config_dto.headers)
             soup = BeautifulSoup(response.text, 'lxml')
-            #future def extract()
-            links = soup.find_all('a')
-            for link in links:
-                link = link.get('href')
-                if link and link.startswith('/news/') and link.endswith('php') and link not in self.urls:
-                    url = link
-                    self.urls.append(url)
-                    self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-                    break
+            self._extract_url(soup).append(self.urls)
+            self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
             sleep(self.timeout)
             page_count += 1
         self.driver.quit()
-
+        print(self.urls)
 
 def main() -> None:
     """
@@ -435,6 +420,16 @@ def recursive_main() -> None:
     Entrypoint for scrapper module.
     """
     prepare_environment(constants.ASSETS_PATH)
+    configuration = Config(constants.CRAWLER_CONFIG_PATH)
+    crawler = Crawler(configuration)
+    crawler.find_articles()
+
+    for i, url in enumerate(crawler.urls):
+        parser = HTMLParser(url, i, configuration)
+        article = parser.parse()
+        if isinstance(article, Article):
+            to_raw(article)
+            to_meta(article)
 
 if __name__ == "__main__":
-    main()
+    recursive_main()
