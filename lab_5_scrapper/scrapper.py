@@ -127,7 +127,6 @@ class Config:
                     not isinstance(config['headless_mode'], bool)):
                 raise IncorrectVerifyError
 
-
     def get_seed_urls(self) -> list[str]:
         """
         Retrieve seed urls.
@@ -228,8 +227,7 @@ class Crawler:
         """
         self.urls = []
         self.config = config
-        self.url_pattern = 'https://www.comnews.ru/news'
-
+        self.url_pattern = 'https://www.comnews.ru'
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -242,7 +240,7 @@ class Crawler:
             str: Url from HTML
         """
         url = " "
-        links = article_bs.find_all("a", class_="node")
+        links = article_bs.find_all("a", class_="field-items")
         for link in links:
             url = link["href"]
             if url not in self.urls:
@@ -307,11 +305,13 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        texts = []
-        text_paragraph = article_soup.find_all(class_='field-items')
-        for paragraph in text_paragraph:
-            texts.append(paragraph.text)
-        self.article.text = ''.join(texts)
+        text_elements = article_soup.find_all('div')
+        text = ''
+        for element in text_elements:
+            if not element.string:
+                continue
+            text += f'\n{element.string}'
+        self.article.text = text
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -369,6 +369,7 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     base_path.mkdir(parents=True, exist_ok=True)
     for f in base_path.iterdir():
         f.unlink(missing_ok=True)
+
 
 def main() -> None:
     """
