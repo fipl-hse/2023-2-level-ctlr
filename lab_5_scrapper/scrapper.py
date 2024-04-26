@@ -196,7 +196,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-    time.sleep(random.randrange(5))
+    time.sleep(random.randrange(3))
     return requests.get(url=url,
                         headers=config.get_headers(),
                         timeout=config.get_timeout(),
@@ -290,12 +290,13 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        full_text_from_div = []
         intro = article_soup.find('div', class_='introtext')
         div_blocks = article_soup.find('div', class_='content')
-        full_text_from_div = intro.text.strip()
+        full_text_from_div.append(intro.text.strip())
         for div_tag in div_blocks:
-            full_text_from_div += div_tag.text.strip()
-        self.article.text = full_text_from_div
+            full_text_from_div.append(div_tag.text.strip())
+        self.article.text = ''.join(full_text_from_div)
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
