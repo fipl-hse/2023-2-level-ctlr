@@ -342,7 +342,7 @@ class HTMLParser:
         if title:
             self.article.title = title
 
-        date = article_soup.find(class_='ds-article-header-date-and-stats__date').text.strip()
+        date = article_soup.find('span', class_='ds-article-header-date-and-stats__date').text.strip()
         parts = date.split()
         month = parts[1].capitalize()
         formatted_date = f"{parts[0]} {month} {parts[2]}"
@@ -367,13 +367,10 @@ class HTMLParser:
 
         self.article.date = self.unify_date_format(formatted_date)
 
-        list_of_keywords = []
         keywords = article_soup.find_all(itemprop="articleSection")
 
         for i in keywords:
-            list_of_keywords.append(i.text)
-
-        self.article.topics = list_of_keywords
+            self.article.topics.append(i.text)
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
