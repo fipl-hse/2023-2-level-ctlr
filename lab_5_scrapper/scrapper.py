@@ -231,7 +231,7 @@ class Crawler:
         link = article_bs.get('href')
         if link and '/news/' in link:
             if 'https' in link:
-                return link
+                return str(link)
             else:
                 return self.url_pattern + str(article_bs.get('href'))
         return ''
@@ -402,8 +402,9 @@ def main() -> None:
     for index, url in enumerate(urls):
         parser = HTMLParser(full_url=url, article_id=index + 1, config=configuration)
         article = parser.parse()
-        to_raw(article)
-        to_meta(article)
+        if isinstance(article, Article):
+            to_raw(article)
+            to_meta(article)
 
 
 if __name__ == "__main__":
