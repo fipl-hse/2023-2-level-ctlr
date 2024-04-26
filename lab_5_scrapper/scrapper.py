@@ -298,10 +298,12 @@ class HTMLParser:
         """
         topics = article_soup.find_all('a', class_='breadcrumbs__link')
         for t in topics:
-            self.article.topics.append(t.text)
+            if t:
+                self.article.topics.append(t.text)
         self.article.title = article_soup.title.text
         date = article_soup.find('div', attrs={'class': ['sb-item__date', 'sb-item__time']})
-        self.article.date = self.unify_date_format(date.text)
+        if date:
+            self.article.date = self.unify_date_format(date.text)
         self.article.author = ['NOT FOUND']
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
@@ -326,8 +328,8 @@ class HTMLParser:
                                   minute=minute)
         else:
             day, mon, year = date_str.replace(',', '').split(' ')
-            d = f'{day} {months[mon]} {year}'
-            d = datetime.datetime.strptime(d, "%d %b %Y")
+            d_str = f'{day} {months[mon]} {year}'
+            d = datetime.datetime.strptime(d_str, "%d %b %Y")
         return d
 
     def parse(self) -> Union[Article, bool, list]:
