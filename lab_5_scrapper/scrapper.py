@@ -313,7 +313,6 @@ class HTMLParser:
                 texts.append(p_bs.text)
         self.article.text = '\n'.join(texts)
 
-
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
         Find meta information of article.
@@ -326,6 +325,11 @@ class HTMLParser:
         if header:
             self.article.title = header
 
+        author = article_soup.find('div', itemprop="author")
+        if author:
+            self.article.author = [author]
+        else:
+            self.article.author = ['NOT FOUND']
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -380,6 +384,8 @@ def main() -> None:
     for index, url in enumerate(all_urls):
         parser = HTMLParser(full_url=url, article_id=index, config=config)
         article = parser.parse()
+        to_raw(article)
+        to_meta(article)
 
 
 if __name__ == "__main__":
