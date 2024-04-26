@@ -322,10 +322,10 @@ class HTMLParser:
         if title:
             self.article.title = title.text.strip()
 
-        date = article_soup.find('time', class_='meta__text')
+        date = article_soup.find(itemprop='datePublished')
         if date:
             article_date = date.text
-            formatted_date = ''.join(article_date.split(' в '))
+            formatted_date = datetime.datetime.strptime(article_date, "%Y-%m-%dT%H:%M:%S%z").strftime("%Y.%m.%d %H:%M")
             self.article.date = self.unify_date_format(formatted_date)
 
         tags = article_soup.find_all('a', class_='article__tag-item')
