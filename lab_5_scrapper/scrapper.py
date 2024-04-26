@@ -252,7 +252,7 @@ class Crawler:
 
         for seed_url in seed_urls:
             response = make_request(seed_url, self.config)
-            if response.status_code < 400:
+            if response.ok:
                 soup = BeautifulSoup(response.text, 'html.parser')
                 for i in range(10):
                     urls = self._extract_url(soup)
@@ -285,6 +285,10 @@ class HTMLParser:
             article_id (int): Article id
             config (Config): Configuration
         """
+        self.full_url = full_url
+        self.article_id = article_id
+        self.config = config
+        self.article = Article(full_url, article_id)
 
     def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
         """
@@ -293,6 +297,24 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        header = article_soup.find('h1')
+        if header:
+            print(f'Found a header: {header}')
+        else:
+            print('Header not found')
+
+        all_body = article_soup.find('span', itemprop='articleBody')
+
+        texts = []
+        if all_body:
+            all_ps_style = all_body.find_all('p', style="text-align: justify;")
+            all_ps = all_body.find_all('p')
+            texts = []
+            for p_bs_style in all_ps_style:
+                texts.append(p_bs_style.text)
+            for p_bs in all_ps:
+                texts.append(p_bs.text)
+        self.article.text = '\n'.join(texts)
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -320,6 +342,12 @@ class HTMLParser:
         Returns:
             Union[Article, bool, list]: Article instance
         """
+        response = make_request(self.full_url, self.config)
+        if response.ok:
+            article_bs = BeautifulSoup(response.text, 'html.parser')
+            self._fill_article_with_text(article_bs)
+
+        return self.article
 
 
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
@@ -330,10 +358,11 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
     if not base_path.exists():
-        base_path.mkdir(exist_ok=True,
-                        parents=True)
-    shutil.rmtree(base_path)
-
+        base_path.mkdir(parents=True)
+    if base_path.exists():
+        shutil.rmtree(base_path)
+    base_path.mkdir(exist_ok=True,
+                    parents=True)
 
 def main() -> None:
     """
