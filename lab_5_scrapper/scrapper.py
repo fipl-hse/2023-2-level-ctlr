@@ -238,6 +238,7 @@ class Crawler:
         link = article_bs.find('a', class_="post-item-link")
         if link:
             return self.url_pattern + link.get('href')
+        return ''
 
     def find_articles(self) -> None:
         """
