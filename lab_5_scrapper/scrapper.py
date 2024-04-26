@@ -13,6 +13,8 @@ import shutil
 import requests
 import datetime
 from core_utils.article.article import Article
+from core_utils.article.io import to_raw, to_meta
+from core_utils.constants import CRAWLER_CONFIG_PATH, ASSETS_PATH
 
 
 class IncorrectSeedURLError(Exception):
@@ -297,11 +299,6 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        header = article_soup.find('h1')
-        if header:
-            print(f'Found a header: {header}')
-        else:
-            print('Header not found')
 
         all_body = article_soup.find('span', itemprop='articleBody')
 
@@ -316,6 +313,7 @@ class HTMLParser:
                 texts.append(p_bs.text)
         self.article.text = '\n'.join(texts)
 
+
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
         Find meta information of article.
@@ -323,6 +321,11 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+
+        header = article_soup.find('h1')
+        if header:
+            self.article.title = header
+
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -346,7 +349,7 @@ class HTMLParser:
         if response.ok:
             article_bs = BeautifulSoup(response.text, 'html.parser')
             self._fill_article_with_text(article_bs)
-
+            self._fill_article_with_meta_information(article_bs)
         return self.article
 
 
@@ -368,6 +371,15 @@ def main() -> None:
     """
     Entrypoint for scrapper module.
     """
+    config = Config(path_to_config=CRAWLER_CONFIG_PATH)
+    prepare_environment(base_path=ASSETS_PATH)
+
+    crawler = Crawler(config=config)
+    crawler.find_articles()
+    all_urls = crawler.urls
+    for index, url in enumerate(all_urls):
+        parser = HTMLParser(full_url=url, article_id=index, config=config)
+        article = parser.parse()
 
 
 if __name__ == "__main__":
