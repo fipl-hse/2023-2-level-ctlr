@@ -316,9 +316,6 @@ class HTMLParser:
         post_titles = article_soup.find(class_='news-title')
         if post_titles:
             self.article.title = post_titles.text.strip()
-        date = article_soup.find(class_='meta-date')
-        if date:
-            self.article.date = date
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
