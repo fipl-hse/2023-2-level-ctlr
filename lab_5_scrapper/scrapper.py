@@ -12,7 +12,10 @@ from random import randrange
 
 from bs4 import BeautifulSoup
 
+import core_utils
+from core_utils import constants
 from core_utils.article.article import Article
+from core_utils.article.io import to_raw
 from core_utils.config_dto import ConfigDTO
 import datetime
 
@@ -23,37 +26,37 @@ class IncorrectSeedURLError(Exception):
     """
 
 
-class IncorrectNumberOfArticlesError:
+class IncorrectNumberOfArticlesError(Exception):
     """
     Total number of articles to parse is not integer
     """
 
 
-class NumberOfArticlesOutOfRangeError:
+class NumberOfArticlesOutOfRangeError(Exception):
     """
     Total number of articles is out of range from 1 to 150
     """
 
 
-class IncorrectHeadersError:
+class IncorrectHeadersError(Exception):
     """
     Headers are not in a form of dictionary
     """
 
 
-class IncorrectEncodingError:
+class IncorrectEncodingError(Exception):
     """
     Encoding must be specified as a string
     """
 
 
-class IncorrectTimeoutError:
+class IncorrectTimeoutError(Exception):
     """
     Timeout value must be a positive integer less than 60
     """
 
 
-class IncorrectVerifyError:
+class IncorrectVerifyError(Exception):
     """
  Verify certificate value must either be True or False
     """
@@ -74,6 +77,13 @@ class Config:
         self.path_to_config = path_to_config
         self._validate_config_content()
         self.config = self._extract_config_content()
+        self._seed_urls = self.config.seed_urls
+        self._num_articles = self.config.total_articles
+        self._headers = self.config.headers
+        self._encoding = self.config.encoding
+        self._timeout = self.config.timeout
+        self._should_verify_certificate = self.config.should_verify_certificate
+        self._headless_mode = self.config.headless_mode
 
     def _extract_config_content(self) -> ConfigDTO:
         """
@@ -116,7 +126,7 @@ class Config:
         if not isinstance(config.encoding, str):
             raise IncorrectEncodingError
 
-        if not (isinstance(config.timeout, int) and 0 > config.timeout > 60):
+        if not (isinstance(config.timeout, int) and 0 < config.timeout < 60):
             raise IncorrectTimeoutError
 
         if not isinstance(config.should_verify_certificate, bool):
@@ -239,6 +249,15 @@ class Crawler:
         """
         Find articles.
         """
+        seeds = self.config.get_seed_urls()
+        for seed in seeds:
+            response = make_request(seed, self.config)
+            if not response.ok:
+                continue
+            soup = BeautifulSoup(response.text, 'lxml')
+            while len(self.urls) < self.config.get_num_articles():
+                article_url = self._extract_url(soup)
+                self.urls.append(article_url)
 
     def get_search_urls(self) -> list:
         """
@@ -267,6 +286,10 @@ class HTMLParser:
             article_id (int): Article id
             config (Config): Configuration
         """
+        self.full_url = full_url
+        self.article_id = article_id
+        self.config = config
+        self.article = core_utils.article.article.Article(self.full_url, self.article_id)
 
     def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
         """
@@ -275,6 +298,18 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        article = ''
+        raw_article = article_soup.find(class_='article_detail__text')
+        table_tag = raw_article.find('table')
+        if table_tag:
+            raw_article.table.extract()
+        div_tag = raw_article.find('div')
+        if div_tag:
+            raw_article.div.extract()
+        for block in raw_article:
+            if block.text != '\n':
+                article += block.text
+        self.article.text = article
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -302,6 +337,12 @@ class HTMLParser:
         Returns:
             Union[Article, bool, list]: Article instance
         """
+        response = make_request(self.full_url, self.config)
+        if response.ok:
+            article_bs = BeautifulSoup(response.text, 'lxml')
+            self._fill_article_with_text(article_bs)
+            self._fill_article_with_meta_information(article_bs)
+        return self.article
 
 
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
@@ -321,6 +362,17 @@ def main() -> None:
     """
     Entrypoint for scrapper module.
     """
+    config = Config(path_to_config=constants.CRAWLER_CONFIG_PATH)
+    prepare_environment(base_path=constants.ASSETS_PATH)
+    crawler = Crawler(config)
+    crawler.find_articles()
+
+    for i, url in enumerate(crawler.urls):
+        parser = HTMLParser(full_url=url, article_id=i + 1, config=config)
+        article = parser.parse()
+        if isinstance(article, Article):
+            to_raw(article)
+            # to_meta(article)
 
 
 if __name__ == "__main__":
