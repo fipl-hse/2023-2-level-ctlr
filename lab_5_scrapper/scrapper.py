@@ -258,8 +258,6 @@ class Crawler:
                 if len(self.urls) == self.config.get_num_articles():
                     break
                 self.urls.append(extracted_url)
-                response = make_request(extracted_url, self.config)
-                soup = BeautifulSoup(response.text, 'lxml')
                 extracted_url = self._extract_url(soup)
                 if len(self.urls) == self.config.get_num_articles():
                     break
