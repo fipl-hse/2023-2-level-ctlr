@@ -229,10 +229,10 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        url = article_bs.get('href')
-        if url and '/news/' in url:
-            if 'https' in url:
-                return url
+        link = article_bs.get('href')
+        if link and '/news/' in link:
+            if 'https' in link:
+                return link
             else:
                 return self.url_pattern + str(article_bs.get('href'))
         return ''
