@@ -214,7 +214,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-    sleep(randrange(5))
+    sleep(randrange(3))
 
     return requests.get(
         url=url,
