@@ -6,10 +6,10 @@ import datetime
 import json
 import pathlib
 import random
+import re
 import shutil
 import time
 from typing import Pattern, Union
-from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -65,11 +65,11 @@ class Config:
         self._validate_config_content()
 
         self._seed_urls = self.configdto.seed_urls
-        self._num_articles = self.configdto.total_articles
         self._headers = self.configdto.headers
+        self._num_articles = self.configdto.total_articles
         self._encoding = self.configdto.encoding
         self._timeout = self.configdto.timeout
-        self._verify = self.configdto.should_verify_certificate
+        self._should_verify_certificate = self.configdto.should_verify_certificate
         self._headless_mode = self.configdto.headless_mode
 
     def _extract_config_content(self) -> ConfigDTO:
@@ -82,13 +82,6 @@ class Config:
         with open(self.path_to_config, encoding='utf-8') as file:
             config = json.load(file)
         return ConfigDTO(**config)
-            # seed_urls=config['seed_urls'],
-            #              total_articles_to_find_and_parse=config['total_articles_to_find_and_parse'],
-            #              headers=config['headers'],
-            #              encoding=config['encoding'],
-            #              timeout=config['timeout'],
-            #              should_verify_certificate=config['should_verify_certificate'],
-            #              headless_mode=config['headless_mode'])
 
     def _validate_config_content(self) -> None:
         """
@@ -97,8 +90,7 @@ class Config:
         if not isinstance(self.configdto.seed_urls, list):
             raise IncorrectSeedURLError("seed URL should be a list")
         for seed_url in self.configdto.seed_urls:
-            parsed_url = urlparse(seed_url)
-            if not parsed_url.scheme or not parsed_url.netloc:
+            if not re.match(r'https?://(www.)?academ\.info/news', seed_url):
                 raise IncorrectSeedURLError("seed URL does not match standard pattern 'https?://(www.)?'")
 
         if not isinstance(self.configdto.total_articles, int) or \
@@ -173,7 +165,7 @@ class Config:
         Returns:
             bool: Whether to verify certificate or not
         """
-        return self._verify
+        return self._should_verify_certificate
 
     def get_headless_mode(self) -> bool:
         """
@@ -196,7 +188,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-    time.sleep(random.randrange(3))
+    time.sleep(random.randrange(1, 4))
     return requests.get(url=url,
                         headers=config.get_headers(),
                         timeout=config.get_timeout(),
@@ -219,7 +211,6 @@ class Crawler:
         """
         self.config = config
         self.url_pattern = 'https://academ.info'
-            # self.config.get_seed_urls()[0].split('/news')[0]
         self.urls = []
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
@@ -309,7 +300,7 @@ class HTMLParser:
         for t in topics:
             self.article.topics.append(t.text)
         self.article.title = article_soup.title.text
-        date = article_soup.find('div', class_='sb-item__date')
+        date = article_soup.find('div', attrs={'class': ['sb-item__date', 'sb-item__time']})
         self.article.date = self.unify_date_format(date.text)
         self.article.author = ['NOT FOUND']
 
@@ -323,15 +314,21 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
-        d = ''
         months = {"января": "Jan", "февраля": "Feb", "марта": "Mar",
                   "апреля": "Apr", "мая": "May", "июня": "Jun", "июля": "Jul",
                   "августа": "Aug", "сентября": "Sep", "октября": "Oct", "ноября": "Nov",
                   "декабря": "Dec"}
-        for k, v in months.items():
-            if k in date_str:
-                d = date_str.replace(k, v)
-        return datetime.datetime.strptime(d, "%d %b, %Y")
+        if ":" in date_str:
+            today = datetime.date.today()
+            hour, minute = map(int, date_str.split(":"))
+            d = datetime.datetime(year=today.year, month=today.month,
+                                  day=today.day, hour=hour,
+                                  minute=minute)
+        else:
+            day, mon, year = date_str.replace(',', '').split(' ')
+            d = f'{day} {months[mon]} {year}'
+            d = datetime.datetime.strptime(d, "%d %b %Y")
+        return d
 
     def parse(self) -> Union[Article, bool, list]:
         """
