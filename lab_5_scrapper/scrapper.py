@@ -237,7 +237,7 @@ class Crawler:
         """
         links = article_bs.find_all('div', class_="post-item")
         for link in links:
-            url = str(self.url_pattern + link.find('a').get('href'))
+            url = self.url_pattern + link.find('a').get('href')
             if url not in self.urls:
                 break
         else:
@@ -264,7 +264,6 @@ class Crawler:
                 extracted_url = self._extract_url(soup)
                 if len(self.urls) == self.config.get_num_articles():
                     break
-
     def get_search_urls(self) -> list:
         """
         Get seed_urls param.
