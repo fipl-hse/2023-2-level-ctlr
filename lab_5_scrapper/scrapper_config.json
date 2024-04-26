@@ -1,5 +1,5 @@
 {
-    "seed_urls": ["https://www.mk.ru/news/", "https://www.mk.ru/news/2/", "https://www.mk.ru/news/3/", "https://www.mk.ru/news/4/", "https://www.mk.ru/news/5/"],
+    "seed_urls": ["https://www.mk.ru/news/3/", "https://www.mk.ru/news/4/", "https://www.mk.ru/news/5/", "https://www.mk.ru/news/6/", "https://www.mk.ru/news/7/"],
     "headers": {
     "cookie": "stg_traffic_source_priority=4; stg_externalReferrer=https://www.google.com/; stg_last_interaction=Mon%2C%2008%20Apr%202024%2009:22:24%20GMT; stg_returning_visitor=Mon%2C%2008%20Apr%202024%2009:22:24%20GMT",
     "accept-language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",

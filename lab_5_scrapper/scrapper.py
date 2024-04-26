@@ -15,7 +15,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from core_utils.article.article import Article
-from core_utils.article.io import (to_raw)
+from core_utils.article.io import to_meta, to_raw
 from core_utils.config_dto import ConfigDTO
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 
@@ -201,7 +201,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-    sleep(randrange(7))
+    sleep(randrange(3))
     return requests.get(
         url=url,
         timeout=config.get_timeout(),
@@ -236,7 +236,7 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        tags = article_bs.find_all('a', class_='listing-preview__content')
+        tags = article_bs.find_all('a', class_='news-listing__item-link')
         url = ''
         for element in tags:
             url = element['href']
@@ -246,15 +246,18 @@ class Crawler:
         """
         Find articles.
         """
-        for url in self.get_search_urls():
-            response = make_request(url, self.config)
-            if not response.ok:
-                continue
-            article_bs = BeautifulSoup(response.text, "lxml")
-            for i in range(30):
-                extracted_url = self._extract_url(article_bs)
-                if extracted_url:
-                    self.urls.append(extracted_url)
+        urls = []
+        while len(urls) < self.config.get_num_articles():
+            for url in self.get_search_urls():
+                response = make_request(url, self.config)
+
+                if not response.ok:
+                    continue
+
+                soup = BeautifulSoup(response.text, 'lxml')
+                urls.append(self._extract_url(soup))
+
+        self.urls.extend(urls)
 
     def get_search_urls(self) -> list:
         """
@@ -309,13 +312,15 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        author = article_soup.find("li", itemprop="author").text.strip()
-        if isinstance(author, str) and author:
-            self.article.author = [author]
+        author = article_soup.find("li", itemprop="author")
+        if author:
+            self.article.author = [author.text.strip()]
         else:
             self.article.author = ["NOT FOUND"]
 
-        self.article.title = article_soup.find(itemprop="headline").text.strip()
+        title = article_soup.find(itemprop="headline")
+        if title:
+            self.article.title = title.text.strip()
 
         date = article_soup.find('time', class_='meta__text')
         if date:
@@ -375,11 +380,12 @@ def main() -> None:
     crawler.find_articles()
     prepare_environment(ASSETS_PATH)
 
-    for index, url in enumerate(crawler.get_search_urls()):
+    for index, url in enumerate(crawler.urls, 1):
         parser = HTMLParser(url, index, config)
         article = parser.parse()
         if isinstance(article, Article):
             to_raw(article)
+            to_meta(article)
 
 
 if __name__ == "__main__":
