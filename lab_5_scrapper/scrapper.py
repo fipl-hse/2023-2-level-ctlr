@@ -235,13 +235,13 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        url = ''
-        links = article_bs.find_all('a', class_="post-item-link")
+        links = article_bs.find_all('div', class_="post-item")
         for link in links:
-            url = link.get('href')
+            url = self.url_pattern + link.find('a').get('href')
             if url not in self.urls:
                 break
-        url = self.url_pattern + url
+        else:
+            url = ''
         return url
 
     def find_articles(self) -> None:
@@ -259,9 +259,11 @@ class Crawler:
                 if len(self.urls) == self.config.get_num_articles():
                     break
                 self.urls.append(extracted_url)
+                response = make_request(extracted_url, self.config)
+                soup = BeautifulSoup(response.text, 'lxml')
                 extracted_url = self._extract_url(soup)
-            if len(self.urls) == self.config.get_num_articles():
-                break
+                if len(self.urls) == self.config.get_num_articles():
+                    break
 
     def get_search_urls(self) -> list:
         """
