@@ -5,7 +5,7 @@ Crawler implementation.
 import datetime
 import json
 import pathlib
-import  random
+import random
 import re
 import requests
 import shutil
