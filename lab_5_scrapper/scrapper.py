@@ -299,7 +299,7 @@ class HTMLParser:
         headline = article_soup.find(
             class_="large-9 large-offset-1 medium-10 medium-offset-1 small-12 columns news-text js-mediator-article")
         if headline:
-            raw_text += f"{headline.text.strip()}\n\n"
+            raw_text = ''.join([headline.text.strip() for headline in headline])
 
         self.article.text = raw_text
 
