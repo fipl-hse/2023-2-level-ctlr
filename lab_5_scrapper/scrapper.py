@@ -342,7 +342,7 @@ class HTMLParser:
         if title:
             self.article.title = title
 
-        date = article_soup.find('span', class_='ds-article-header-date-and-stats__date').text.strip()
+        date = article_soup.find(class_='ds-article-header-date-and-stats__date').text.strip()
         parts = date.split()
         month = parts[1].capitalize()
         formatted_date = f"{parts[0]} {month} {parts[2]}"
