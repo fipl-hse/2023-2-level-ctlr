@@ -5,19 +5,21 @@ Crawler implementation.
 import datetime
 import json
 import pathlib
-import random 
+import  random
 import re
 import requests
 import shutil
 
-
 from bs4 import BeautifulSoup
-from core_utils.article.article import Article
-from core_utils.article.io import to_raw, to_meta
-from core_utils import constants
-from core_utils.config_dto import ConfigDTO
-from time import sleep 
+from selenium import webdriver
+from time import sleep
 from typing import Pattern, Union
+
+from core_utils import constants
+from core_utils.article.article import Article
+from core_utils.article.io import to_meta, to_raw
+from core_utils.config_dto import ConfigDTO
+
 
 class IncorrectSeedURLError(Exception):
     """
@@ -373,15 +375,44 @@ class CrawlerRecursive(Crawler):
     """
     The Crawler in a recursive manner.
 
-    Args:
-            config (Config): Configuration
     """
-    def __init__(self, config: Config) -> None:
-        super().__init__(config)
-        self.start_url = self.config.get_seed_urls()[0]
+
+    def __init__(self, configuration: Config) -> None:
+        super().__init__(configuration)
+        self.start_url = 'https://www.securitylab.ru/news/547738.php' #self.config.get_seed_urls()[0]
         self.urls = []
+        self.driver = webdriver.Edge()
+        self.texts = []
+        self.scroll_timeout = 5
+
 
     #def find_articles(self) -> None:
+
+        #return super().find_articles()
+
+
+    def scroll(self) -> None: 
+        page_count = 0
+        domain = 'https://www.securitylab.ru'
+        url = self.start_url
+
+        while page_count < self.scroll_timeout:
+            response = requests.get(domain + url, self.config.config_dto.headers)
+            print(self.config.config_dto.headers)
+            soup = BeautifulSoup(response.text, 'lxml')
+            #future def extract()
+            links = soup.find_all('a')
+            for link in links:
+                link = link.get('href')
+                if link and link.startswith('/news/') and link.endswith('php') and link not in self.urls:
+                    url = link
+                    self.urls.append(url)
+                    self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+                    break
+            sleep(self.timeout)
+            page_count += 1
+        self.driver.quit()
+
 
 def main() -> None:
     """
@@ -398,6 +429,12 @@ def main() -> None:
         if isinstance(article, Article):
             to_raw(article)
             to_meta(article)
+
+def recursive_main() -> None:
+    """
+    Entrypoint for scrapper module.
+    """
+    prepare_environment(constants.ASSETS_PATH)
 
 if __name__ == "__main__":
     main()
