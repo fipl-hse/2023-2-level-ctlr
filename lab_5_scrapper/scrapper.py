@@ -313,9 +313,35 @@ class HTMLParser:
         self.article.author = ["NOT FOUND"]  # there are not any authors in the articles in my web-site,
         # at least I didn't find any
         # What should I do in this case?
+
         post_titles = article_soup.find(class_='news-title')
         if post_titles:
             self.article.title = post_titles.text.strip()
+
+        month_dict = {
+            'января': '01',
+            'февраля': '02',
+            'марта': '03',
+            'апреля': '04',
+            'мая': '05',
+            'июня': '06',
+            'июля': '07',
+            'августа': '08',
+            'сентября': '09',
+            'октября': '10',
+            'ноября': '11',
+            'декабря': '12'
+        }
+        post_date = article_soup.find(class_='meta-date').text
+        if post_date:
+            post_date = post_date.replace(' в ', ' ')
+            day, month, time = post_date.split()
+            month_name_eng = month_dict.get(month)
+            date = f'2024-{month_name_eng}-{day} {time}'
+            # I am not sure about the year,
+            # because I do not have this information in the date of the article publication
+            # Can I just do like this? Because if there is no year written, it will be automatically 1900
+            self.article.date = self.unify_date_format(date)
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -327,6 +353,7 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
+        return datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M')
 
     def parse(self) -> Union[Article, bool, list]:
         """
