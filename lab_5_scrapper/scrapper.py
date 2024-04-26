@@ -337,8 +337,14 @@ class HTMLParser:
         self.article.author = 'NOT FOUND'
 
         element = article_soup.find('ul', class_='list-unstyled list-inline').find('li', class_='list-inline-item')
-        date = element.get_text().strip()
+        date = element.get_text().strip().split(', ')[1]
         self.article.date = date
+
+        meta_tag = article_soup.find('meta', attrs={'meta': 'keywords'})
+        topics = []
+        if meta_tag:
+            topics = meta_tag['content'].split(', ')
+        self.article.topics = topics
 
 
 
@@ -352,6 +358,7 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
+        return datetime.datetime.strptime(date_str, '%d.%m.%Y %H:%M')
 
     def parse(self) -> Union[Article, bool, list]:
         """
