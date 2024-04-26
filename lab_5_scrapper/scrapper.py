@@ -322,9 +322,9 @@ class HTMLParser:
         if title:
             self.article.title = title.text.strip()
 
-        date = article_soup.find(itemprop='datePublished')
+        date = article_soup.find('meta', itemprop='datePublished')
         if date:
-            article_date = date.text
+            article_date = date['content']
             formatted_date = datetime.datetime.strptime(article_date, "%Y-%m-%dT%H:%M:%S%z").strftime("%Y.%m.%d %H:%M")
             self.article.date = self.unify_date_format(formatted_date)
 
