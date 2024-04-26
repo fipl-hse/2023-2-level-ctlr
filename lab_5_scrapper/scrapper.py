@@ -13,10 +13,10 @@ from typing import Pattern, Union
 import requests
 from bs4 import BeautifulSoup
 
-from core_utils import constants
 from core_utils.article.article import Article
 from core_utils.article.io import to_meta, to_raw
 from core_utils.config_dto import ConfigDTO
+from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 
 
 class IncorrectSeedURLError(Exception):
@@ -241,35 +241,31 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        links = article_bs.find_all('a', class_="title")
+        url = " "
+        links = article_bs.find_all("a", class_="node")
         for link in links:
-            url = self.url_pattern + link.get('href')[len('//news')::]
+            url = link["href"]
             if url not in self.urls:
                 break
-        else:
-            url = ''
+        url = self.url_pattern + url
         return url
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
-        seed_urls = self.get_search_urls()
-        for seed_url in seed_urls:
-            response = make_request(seed_url, self.config)
+        urls = []
+        while len(urls) < self.config.get_num_articles():
+            for url in self.get_search_urls():
+                response = make_request(url, self.config)
 
-            if not response.ok:
-                continue
+                if not response.ok:
+                    continue
 
-            article_bs = BeautifulSoup(response.text, 'html.parser')
-            article_url = self._extract_url(article_bs)
-            while article_url:
-                if len(self.urls) == self.config.get_num_articles():
-                    break
-                self.urls.append(article_url)
-                article_url = self._extract_url(article_bs)
-            if len(self.urls) == self.config.get_num_articles():
-                break
+                article_bs = BeautifulSoup(response.text, 'html.parser')
+                urls.append(self._extract_url(article_bs))
+
+        self.urls.extend(urls)
 
     def get_search_urls(self) -> list:
         """
@@ -311,12 +307,11 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        all_div = article_soup.find(class_="field-item")
-        full_text = ''
-        all_p_tags = all_div.find_all("p", recursive=False)[:-1]
-        for p in all_p_tags:
-            full_text += p.text + '\n'
-        self.article.text = full_text
+        texts = []
+        text_paragraph = article_soup.find_all(class_='field-items')
+        for paragraph in text_paragraph:
+            texts.append(paragraph.text)
+        self.article.text = ''.join(texts)
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -327,11 +322,10 @@ class HTMLParser:
         """
         self.article.title = article_soup.find('h1').text
 
-        author = [' '.join(article_soup.find(class_='field field-text field-multiple person field-name-authors').text.split()[2:4])]
-        if author:
-            self.article.author = author
-        else:
-            self.article.author = ["NOT FOUND"]
+        author = article_soup.find(class_="field field-text field-multiple person field-name-authors").text
+        if not isinstance(author, str) or not author:
+            author = 'NOT FOUND'
+        self.article.author = [author[7:-11:]]
 
         date = article_soup.find(class_='field field-text field-name-date').text
         if date:
@@ -380,14 +374,13 @@ def main() -> None:
     """
     Entrypoint for scrapper module.
     """
-    configuration = Config(path_to_config=constants.CRAWLER_CONFIG_PATH)
-    crawler = Crawler(configuration)
-    base_path = constants.ASSETS_PATH
-    prepare_environment(base_path)
+    conf = Config(CRAWLER_CONFIG_PATH)
+    crawler = Crawler(conf)
     crawler.find_articles()
+    prepare_environment(ASSETS_PATH)
 
-    for i, full_url in enumerate(crawler.urls, 1):
-        parser = HTMLParser(full_url=full_url, article_id=i, config=configuration)
+    for i, url in enumerate(crawler.urls, 1):
+        parser = HTMLParser(url, i, conf)
         article = parser.parse()
         to_raw(article)
         to_meta(article)
