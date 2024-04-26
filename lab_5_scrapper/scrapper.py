@@ -50,7 +50,7 @@ class IncorrectTimeoutError(Exception):
 
 class IncorrectVerifyError(Exception):
     """
-    Verify certificate value must either be `True` or `False`.
+    Certificate value must be a bool type.
     """
 
 
@@ -69,14 +69,6 @@ class Config:
         self.path_to_config = path_to_config
         self.config_dto = self._extract_config_content()
         self._validate_config_content()
-
-        self._seed_urls = self.config_dto.seed_urls
-        self._num_articles = self.config_dto.total_articles
-        self._headers = self.config_dto.headers
-        self._encoding = self.config_dto.encoding
-        self._timeout = self.config_dto.timeout
-        self._should_verify_certificate = self.config_dto.should_verify_certificate
-        self._headless_mode = self.config_dto.headless_mode
 
     def _extract_config_content(self) -> ConfigDTO:
         """
@@ -139,7 +131,7 @@ class Config:
         Returns:
             list[str]: Seed urls
         """
-        return self._seed_urls
+        return self.config_dto.seed_urls
 
     def get_num_articles(self) -> int:
         """
@@ -148,7 +140,7 @@ class Config:
         Returns:
             int: Total number of articles to scrape
         """
-        return self._num_articles
+        return self.config_dto.total_articles
 
     def get_headers(self) -> dict[str, str]:
         """
@@ -157,7 +149,7 @@ class Config:
         Returns:
             dict[str, str]: Headers
         """
-        return self._headers
+        return self.config_dto.headers
 
     def get_encoding(self) -> str:
         """
@@ -166,7 +158,7 @@ class Config:
         Returns:
             str: Encoding
         """
-        return self._encoding
+        return self.config_dto.encoding
 
     def get_timeout(self) -> int:
         """
@@ -175,7 +167,7 @@ class Config:
         Returns:
             int: Number of seconds to wait for response
         """
-        return self._timeout
+        return self.config_dto.timeout
 
     def get_verify_certificate(self) -> bool:
         """
@@ -184,7 +176,7 @@ class Config:
         Returns:
             bool: Whether to verify certificate or not
         """
-        return self._should_verify_certificate
+        return self.config_dto.should_verify_certificate
 
     def get_headless_mode(self) -> bool:
         """
@@ -193,7 +185,8 @@ class Config:
         Returns:
             bool: Whether to use headless mode or not
         """
-        return self._headless_mode
+        return self.config_dto.headless_mode
+    
 
 def make_request(url: str, config: Config) -> requests.models.Response:
     """
@@ -246,7 +239,7 @@ class Crawler:
         links = article_bs.find_all('a')
         for link in links:
             link = link.get('href')
-            if link.startswith('/news/') and link.endswith('php'):
+            if link and link.startswith('/news/') and link.endswith('php'):
                 url = 'https://www.securitylab.ru' + link
                 if url not in self.urls:
                     return url
@@ -295,7 +288,7 @@ class HTMLParser:
             config (Config): Configuration
         """
         self.full_url = full_url
-        self.article_id = article_id
+        self.article_id = article_id + 1
         self.config = config
         self.article = Article(self.full_url, self.article_id)
 
@@ -327,9 +320,15 @@ class HTMLParser:
         date = article_soup.find('time')
         date = date.get('datetime')
         # date = datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S%z")
-
         self.article.date = self.unify_date_format(date)
-        
+
+        keyword_class = article_soup.find_all(class_ ='tag tag-outline-primary')
+        self.article.topics = []
+        for key in keyword_class:
+            if key not in self.article.topics:
+                keyword = key.string.strip()
+                self.article.topics.append(keyword)
+
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
         Unify date format.
@@ -369,6 +368,20 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     if base_path.exists():
         shutil.rmtree(base_path)
     base_path.mkdir(parents=True)
+
+class CrawlerRecursive(Crawler):
+    """
+    The Crawler in a recursive manner.
+
+    Args:
+            config (Config): Configuration
+    """
+    def __init__(self, config: Config) -> None:
+        super().__init__(config)
+        self.start_url = self.config.get_seed_urls()[0]
+        self.urls = []
+
+    #def find_articles(self) -> None:
 
 def main() -> None:
     """
