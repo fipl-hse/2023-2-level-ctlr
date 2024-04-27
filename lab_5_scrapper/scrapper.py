@@ -8,6 +8,8 @@ from core_utils.article.article import Article
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
 import pathlib
 from bs4 import BeautifulSoup
+from random import randrange
+import time
 from typing import Pattern, Union
 import requests
 
@@ -183,6 +185,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
+    time.sleep(randrange(3))
     return requests.get(url, headers=config.get_headers(), timeout=config.get_timeout())
 
 
