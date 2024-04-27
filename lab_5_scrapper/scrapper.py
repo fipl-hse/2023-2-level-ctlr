@@ -4,7 +4,7 @@ Crawler implementation.
 import datetime
 import json
 from core_utils.config_dto import ConfigDTO
-from core_utils.article import Article
+from core_utils.article.article import Article
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
 import pathlib
 from bs4 import BeautifulSoup
