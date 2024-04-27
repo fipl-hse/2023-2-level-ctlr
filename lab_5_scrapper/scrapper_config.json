@@ -7,7 +7,7 @@
     "Cookie":  "pll_language=ru; _ga=GA1.1.1062650392.1712571174; _ym_uid=1712571175932250582; _ym_d=1712571175; clearfy_cookie_hide=yes; _ym_isad=2; _ym_visorc=w; _ga_RP13VBRV0S=GS1.1.1713782974.5.1.1713782986.0.0.0"},
     "total_articles_to_find_and_parse": 100,
     "encoding": "",
-    "timeout": 0,
+    "timeout": 5,
     "should_verify_certificate": true,
     "headless_mode": true
 }
