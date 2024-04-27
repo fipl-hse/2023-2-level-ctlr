@@ -236,10 +236,12 @@ class Crawler:
         """
         container_div = article_bs.find('div', class_='col-lg-9 col-md-12')
         for link in container_div.find_all('a', href=True):
-            if link.get('href').startswith('/news/202'):
-                href = 'https://www.gazetavechorka.ru' + link.get('href')
-                if href and href not in self.urls:
-                    return href
+            if not link.get('href').startswith('/news/202'):
+                continue
+            href = 'https://www.gazetavechorka.ru' + link.get('href')
+            if href and href not in self.urls:
+                return href
+        return ''
 
     def find_articles(self) -> None:
         """
@@ -251,19 +253,20 @@ class Crawler:
         while len(self.urls) != necessary_len:
             for url in seed_urls:
                 response = make_request(url, self.config)
+                if not response.ok:
+                    continue
 
-                if response.ok:
-                    soup = BeautifulSoup(response.text, 'html.parser')
+                soup = BeautifulSoup(response.text, 'html.parser')
+                extracted = self._extract_url(soup)
+
+                while extracted:
+                    self.urls.append(extracted)
+                    if len(self.urls) == necessary_len:
+                        break
                     extracted = self._extract_url(soup)
 
-                    while extracted:
-                        self.urls.append(extracted)
-                        if len(self.urls) == necessary_len:
-                            break
-                        extracted = self._extract_url(soup)
-
-                    if not extracted:
-                        continue
+                if not extracted:
+                    continue
 
                 if len(self.urls) == necessary_len:
                     break
@@ -334,18 +337,18 @@ class HTMLParser:
         if header:
             self.article.title = header
 
-        self.article.author = 'NOT FOUND'
+        self.article.author = ['NOT FOUND']
 
         element = article_soup.find('ul', class_='list-unstyled list-inline').find('li', class_='list-inline-item')
         date = element.get_text().strip().split(', ')[1]
-        self.article.date = date
+        if date:
+            self.article.date = self.unify_date_format(date)
 
         meta_tag = article_soup.find('meta', attrs={'meta': 'keywords'})
         topics = []
         if meta_tag:
             topics = meta_tag['content'].split(', ')
         self.article.topics = topics
-
 
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
@@ -358,7 +361,14 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
-        return datetime.datetime.strptime(date_str, '%d.%m.%Y %H:%M')
+        month_names = {
+            'Января': 1, 'Февраля': 2, 'Марта': 3, 'Апреля': 4,
+            'Мая': 5, 'Июня': 6, 'Июля': 7, 'Августа': 8,
+            'Сентября': 9, 'Октября': 10, 'Ноября': 11, 'Декабря': 12
+        }
+        parts = date_str.split()
+        new_date_str = f"{int(parts[0]):02d}.{month_names[parts[1]]:02d}.{int(parts[2])} 00:00"
+        return datetime.datetime.strptime(new_date_str, '%d.%m.%Y %H:%M')
 
     def parse(self) -> Union[Article, bool, list]:
         """
@@ -372,7 +382,7 @@ class HTMLParser:
             article_bs = BeautifulSoup(response.text, 'html.parser')
             self._fill_article_with_text(article_bs)
             self._fill_article_with_meta_information(article_bs)
-            return self.article
+        return self.article
 
 
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
@@ -382,11 +392,9 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    if not base_path.exists():
-        base_path.mkdir(parents=True)
-    else:
+    if base_path.exists():
         shutil.rmtree(base_path)
-        base_path.mkdir(parents=True, exist_ok=True)
+    base_path.mkdir(parents=True)
 
 
 def main() -> None:
