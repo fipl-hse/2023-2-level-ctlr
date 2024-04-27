@@ -7,10 +7,8 @@ import json
 import pathlib
 import re
 import shutil
-import signal
 from random import randrange
 from time import sleep
-from types import FrameType
 from typing import Pattern, Union
 
 import requests
@@ -64,12 +62,6 @@ class IncorrectVerifyError(Exception):
     """
 
 
-class EnoughArticlesException(Exception):
-    """
-    Raise when the number of article urls is equal the requested number.
-    """
-
-
 class Config:
     """
     Class for unpacking and validating configurations.
@@ -103,15 +95,7 @@ class Config:
         """
         with open(self.path_to_config, 'r', encoding='utf-8') as file:
             config = json.load(file)
-        return ConfigDTO(
-            seed_urls=config["seed_urls"],
-            total_articles_to_find_and_parse=config["total_articles_to_find_and_parse"],
-            headers=config["headers"],
-            encoding=config["encoding"],
-            timeout=config["timeout"],
-            should_verify_certificate=config["should_verify_certificate"],
-            headless_mode=config["headless_mode"]
-        )
+        return ConfigDTO(**config)
 
     def _validate_config_content(self) -> None:
         """
@@ -126,10 +110,9 @@ class Config:
                 ):
             raise IncorrectSeedURLError
 
-        num = config.total_articles
-        if not isinstance(num, int) or num <= 0:
+        if not isinstance(config.total_articles, int) or config.total_articles <= 0:
             raise IncorrectNumberOfArticlesError
-        if num > 150:
+        if config.total_articles > 150:
             raise NumberOfArticlesOutOfRangeError
 
         if not isinstance(config.headers, dict):
@@ -310,45 +293,52 @@ class CrawlerRecursive(Crawler):
     def __init__(self, config: Config) -> None:
         super().__init__(config)
 
-        with open('already_crawled_urls.txt', 'r', encoding='utf-8') as f:
-            self.already_crawled = f.readlines()
-
-        self.article_tag = 'ARTICLE URL: '
-        self.urls = [url[len(self.article_tag):-1:]
-                     for url in self.already_crawled
-                     if self.article_tag in url]
-
-        if self.already_crawled:
-            self.start_url = self.urls[-1]
-            # to not encounter core element url
+        crawled_urls_path = pathlib.Path('tmp/crawled_urls/')
+        if crawled_urls_path.joinpath('all_urls.txt').exists():
+            with open(crawled_urls_path / 'all_urls.txt', 'r', encoding='utf-8') as f:
+                self.already_crawled = [line[:-1] for line in f.readlines()]
+            self.start_url = self.already_crawled[-1]
         else:
+            self.already_crawled = []
             self.start_url = self.base_url
 
+        if crawled_urls_path.joinpath('all_urls.txt').exists():
+            with open(crawled_urls_path / 'article_urls.txt', 'r', encoding='utf-8') as f:
+                self.urls = [line[:-1] for line in f.readlines()]
+            self.start_url = self.urls[-1]
+
     def find_articles(self) -> None:
+        if len(self.urls) == self.config.get_num_articles():
+            return
+
         response = make_request(self.start_url, self.config)
         if not response.ok:
             return
 
         article_bs = BeautifulSoup(response.text, "lxml")
 
-        all_urls = [self.start_url]
-        all_urls.extend(self.base_url[:-len('/news'):] + link.get('href')
+        all_urls = [self.base_url + link.get('href')
                         for link in article_bs.find_all(href=True)
-                        if 'http' not in link.get('href'))
+                        if 'http' not in link.get('href')
+                        and '.ico' not in link.get('href')
+                        and 'css' not in link.get('href')]
+        all_urls = [url.replace('/news'*2, '/news') for url in all_urls]
         # all urls to my site pages are put into the html code as
         # /something/..., but not the full link like
         # https://www.sbras.info/news/something/...,
         # so everything that refers to other https pages will break requests.get
         # because it will be https://www.sbras.infohttp/...
         # also, there are lots of links that are not on the page,
-        # but refer to core components, like .ico/.css files, so there's no need to have them
-        # but they are handled by request generally
+        # but refer to core components, like .ico/css files, so there's no need to have them
 
         for url in all_urls:
-            if url in self.already_crawled and url != self.base_url:
+            if url in self.already_crawled:
                 continue
-            elif url != self.base_url:
-                self.already_crawled.append(url)
+            self.already_crawled.append(url)
+            with open('tmp/crawled_urls/all_urls.txt', 'a',
+                      encoding='utf-8', newline='\n') as f:
+                f.write(f"{url}\n")
+
             self.start_url = url
 
             extracted_url = self._extract_url(article_bs)
@@ -358,10 +348,15 @@ class CrawlerRecursive(Crawler):
                     continue
 
                 self.urls.append(extracted_url)
-                self.already_crawled.append(self.article_tag + extracted_url)
+                with open('tmp/crawled_urls/article_urls.txt', 'a',
+                          encoding='utf-8', newline='\n') as f:
+                    f.write(f"{extracted_url}\n")
+
+                if len(self.urls) == 10:
+                    print('here')
 
                 if len(self.urls) == self.config.get_num_articles():
-                    raise EnoughArticlesException
+                    return
 
                 self.start_url = extracted_url
                 self.find_articles()
@@ -399,9 +394,9 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        text_blocks = article_soup.find_all('p')
-        raw_text = [text_block.string for text_block in text_blocks
-                    if text_block.string]
+        text_blocks = article_soup.find_all('p')[:-3]
+        raw_text = [text_block.text for text_block in text_blocks
+                    if text_block.text]
         self.article.text = '\n'.join(raw_text)
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
@@ -417,8 +412,11 @@ class HTMLParser:
         if date:
             self.article.date = self.unify_date_format(date)
 
-        author = article_soup.find_all('strong')[-1].string
-        if not isinstance(author, str) or not author:
+        last_paragraph = article_soup.find_all('p')[-3]  # exclude copyright info
+        author = last_paragraph.find('strong')
+        if author:
+            author = author.text
+        else:
             author = 'NOT FOUND'
         self.article.author = [author]
 
@@ -468,38 +466,13 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     base_path.mkdir(parents=True)
 
 
-class ProgramKilledException(Exception):
-    """
-    Raise when the program is killed.
-    """
-
-
-class Killer:
-    """
-    Class to see if the system is shut down or script is interrupted.
-    """
-    def __init__(self) -> None:
-        signals = [signal.SIGINT, signal.SIGTERM, signal.SIGBREAK]
-        for sig in signals:
-            signal.signal(sig, self.handler)
-
-    def handler(self, signum: int, frame: FrameType | None) -> None:
-        raise ProgramKilledException
-
-
-def save_all_urls(crawler: CrawlerRecursive) -> None:
-    with open('already_crawled_urls.txt', 'w', encoding='utf-8', newline='\n') as f:
-        f.write("\n".join(crawler.already_crawled))
-
-
 def main() -> None:
     """
     Entrypoint for scrapper module.
     """
-    configuration = Config(path_to_config=constants.CRAWLER_CONFIG_PATH)
-
     prepare_environment(base_path=constants.ASSETS_PATH)
 
+    configuration = Config(path_to_config=constants.CRAWLER_CONFIG_PATH)
     crawler = Crawler(config=configuration)
     crawler.find_articles()
 
@@ -515,17 +488,14 @@ def main_recursive() -> None:
     """
     Entrypoint for recursive scrapper module.
     """
-    configuration = Config(path_to_config=constants.CRAWLER_CONFIG_PATH)
-
     prepare_environment(constants.ASSETS_PATH)
-    crawler = CrawlerRecursive(config=configuration)
+    prepare_environment(pathlib.Path('tmp/crawled_urls/'))
 
-    try:
-        Killer()
-        crawler.find_articles()
-    except ProgramKilledException:
-        save_all_urls(crawler)
-    except EnoughArticlesException:
+    configuration = Config(path_to_config=constants.CRAWLER_CONFIG_PATH)
+    crawler = CrawlerRecursive(config=configuration)
+    crawler.find_articles()
+
+    if len(crawler.urls) == configuration.get_num_articles():
         for index, url in enumerate(crawler.urls):
             parser = HTMLParser(full_url=url, article_id=index + 1, config=configuration)
             article = parser.parse()
@@ -533,9 +503,7 @@ def main_recursive() -> None:
                 to_raw(article)
                 to_meta(article)
 
-        crawled = pathlib.Path('already_crawled_urls.txt')
-        crawled.unlink()  # clear crawler for the next run.
-
 
 if __name__ == "__main__":
     main()
+    # main_recursive()
