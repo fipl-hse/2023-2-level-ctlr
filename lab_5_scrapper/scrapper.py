@@ -235,10 +235,14 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        link = article_bs.find('a', class_="post-item-link")
-        if link:
-            return self.url_pattern + link.get('href')
-        return ''
+        links = article_bs.find_all(class_="post-item__title")
+        for link in links:
+            url = self.url_pattern + link.find('a').get('href')
+            if url not in self.urls:
+                break
+        else:
+            url = ''
+        return url
 
     def find_articles(self) -> None:
         """
@@ -262,7 +266,6 @@ class Crawler:
     def get_search_urls(self) -> list:
         """
         Get seed_urls param.
-
         Returns:
             list: seed_urls param
         """
