@@ -322,9 +322,12 @@ class HTMLParser:
         if date:
             d = date.get("datetime")
             self.article.date = self.unify_date_format(str(d))
-        author = article_soup.find(target="_blank").text.strip()
+        else:
+            date_example = '2024-01-01'
+            self.article.date = self.unify_date_format(date_example)
+        author = article_soup.find(class_='article-author')
         if author:
-            self.article.author = [author]
+            self.article.author = [' '.join(author.text.split()[1:])]
         else:
             self.article.author = ["NOT FOUND"]
         topics = article_soup.find_all(class_="article-tag-link")
