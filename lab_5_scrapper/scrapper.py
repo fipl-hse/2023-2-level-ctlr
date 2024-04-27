@@ -319,8 +319,8 @@ class HTMLParser:
         self.article.title = article_soup.find('h1').text
         date = article_soup.find("time")
         if date:
-            date = date.get("datetime")
-            self.article.date = self.unify_date_format(str(date))
+            d = date.get("datetime")
+            self.article.date = self.unify_date_format(str(d))
         author = article_soup.find(target="_blank").text.strip()
         if author:
             self.article.author = [author]
