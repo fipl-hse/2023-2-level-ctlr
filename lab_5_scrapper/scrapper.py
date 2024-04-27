@@ -237,7 +237,7 @@ class Crawler:
         """
         links = article_bs.find_all(class_="post-item__title")
         for link in links:
-            url = self.url_pattern + link.find('a').get('href')
+            url = self.url_pattern + str(link.find('a').get('href'))
             if url not in self.urls:
                 break
         else:
