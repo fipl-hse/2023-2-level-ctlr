@@ -227,7 +227,7 @@ class Crawler:
         """
         self.urls = []
         self.config = config
-        self.url_pattern = 'https://www.comnews.ru'
+        self.url_pattern = 'https://www.comnews.ru/'
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -240,7 +240,7 @@ class Crawler:
             str: Url from HTML
         """
         url = " "
-        links = article_bs.find_all("a", class_="field-items")
+        links = article_bs.find_all("a", class_="title")
         for link in links:
             url = link["href"]
             if url not in self.urls:
@@ -305,13 +305,12 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        text_elements = article_soup.find_all('div')
-        text = ''
-        for element in text_elements:
-            if not element.string:
-                continue
-            text += f'\n{element.string}'
-        self.article.text = text
+
+        texts = []
+        text_paragraphs = article_soup.find_all(class_='field-item')
+        for paragraph in text_paragraphs:
+            texts.append(paragraph.text)
+        self.article.text = ''.join(texts)
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -322,14 +321,10 @@ class HTMLParser:
         """
         self.article.title = article_soup.find('h1').text
 
-        author = article_soup.find(class_="field field-text field-multiple person field-name-authors").text
+        author = article_soup.find("span").text
         if not isinstance(author, str) or not author:
             author = 'NOT FOUND'
-        self.article.author = [author[7:-11:]]
-
-        date = article_soup.find(class_='field field-text field-name-date').text
-        if date:
-            self.article.date = self.unify_date_format(date)
+        self.article.author = [author[7:-5:]]
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
