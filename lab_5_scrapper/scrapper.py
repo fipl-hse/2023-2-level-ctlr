@@ -352,9 +352,6 @@ class CrawlerRecursive(Crawler):
                           encoding='utf-8', newline='\n') as f:
                     f.write(f"{extracted_url}\n")
 
-                if len(self.urls) == 10:
-                    print('here')
-
                 if len(self.urls) == self.config.get_num_articles():
                     return
 
@@ -394,7 +391,7 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        text_blocks = article_soup.find_all('p')[:-3]
+        text_blocks = article_soup.find_all('p')[:-3]  # exclude copyright info
         raw_text = [text_block.text for text_block in text_blocks
                     if text_block.text]
         self.article.text = '\n'.join(raw_text)
