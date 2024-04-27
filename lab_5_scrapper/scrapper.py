@@ -198,7 +198,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-    period = random.randrange(10)
+    period = random.randrange(2)
     time.sleep(period)
     response = requests.get(url=url,
                             timeout=config.get_timeout(),
