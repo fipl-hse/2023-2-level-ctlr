@@ -13,31 +13,46 @@ import requests
 
 
 class IncorrectSeedURLError(Exception):
-    pass
+    """
+    seed URL does not match standard pattern "https?://(www.)?"
+    """
 
 
 class NumberOfArticlesOutOfRangeError(Exception):
-    pass
+    """
+    total number of articles is out of range from 1 to 150
+    """
 
 
 class IncorrectNumberOfArticlesError(Exception):
-    pass
+    """
+    total number of articles to parse is not integer
+    """
 
 
 class IncorrectHeadersError(Exception):
-    pass
+    """
+    headers are not in a form of dictionary
+    """
 
 
 class IncorrectEncodingError(Exception):
-    pass
+    """
+    encoding must be specified as a string
+    """
 
 
 class IncorrectTimeoutError(Exception):
-    pass
+    """
+    timeout value must be a positive integer less than 60
+    """
 
 
 class IncorrectVerifyError(Exception):
-    pass
+    """
+    verify certificate value must either be True or False
+    """
+
 
 class Config:
     """
@@ -185,6 +200,8 @@ class Crawler:
         Args:
             config (Config): Configuration
         """
+        self.config = config
+        self.urls = []
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -196,11 +213,20 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
+        return article_bs.find('a')['href']
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
+        for url in self.get_search_urls():
+            response = requests.get(url, self.config)
+            bs = BeautifulSoup(response.text, 'lxml')
+            for tag in bs.find_all('h3'):
+                if self._extract_url(tag) not in self.urls:
+                    self.urls.append(self._extract_url(tag))
+                if len(self.urls) == (self.config.get_num_articles()):
+                    break
 
     def get_search_urls(self) -> list:
         """
@@ -209,6 +235,7 @@ class Crawler:
         Returns:
             list: seed_urls param
         """
+        return self.config.get_seed_urls()
 
 
 # 10
