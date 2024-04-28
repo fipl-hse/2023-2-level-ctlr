@@ -239,28 +239,38 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        url = " "
-        links = article_bs.find_all("a", class_="field-content")
-        for link in links:
-            url = link["href"]
-            if url not in self.urls:
-                break
-        url = self.url_pattern+url
-        return url
+
+        links = article_bs.find(name='div', class_='region region-content')
+        for link in links.find_all('a'):
+            if link.get('href').startswith("/content/"):
+                url = self.url_pattern + link.get('href')
+                if url not in self.urls:
+                    self.urls.append(url)
+                    return url
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
-        seeds = self.config.get_seed_urls()
-        for seed in seeds:
-            response = make_request(seed, self.config)
-            if not response.ok:
-                continue
-            soup = BeautifulSoup(response.text, 'lxml')
-            while len(self.urls) < self.config.get_num_articles():
-                article_url = self._extract_url(soup)
-                self.urls.append(article_url)
+        seed_urls = self.get_search_urls()
+        n_len = self.config.get_num_articles()
+
+        while len(self.urls) < n_len:
+
+            for seed_url in seed_urls:
+                response = make_request(seed_url, self.config)
+                if not response.ok:
+                    continue
+
+                soup = BeautifulSoup(response.text, features='html.parser')
+
+                new_url = self._extract_url(soup)
+                if len(self.urls) >= n_len:
+                    break
+                self.urls.append(new_url)
+
+                if len(self.urls) >= n_len:
+                    break
 
     def get_search_urls(self) -> list:
         """
@@ -302,12 +312,12 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-
         texts = []
-        text_paragraphs = article_soup.find_all(class_='field-item')
+        text_paragraphs = article_soup.find_all(class_="field field-text full-html field-name-body")
         for paragraph in text_paragraphs:
             texts.append(paragraph.text)
         self.article.text = ''.join(texts)
+
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
