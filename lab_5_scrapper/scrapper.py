@@ -108,16 +108,19 @@ class Config:
         Ensure configuration parameters are not corrupt.
         """
         config = self._extract_config_content()
-        for seed_url in config.seed_urls:
-            if not (re.match(r"https?://(www)?\.hij\.ru/read/articles/+", seed_url)
-                    and isinstance(config.seed_urls, list)):
+
+        if not isinstance(config.seed_urls, list):
+            raise IncorrectSeedURLError
+
+        for url in config.seed_urls:
+            if not re.match("https?://(www.)?", url):
                 raise IncorrectSeedURLError
 
         articles_num = config.total_articles
-        if not isinstance(articles_num, int):
+        if not isinstance(articles_num, int) or articles_num <= 0:
             raise IncorrectNumberOfArticlesError
 
-        if not (0 < articles_num < 151):
+        if not 0 < articles_num < 150:
             raise NumberOfArticlesOutOfRangeError
 
         if not isinstance(config.headers, dict):
@@ -130,6 +133,9 @@ class Config:
             raise IncorrectTimeoutError
 
         if not isinstance(config.should_verify_certificate, bool):
+            raise IncorrectVerifyError
+
+        if not isinstance(config.headless_mode, bool):
             raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
@@ -244,6 +250,13 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
+        all_urls = article_bs.find_all('a', class_='magazine_articles__item-fulllink')
+        for url in all_urls:
+            full_url = self.config.get_seed_urls()[0][0:18] + str(url.get('href'))
+            if full_url not in self.urls:
+                return full_url
+            else:
+                continue
 
     def find_articles(self) -> None:
         """
@@ -266,6 +279,7 @@ class Crawler:
         Returns:
             list: seed_urls param
         """
+        return self.config.get_seed_urls()
 
 
 # 10
@@ -306,6 +320,10 @@ class HTMLParser:
         div_tag = raw_article.find('div')
         if div_tag:
             raw_article.div.extract()
+        a_tag = raw_article.find('a', target="_blank")
+        if a_tag:
+            raw_article.a.extract()
+
         for block in raw_article:
             if block.text != '\n':
                 article += block.text
@@ -372,7 +390,6 @@ def main() -> None:
         article = parser.parse()
         if isinstance(article, Article):
             to_raw(article)
-            # to_meta(article)
 
 
 if __name__ == "__main__":
