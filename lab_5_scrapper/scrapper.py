@@ -18,43 +18,46 @@ from core_utils.config_dto import ConfigDTO
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 
 
-class IncorrectSeedURLError(Exception):
-    """
-    seed URL does not match standard pattern 'https?://w?w?w?.'
-    """
 class NumberOfArticlesOutOfRangeError(Exception):
     """
-    total number of articles is out of range from 1 to 150
+    Total number of articles is out of range.
     """
+
 
 class IncorrectNumberOfArticlesError(Exception):
     """
-    total number of articles to parse is not integer
+    Total number of articles to parse is not integer.
     """
 
 
 class IncorrectHeadersError(Exception):
     """
-    headers are not in a form of dictionary
+    Headers are not in a form of dictionary.
     """
 
 
 class IncorrectEncodingError(Exception):
     """
-    encoding is not specified as a string
+    Encoding must be specified as a string.
     """
 
 
 class IncorrectTimeoutError(Exception):
     """
-    timeout value is not a positive integer less than 60
+    Timeout value must be a positive integer less than 60.
     """
+
 
 class IncorrectVerifyError(Exception):
     """
-    verify certificate value is not True or False
+    Verify certificate and Headless mode values must be boolean.
     """
 
+
+class IncorrectSeedURLError(Exception):
+    """
+    Seed URL does not match standard pattern.
+    """
 
 
 class Config:
@@ -96,6 +99,7 @@ class Config:
         """
         with open(self.path_to_config, 'r', encoding='utf-8') as config_file:
             config = json.load(config_file)
+
         return ConfigDTO(
              seed_urls=config['seed_urls'],
              total_articles_to_find_and_parse=config['total_articles_to_find_and_parse'],
@@ -117,25 +121,25 @@ class Config:
                 and all(re.match(r'https?://(www.)?', seed_url) for seed_url in config.seed_urls)):
             raise IncorrectSeedURLError
 
-        if not isinstance(config.headers, dict):
-            raise IncorrectHeadersError
-
         if not isinstance(config.total_articles, int) or not config.total_articles > 0:
             raise IncorrectNumberOfArticlesError
 
-        if config.total_articles > 150:
+        if not 0 < config.total_articles < 150:
             raise NumberOfArticlesOutOfRangeError
+
+        if not isinstance(config.headers, dict):
+            raise IncorrectHeadersError
 
         if not isinstance(config.encoding, str):
             raise IncorrectEncodingError
 
-        if (not isinstance(config.timeout, int)
-                or config.timeout < 0
-                or config.timeout > 60):
+        if not isinstance(config.timeout, int) or not (0 <= config.timeout < 60):
             raise IncorrectTimeoutError
 
-        if not isinstance(config.should_verify_certificate, bool) \
-                or not isinstance(config.headless_mode, bool):
+        if not isinstance(config.should_verify_certificate, bool):
+            raise IncorrectVerifyError
+
+        if not isinstance(config.headless_mode, bool):
             raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
