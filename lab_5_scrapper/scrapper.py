@@ -304,7 +304,7 @@ class HTMLParser:
         self.article.author = ['NOT FOUND']
         self.article.date = self.unify_date_format(article_soup.find('p', class_='desc').text)
         self.article.topics = [article_soup.find('a', class_='label').text]
-        
+
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
         Unify date format.
