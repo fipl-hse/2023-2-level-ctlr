@@ -282,11 +282,11 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        article_soup = article_soup.find('article').find_all(['p', 'h4'],
+        article_soup_list = article_soup.find('article').find_all(['p', 'h4'],
                                                              style=["text-align:justify",
                                                                     "text-align:center"])
         text_list = []
-        for el in article_soup:
+        for el in article_soup_list:
             text_list.append(el.text)
         self.article.text = ''.join(text_list)
 
