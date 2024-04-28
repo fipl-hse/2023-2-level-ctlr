@@ -346,7 +346,8 @@ class HTMLParser:
 
         date_str = date_str[:-count]
 
-        date = datetime.datetime.strptime(date_str, MY_DATE_FORMAT)
+        if date_str:
+            date = datetime.datetime.strptime(date_str, MY_DATE_FORMAT)
 
         return date
 
