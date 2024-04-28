@@ -1,15 +1,16 @@
 """
 Crawler implementation.
 """
-import json
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
+import datetime
+import json
 import pathlib
-from typing import Pattern, Union
-import re
-import requests
-from time import sleep
 from random import randrange
+import re
+from time import sleep
+from typing import Pattern, Union
 
+import requests
 from bs4 import BeautifulSoup
 
 import core_utils
@@ -17,7 +18,7 @@ from core_utils import constants
 from core_utils.article.article import Article
 from core_utils.article.io import to_raw, to_meta
 from core_utils.config_dto import ConfigDTO
-import datetime
+
 
 
 class IncorrectSeedURLError(Exception):
