@@ -1,7 +1,7 @@
 {
     "seed_urls": ["https://megapolisonline.ru/category/society/", "https://megapolisonline.ru/category/society/page/2/", "https://megapolisonline.ru/category/society/page/3/","https://megapolisonline.ru/category/society/page/4/", "https://megapolisonline.ru/category/society/page/5/" ],
     "headers": {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36\n",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "Cookie": "mode=light; domain_sid=vODOvdVeWJacg-KspMaUQ%3A1714310980412"
     },
     "total_articles_to_find_and_parse": 3,
