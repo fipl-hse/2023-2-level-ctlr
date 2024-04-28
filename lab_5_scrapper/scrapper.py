@@ -348,8 +348,11 @@ class HTMLParser:
 
         if date_str:
             date = datetime.datetime.strptime(date_str, MY_DATE_FORMAT)
-            return date
 
+        else:
+            date = None
+
+        return date
     def parse(self) -> Union[Article, bool, list]:
         """
         Parse each article.
