@@ -1,5 +1,5 @@
 {
-    "seed_urls": ["https://portamur.ru/news/",
+    "seed_urls": [
     "https://portamur.ru/news/archive/?day=01&month=04&year=2024",
     "https://portamur.ru/news/archive/?day=03&month=12&year=2023",
     "https://portamur.ru/news/archive/?day=26&month=04&year=2024"],
@@ -9,7 +9,7 @@
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8, application/signed-exchange;v=b3;q=0.7",
         "Accept-Language": "ru,en;q=0.9"
 },
-    "total_articles_to_find_and_parse": 10,
+    "total_articles_to_find_and_parse": 3,
     "encoding": "utf-8",
     "timeout": 3,
     "should_verify_certificate": true,

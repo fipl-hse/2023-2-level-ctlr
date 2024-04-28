@@ -2,6 +2,7 @@
 Crawler implementation.
 """
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
+import datetime
 import pathlib
 import random
 import shutil
@@ -81,7 +82,7 @@ class Config:
                 self.extract.total_articles <= 0):
             raise IncorrectNumberOfArticlesError
 
-        if not 1 >= self.extract.total_articles >= 150:
+        if not 1 <= self.extract.total_articles <= 150:
             raise NumberOfArticlesOutOfRangeError
 
         if not (self.extract.headers, dict):
@@ -213,8 +214,8 @@ class Crawler:
         for div in article_bs.find_all('div', class_='news_item_name'):
             for a in div.find_all('a'):
                 url = self.url_pattern + a['href']
-            if url not in self.urls:
-                return url
+                if url not in self.urls:
+                    return url
         return url
 
     def find_articles(self) -> None:
@@ -222,7 +223,7 @@ class Crawler:
         Find articles.
         """
         while len(self.urls) < self.config.get_num_articles():
-            for seed_url in self.config.get_seed_urls():
+            for seed_url in self.get_search_urls():
                 response = make_request(seed_url, self.config)
                 if not response.ok:
                     continue
@@ -306,6 +307,7 @@ class HTMLParser:
             self._fill_article_with_text(article_soup=article_bs)
         return self.article
 
+
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     """
     Create ASSETS_PATH folder if no created and remove existing folder.
@@ -332,6 +334,7 @@ def main() -> None:
         articles = parser.parse()
         if isinstance(articles, Article):
             to_raw(article=articles)
+
 
 if __name__ == "__main__":
     main()
