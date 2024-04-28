@@ -259,6 +259,10 @@ class HTMLParser:
             article_id (int): Article id
             config (Config): Configuration
         """
+        self.full_url = full_url
+        self.article_id = article_id
+        self.config = config
+        self.article = Article(self.full_url, self.article_id)
 
     def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
         """
@@ -267,6 +271,12 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        tag = article_soup.find('div', {"id": "wtr-content"})
+        raw_texts = tag.find_all('p')
+        texts = []
+        for text in raw_texts:
+            texts.append(text.text)
+        self.article.text = '\n'.join(texts)
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -275,6 +285,10 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        self.article.title = article_soup.find(class_="tdb-title-text").text
+        self.article.topics = article_soup.find(class_="tdb-entry-category").text
+        self.article.author = article_soup.find(class_="tdb-author-name").text
+        self.article.date = self.unify_date_format(article_soup.find("time").text)
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -286,6 +300,8 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
+        date_str = date_str[:-4] + date_str[-2:]
+        return datetime.datetime.strptime(date_str, "%d.%m.%y")
 
     def parse(self) -> Union[Article, bool, list]:
         """
@@ -294,6 +310,11 @@ class HTMLParser:
         Returns:
             Union[Article, bool, list]: Article instance
         """
+        response = requests.get(self.full_url, self.config)
+        article_bs = BeautifulSoup(response.text, 'lxml')
+        self._fill_article_with_text(article_bs)
+        self._fill_article_with_meta_information(article_bs)
+        return self.article
 
 
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
