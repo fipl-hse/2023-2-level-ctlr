@@ -7,7 +7,7 @@ import json
 import pathlib
 import re
 import shutil
-from typing import Pattern, Union
+from typing import Union, Pattern
 
 import requests
 from bs4 import BeautifulSoup
