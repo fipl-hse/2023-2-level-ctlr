@@ -307,7 +307,7 @@ class HTMLParser:
         if article_texts:
             texts = article_texts.find_all('p', class_=False)
             for text in texts:
-                article += text.text + '\n'
+                article += text.text.replace("&shy;", "-").replace('\xa0', ' ') + '\n'
         self.article.text = article_preview + article
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
@@ -317,7 +317,7 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        self.article.title = article_soup.find('h1').text
+        self.article.title = article_soup.find('h1').text.replace('\xa0', ' ')
         date = article_soup.find("time")
         if date:
             d = date.get("datetime")
@@ -329,7 +329,7 @@ class HTMLParser:
         if author_element:
             author_tag = author_element.find('a')
             if author_tag:
-                author = author_tag.text.strip().replace(' ', ' ')
+                author = author_tag.text.strip().replace(' ', '&nbsp;')
                 self.article.author = [author]
             else:
                 self.article.author = ["NOT FOUND"]
