@@ -241,7 +241,6 @@ class Crawler:
         for h2 in h2_tags:
             link = h2.find('a')
             href = link.get('href')
-            print(href)
             url = self.url + href
             if url not in self.urls:
                 return url
@@ -252,13 +251,16 @@ class Crawler:
         """
         seed_urls = self.get_search_urls()
 
-        for seed_url in seed_urls:
-            response = make_request(seed_url, self.config)
-            if response.ok:
+        while len(self.urls) < self.config.get_num_articles():
+            for seed_url in seed_urls:
+                response = make_request(seed_url, self.config)
+                if not response.ok:
+                    continue
                 soup = BeautifulSoup(response.text, 'html.parser')
-                for i in range(10):
-                    urls = self._extract_url(soup)
-                    self.urls.append(urls)
+                urls = self._extract_url(soup)
+                self.urls.append(urls)
+                if len(self.urls) >= self.config.get_num_articles():
+                    break
 
     def get_search_urls(self) -> list:
         """
@@ -320,14 +322,13 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-
         header = article_soup.find('h1')
         if header:
-            self.article.title = header
+            self.article.title = header.text
 
-        author = article_soup.find('div', itemprop="author")
+        author = article_soup.find('span', itemprop="name")
         if author:
-            self.article.author = [author]
+            self.article.author = [author.text]
         else:
             self.article.author = ['NOT FOUND']
 
@@ -364,12 +365,10 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    if not base_path.exists():
-        base_path.mkdir(parents=True)
     if base_path.exists():
         shutil.rmtree(base_path)
-    base_path.mkdir(exist_ok=True,
-                    parents=True)
+    base_path.mkdir(parents=True)
+
 
 def main() -> None:
     """
@@ -380,12 +379,12 @@ def main() -> None:
 
     crawler = Crawler(config=config)
     crawler.find_articles()
-    all_urls = crawler.urls
-    for index, url in enumerate(all_urls):
-        parser = HTMLParser(full_url=url, article_id=index, config=config)
+    for index, url in enumerate(crawler.urls):
+        parser = HTMLParser(full_url=url, article_id=index+1, config=config)
         article = parser.parse()
-        to_raw(article)
-        to_meta(article)
+        if isinstance(article, Article):
+            to_raw(article)
+            to_meta(article)
 
 
 if __name__ == "__main__":
