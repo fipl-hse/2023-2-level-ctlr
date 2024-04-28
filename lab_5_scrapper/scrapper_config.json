@@ -1,9 +1,17 @@
 {
-    "seed_urls": [],
-    "headers": {},
-    "total_articles_to_find_and_parse": 0,
-    "encoding": "",
-    "timeout": 0,
+    "seed_urls": ["https://portamur.ru/news/",
+    "https://portamur.ru/news/archive/?day=01&month=04&year=2024",
+    "https://portamur.ru/news/archive/?day=03&month=12&year=2023",
+    "https://portamur.ru/news/archive/?day=26&month=04&year=2024"],
+    "headers": {
+        "Cookie": "stg_traffic_source_priority=2; stg_externalReferrer=https://yandex.ru/; stg_last_interaction=Mon%2C%2008%20Apr%202024%2011:19:30%20GMT; stg_returning_visitor=Mon%2C%2008%20Apr%202024%2011:19:30%20GMT",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8, application/signed-exchange;v=b3;q=0.7",
+        "Accept-Language": "ru,en;q=0.9"
+},
+    "total_articles_to_find_and_parse": 10,
+    "encoding": "utf-8",
+    "timeout": 3,
     "should_verify_certificate": true,
     "headless_mode": true
 }
