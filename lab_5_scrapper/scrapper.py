@@ -26,6 +26,7 @@ class Config:
         Returns:
             ConfigDTO: Config values
         """
+        pass
 
     def _validate_config_content(self) -> None:
         """
