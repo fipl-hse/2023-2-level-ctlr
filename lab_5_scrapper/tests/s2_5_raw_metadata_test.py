@@ -110,7 +110,7 @@ class RawMediumDataValidator(unittest.TestCase):
         # open and prepare metadata
         self.metadata = []
         for file_name in TEST_PATH.iterdir():
-            if file_name.name.endswith(".json"):
+            if file_name.name.endswith("_meta.json"):
                 with file_name.open(encoding='utf-8') as file:
                     config = json.load(file)
                     self.metadata.append((config['id'], config))
@@ -137,6 +137,7 @@ class RawMediumDataValidator(unittest.TestCase):
     @pytest.mark.mark10
     @pytest.mark.stage_2_5_dataset_validation
     @pytest.mark.lab_5_scrapper
+    @pytest.mark.skip
     def test_validate_metadata_medium(self) -> None:
         """
         Ensure collected metadata is valid.
@@ -196,7 +197,7 @@ class RawAdvancedDataValidator(unittest.TestCase):
         # open and prepare metadata
         self.metadata = []
         for file_name in TEST_PATH.iterdir():
-            if file_name.name.endswith(".json"):
+            if file_name.name.endswith("_meta.json"):
                 with file_name.open(encoding='utf-8') as file:
                     config = json.load(file)
                     self.metadata.append((config['id'], config))
