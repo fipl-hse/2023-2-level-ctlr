@@ -302,7 +302,9 @@ class HTMLParser:
             self.article.title = title.text
         self.article.article_id = self.article_id
         self.article.author = ['NOT FOUND']
-
+        self.article.date = self.unify_date_format(article_soup.find('p', class_='desc').text)
+        self.article.topics = [article_soup.find('a', class_='label').text]
+        
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
         Unify date format.
@@ -313,6 +315,30 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
+
+        months_dict = {
+            "января": "January",
+            "февраля": "February",
+            "марта": "March",
+            "апреля": "April",
+            "мая": "May",
+            "июня": "June",
+            "июля": "July",
+            "августа": "August",
+            "сентября": "September",
+            "октября": "October",
+            "ноября": "November",
+            "декабря": "December"
+        }
+
+        MY_DATE_FORMAT = "%d %B %Y года, %H:%M"
+
+        for rus_month, eng_month in months_dict.items():
+            date_str = date_str.replace(rus_month, eng_month)
+
+        date = datetime.datetime.strptime(date_str, MY_DATE_FORMAT)
+
+        return date
 
     def parse(self) -> Union[Article, bool, list]:
         """
