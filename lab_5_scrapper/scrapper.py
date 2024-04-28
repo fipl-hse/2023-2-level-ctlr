@@ -302,12 +302,12 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         article = ''
-        article_preview = article_soup.find('p', class_="article-preview").text
+        article_preview = article_soup.find('p', class_="article-preview").text.replace(' ', '&nbsp;').replace('&nbsp;',' ')
         article_texts = article_soup.find('div', class_="blog-article__content")
         if article_texts:
             texts = article_texts.find_all('p', class_=False)
             for text in texts:
-                article += text.text.replace("&shy;", "-").replace('\xa0', ' ') + '\n'
+                article += text.text.replace(' ', '&nbsp;').replace('&nbsp;', ' ').replace('­', '&shy;').replace('&shy;', '').replace(' ', '') + '\n'
         self.article.text = article_preview + article
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
