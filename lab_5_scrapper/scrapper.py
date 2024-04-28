@@ -297,13 +297,14 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        title = article_soup.find('h1', class_='ro-1')
-        if title:
-            self.article.title = title.text
+
+        self.article.title = article_soup.find('h1', class_=['ro-1', 'short-header']).text
         self.article.article_id = self.article_id
         self.article.author = ['NOT FOUND']
         self.article.date = self.unify_date_format(article_soup.find('p', class_='desc').text)
-        self.article.topics = [article_soup.find('a', class_='label').text]
+        topics = article_soup.find('a', class_='label')
+        if topics:
+            self.article.topics = [article_soup.find('a', class_='label').text]
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -335,6 +336,15 @@ class HTMLParser:
 
         for rus_month, eng_month in months_dict.items():
             date_str = date_str.replace(rus_month, eng_month)
+
+        count = 0
+        for el in reversed(date_str):
+            if not el.isdigit():
+                count += 1
+            else:
+                break
+
+        date_str = date_str[:-count]
 
         date = datetime.datetime.strptime(date_str, MY_DATE_FORMAT)
 
