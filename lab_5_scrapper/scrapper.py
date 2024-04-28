@@ -313,8 +313,8 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        div = article_soup.find('div', class_='col-lg-9 col-md-12') # type: ignore
-        div_news = div.find('div', class_='news-content') # type: ignore
+        div = article_soup.find_all('div', class_='col-lg-9 col-md-12')[0]
+        div_news = div.find_all('div', class_='news-content')[0]
 
         all_ps = div_news.find_all('p')
         tag_to_remove = 'em'
@@ -341,9 +341,11 @@ class HTMLParser:
 
         self.article.author = ['NOT FOUND']
 
-        list_element = article_soup.find('ul', class_='list-unstyled list-inline')
-        element = list_element.find('li', class_='list-inline-item') # type: ignore
-        date = element.get_text().strip().split(', ')[1]
+        div = article_soup.find_all('div', class_='news-heading')[0]
+        list_element = div.find_all('ul', class_='list-unstyled list-inline')[0]
+        element = list_element.find_all('li', class_='list-inline-item')[0]
+        print(element.get_text().strip())
+        date = element.get_text().strip()
         if date:
             self.article.date = self.unify_date_format(date)
 
@@ -366,9 +368,9 @@ class HTMLParser:
             datetime.datetime: Datetime object
         """
         month_names = {
-            'Января': 1, 'Февраля': 2, 'Марта': 3, 'Апреля': 4,
-            'Мая': 5, 'Июня': 6, 'Июля': 7, 'Августа': 8,
-            'Сентября': 9, 'Октября': 10, 'Ноября': 11, 'Декабря': 12
+            'янв.': 1, 'фев.': 2, 'мар.': 3, 'апр.': 4,
+            'мая': 5, 'июн.': 6, 'июл.': 7, 'авг.': 8,
+            'cент.': 9, 'окт.': 10, 'нояб.': 11, 'дек.': 12
         }
         parts = date_str.split()
         new_date_str = f"{int(parts[2])}-{month_names[parts[1]]:02d}-{int(parts[0]):02d} 00:00:00"
@@ -418,7 +420,6 @@ def main() -> None:
             to_raw(article)
             to_meta(article)
             print(article)
-
 
 
 if __name__ == "__main__":
