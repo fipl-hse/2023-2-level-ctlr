@@ -103,7 +103,8 @@ class Config:
                all(re.match(pattern, x) for x in config['seed_urls'])):
             raise IncorrectSeedURLError
 
-        if not isinstance(config['total_articles_to_find_and_parse'], int) or config['total_articles_to_find_and_parse'] <= 0:
+        if not isinstance(config['total_articles_to_find_and_parse'], int)\
+                or config['total_articles_to_find_and_parse'] <= 0:
             raise IncorrectNumberOfArticlesError
 
         if config['total_articles_to_find_and_parse'] > 150:
