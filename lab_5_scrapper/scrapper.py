@@ -95,8 +95,16 @@ class Config:
             ConfigDTO: Config values
         """
         with open(self.path_to_config, 'r', encoding='utf-8') as config_file:
-            config_dict = json.load(config_file)
-        return ConfigDTO(**config_dict)
+            config = json.load(config_file)
+        return ConfigDTO(
+             seed_urls=config['seed_urls'],
+             total_articles_to_find_and_parse=config['total_articles_to_find_and_parse'],
+             headers=config['headers'],
+             encoding=config['encoding'],
+             timeout=config['timeout'],
+             should_verify_certificate=config['should_verify_certificate'],
+             headless_mode=config['headless_mode']
+          )
 
 
     def _validate_config_content(self) -> None:
@@ -105,19 +113,14 @@ class Config:
         """
         config = self._extract_config_content()
 
-        if not isinstance(config.seed_urls, list) or not config.seed_urls:
+        if not (isinstance(config.seed_urls, list)
+                and all(re.match(r'https?://(www.)?', seed_url) for seed_url in config.seed_urls)):
             raise IncorrectSeedURLError
-
-        for url in config.seed_urls:
-            if not isinstance(url, str) or not re.match(r'https?://(www.)?', url):
-                raise IncorrectSeedURLError
 
         if not isinstance(config.headers, dict):
             raise IncorrectHeadersError
 
-        if (not isinstance(config.total_articles, int)
-                or isinstance(config.total_articles, bool)
-                or config.total_articles < 1):
+        if not isinstance(config.total_articles, int) or not config.total_articles > 0:
             raise IncorrectNumberOfArticlesError
 
         if config.total_articles > 150:
