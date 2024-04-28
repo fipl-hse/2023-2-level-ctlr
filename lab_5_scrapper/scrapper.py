@@ -313,8 +313,8 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        div = article_soup.find('div', class_='col-lg-9 col-md-12')
-        div_news = div.find('div', class_='news-content')
+        div = article_soup.find('div', class_='col-lg-9 col-md-12') # type: ignore
+        div_news = div.find('div', class_='news-content') # type: ignore
 
         all_ps = div_news.find_all('p')
         tag_to_remove = 'em'
@@ -342,7 +342,7 @@ class HTMLParser:
         self.article.author = ['NOT FOUND']
 
         list_element = article_soup.find('ul', class_='list-unstyled list-inline')
-        element = list_element.find('li', class_='list-inline-item')
+        element = list_element.find('li', class_='list-inline-item') # type: ignore
         date = element.get_text().strip().split(', ')[1]
         if date:
             self.article.date = self.unify_date_format(date)
