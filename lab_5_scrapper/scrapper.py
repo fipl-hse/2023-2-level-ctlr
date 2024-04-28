@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 import core_utils
 from core_utils import constants
 from core_utils.article.article import Article
-from core_utils.article.io import to_raw
+from core_utils.article.io import to_raw, to_meta
 from core_utils.config_dto import ConfigDTO
 import datetime
 
@@ -336,6 +336,15 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        self.article.article_id = self.article_id
+        self.article.title = article_soup.find('h1', class_="page__title").text
+        self.article.author = []
+        authors = article_soup.find_all(class_="b_subtitle_name article_detail__authors")
+        if authors:
+            for author in authors:
+                self.article.author.append(author.text)
+        else:
+            self.article.author.append("NOT FOUND")
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -390,6 +399,7 @@ def main() -> None:
         article = parser.parse()
         if isinstance(article, Article):
             to_raw(article)
+            to_meta(article)
 
 
 if __name__ == "__main__":
