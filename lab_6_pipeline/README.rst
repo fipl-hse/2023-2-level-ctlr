@@ -463,7 +463,7 @@ reason, you are required to implement a wrapper abstraction over UDPipe model:
 for processing text and outputting its linguistic features in CoNLL-U format.
 
 Notice that this class inherits from
-``LibraryWrapperProtocol``, which defines a specific set of methods to be present
+``LibraryWrapper``, which defines a specific set of methods to be present
 across all wrappers: ``_bootstrap``, ``analyze``, ``to_conllu``,
 as well as an attribute ``_analyzer``.
 In the following sections each field will be explained.
@@ -594,7 +594,7 @@ It is a wrapper over a Stanza model.
 
 Similarly, its responsibility is processing text and outputting
 its linguistic features in CoNLL-U format. Notice that this wrapper inherits
-from ``LibraryWrapperProtocol`` protocol, which means that its interface is
+from ``LibraryWrapper`` protocol, which means that its interface is
 dictated by the protocol and identical to that of
 :py:class:`lab_6_pipeline.pipeline.UDPipeAnalyzer` abstraction.
 In other words, :py:class:`lab_6_pipeline.pipeline.StanzaAnalyzer` and
@@ -634,7 +634,7 @@ Next, you are required to implement
 :py:meth:`lab_6_pipeline.pipeline.StanzaAnalyzer.analyze` method.
 It is a public method used to process texts into CoNLL-U formatted markup.
 The method accepts a list of strings and produces a list of
-``StanzaDocumentProtocol`` instances.
+``StanzaDocument`` instances.
 
 This method uses ``_analyzer`` attribute, which encloses the Stanza model, to retrieve
 linguistic features of the text.
@@ -717,7 +717,7 @@ If you encounter errors from using
 with :py:class:`lab_6_pipeline.pipeline.StanzaAnalyzer`, then you must have made a mistake
 during either implementation of the model wrapper or markup extraction during pipeline
 execution. Note that all model wrappers must have identical interface, specified by
-``LibraryWrapperProtocol``, and processing pipeline must only rely on that interface.
+``LibraryWrapper``, and processing pipeline must only rely on that interface.
 Pipeline must not rely on any library specific attributes or methods.
 
 Stage 5. Extract and visualize POS frequency statistics
@@ -750,7 +750,7 @@ you are required to implement a
 Its responsibility is the opposite of that of
 :py:meth:`lab_6_pipeline.pipeline.StanzaAnalyzer.to_conllu` method: it
 accepts article instance, derives the name of the file where its UD properties are stored,
-and converts its contents to the ``StanzaDocumentProtocol`` via ``stanza.utils.conll``.
+and converts its contents to the ``StanzaDocument`` via ``stanza.utils.conll``.
 
 To learn more about the Stanza library interface,
 refer to the corresponding seminar materials or inspect

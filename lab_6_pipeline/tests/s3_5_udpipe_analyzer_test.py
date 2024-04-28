@@ -16,7 +16,7 @@ from lab_6_pipeline.tests.utils import pipeline_test_files_setup
 
 class UDPipeAnalyzerTest(unittest.TestCase):
     """
-    Tests udpipe texts analysis for 6 marks.
+    Tests udpipe texts analysis.
     """
 
     def setUp(self) -> None:
@@ -51,7 +51,7 @@ class UDPipeAnalyzerTest(unittest.TestCase):
     @pytest.mark.lab_6_pipeline
     def test_headers_are_included(self):
         """
-        Checks id of sentence.
+        Check id of sentence.
         """
         conllu_format = self.udpipe_analyzer.analyze(self.texts)[0].format()
         header_line = conllu_format.split("\n")[0]

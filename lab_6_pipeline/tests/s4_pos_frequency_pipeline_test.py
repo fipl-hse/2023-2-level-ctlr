@@ -18,7 +18,7 @@ from lab_6_pipeline.tests.utils import pipeline_test_files_setup
 
 class PosFrequencyPipelineTests(unittest.TestCase):
     """
-    Class for testing POSFrequencyPipeline realization.
+    Tests for POSFrequencyPipeline realization.
     """
 
     @classmethod

@@ -18,7 +18,7 @@ from lab_6_pipeline.tests.utils import pipeline_test_files_setup
 
 class StanzaAnalyzerTest(unittest.TestCase):
     """
-    Tests stanza texts analysis for 8 marks.
+    Tests for stanza texts analysis.
     """
 
     def setUp(self) -> None:
@@ -53,7 +53,7 @@ class StanzaAnalyzerTest(unittest.TestCase):
     @pytest.mark.lab_6_pipeline
     def test_analyze_method(self) -> None:
         """
-        Checks the correctness of the analyze method.
+        Check the correctness of the analyze method.
         """
         analysis = self.stanza_analyzer.analyze(self.texts)
 
@@ -66,7 +66,7 @@ class StanzaAnalyzerTest(unittest.TestCase):
     @pytest.mark.lab_6_pipeline
     def test_type_of_analyzer(self) -> None:
         """
-        Checks the type of the stanza pipeline.
+        Check the type of the stanza pipeline.
         """
         self.assertIsInstance(self.stanza_analyzer._analyzer, stanza.pipeline.core.Pipeline)
 
@@ -76,7 +76,7 @@ class StanzaAnalyzerTest(unittest.TestCase):
     @pytest.mark.lab_6_pipeline
     def test_from_conllu_method(self) -> None:
         """
-        Checks the correctness of the from_conllu method.
+        Check the correctness of the from_conllu method.
         """
         from_conllu_format = self.stanza_analyzer.from_conllu(article=self.articles[1])
 

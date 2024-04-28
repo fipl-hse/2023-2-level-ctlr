@@ -73,4 +73,3 @@ Lab_6
 -  :py:func:`core_utils.article.io.from_meta` - use to load
    meta-information about each article and create the
    :py:class:`core_utils.article.article.Article` abstraction;
--  :py:func:`core_utils.article.io.to_json` - use to save patterns of articles in json;

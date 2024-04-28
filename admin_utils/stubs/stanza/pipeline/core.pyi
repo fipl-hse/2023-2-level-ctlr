@@ -1,4 +1,4 @@
-from core_utils.pipeline import StanzaDocumentProtocol, UDPipeResultProtocol
+from core_utils.pipeline import StanzaDocument, UDPipeResultProtocol
 
 class Pipeline:
 
@@ -7,7 +7,7 @@ class Pipeline:
         Initializes instance.
         """
 
-    def process(self, text: StanzaDocumentProtocol) -> list[StanzaDocumentProtocol]:
+    def process(self, text: StanzaDocument) -> list[StanzaDocument]:
         """
         Explicit processing.
         """
