@@ -320,7 +320,7 @@ class HTMLParser:
         """
         text = []
         text_str = ''
-        #text_bs = article_soup.find(class_="pin-text wid")
+        text_bs = article_soup.find(class_="pin-text wid")
         article = article_soup.find_all("p")
         if article:
             for paragraph in article:
@@ -328,8 +328,8 @@ class HTMLParser:
                 if cleaned_paragraph:
                     text.append(cleaned_paragraph)
             text_str = "\n".join(text)
-        #if len(text_str) < 50:
-         #   text_str = text_bs.get_text(strip=True)
+        if len(text_str) < 50:
+            text_str = text_bs.get_text(strip=True)
         self.article.text = text_str
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
@@ -348,8 +348,8 @@ class HTMLParser:
         for topic in topics:
             self.article.topics.append(topic.text)
 
-        #date = article_soup.find_all(class_="pin-date wid bs-bb")[0].text
-        #self.article.date = self.unify_date_format(date)
+        date = article_soup.find(class_="post__meta-date").text
+        self.article.date = self.unify_date_format(date)
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -361,7 +361,7 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
-        return datetime.datetime.strptime(date_str, '%d.%m.%Y, %H:%M')
+        return datetime.datetime.strptime(date_str, '%H:%M, %d.%m.%Y')
 
     def parse(self) -> Union[Article, bool, list]:
         """
