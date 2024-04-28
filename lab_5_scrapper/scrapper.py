@@ -5,8 +5,8 @@ Crawler implementation.
 import datetime
 import json
 import pathlib
-from random import randrange
 import re
+from random import randrange
 from time import sleep
 from typing import Pattern, Union
 
@@ -16,9 +16,8 @@ from bs4 import BeautifulSoup
 import core_utils
 from core_utils import constants
 from core_utils.article.article import Article
-from core_utils.article.io import to_raw, to_meta
+from core_utils.article.io import to_meta, to_raw
 from core_utils.config_dto import ConfigDTO
-
 
 
 class IncorrectSeedURLError(Exception):
