@@ -137,7 +137,6 @@ class RawMediumDataValidator(unittest.TestCase):
     @pytest.mark.mark10
     @pytest.mark.stage_2_5_dataset_validation
     @pytest.mark.lab_5_scrapper
-    @pytest.mark.skip
     def test_validate_metadata_medium(self) -> None:
         """
         Ensure collected metadata is valid.
