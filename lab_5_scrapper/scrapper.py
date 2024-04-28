@@ -238,7 +238,10 @@ class Crawler:
         """
         tags = article_bs.find_all('a', class_='news-listing__item-link')
         urls = [tag['href'] for tag in tags]
-        return urls[-1] if urls else ''
+        if urls and isinstance(urls[-1], str):
+            return urls[-1]
+        else:
+            return ''
 
     def find_articles(self) -> None:
         """
