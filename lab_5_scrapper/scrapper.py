@@ -325,9 +325,9 @@ class HTMLParser:
         else:
             date_example = '2024-01-01'
             self.article.date = self.unify_date_format(date_example)
-        author_element = article_soup.find(class_='article-author', target="_blank")
-        if author_element:
-            words = author_element.text.split()
+        author = article_soup.find(class_="article-author")
+        if author:
+            words = author.text.split()[1:]
             author = ' '.join(word for word in words if 'label' not in word)
             self.article.author = [author.strip()]
         else:
