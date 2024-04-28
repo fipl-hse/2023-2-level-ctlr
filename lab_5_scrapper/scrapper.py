@@ -350,7 +350,7 @@ class HTMLParser:
             date = datetime.datetime.strptime(date_str, MY_DATE_FORMAT)
 
         else:
-            date = None
+            date = datetime.datetime(2024, 4, 25, 8, 0, 0)
 
         return date
     def parse(self) -> Union[Article, bool, list]:
