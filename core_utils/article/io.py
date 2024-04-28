@@ -103,29 +103,6 @@ def from_meta(path: Union[pathlib.Path, str],
     return article
 
 
-def to_conllu(article: Article,
-              include_morphological_tags: bool = False,
-              include_pymorphy_tags: bool = False) -> None:
-    """
-    Save conllu information from the Article into the .conllu file.
-
-    Args:
-        article (Article): Article instance
-        include_morphological_tags (bool): Flag to include morphological information
-        include_pymorphy_tags (bool): Include pymorphy tags or not
-    """
-    article_type = ArtifactType.POS_CONLLU
-    if include_morphological_tags:
-        article_type = ArtifactType.MORPHOLOGICAL_CONLLU
-    if include_pymorphy_tags:
-        article_type = ArtifactType.FULL_CONLLU
-
-    with open(file=article.get_file_path(article_type),
-              mode='w',
-              encoding='utf-8') as conllu_file:
-        conllu_file.write(article.get_conllu_text(include_morphological_tags))
-
-
 def to_json(article: Article,
             patterns_found: dict[str, list[tuple[list[str], str]]]) -> None:
     """
