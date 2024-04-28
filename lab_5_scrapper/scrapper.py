@@ -7,10 +7,10 @@ import json
 import pathlib
 import re
 import shutil
-from typing import Pattern, Union
+from typing import Pattern, Union, Optional
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag, NavigableString
 
 from core_utils.article.article import Article
 from core_utils.article.io import to_meta, to_raw
@@ -240,7 +240,7 @@ class Crawler:
         for link in container_div.find_all('a', href=True):
             if not link.get('href').startswith('/news/202'):
                 continue
-            href = 'https://www.gazetavechorka.ru' + link.get('href')
+            href = 'https://www.gazetavechorka.ru' + str(link.get('href'))
             if href and href not in self.urls:
                 return href
         return ''
@@ -325,8 +325,8 @@ class HTMLParser:
         texts = []
         for p_bs in all_ps:
             texts.append(p_bs.text)
-
         self.article.text = '\n'.join(texts)
+        print(self.article.text)
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -337,11 +337,12 @@ class HTMLParser:
         """
         header = article_soup.find('h1')
         if header:
-            self.article.title = header
+            self.article.title = header.text
 
         self.article.author = ['NOT FOUND']
 
-        element = article_soup.find('ul', class_='list-unstyled list-inline').find('li', class_='list-inline-item')
+        list_element = article_soup.find('ul', class_='list-unstyled list-inline')
+        element = list_element.find('li', class_='list-inline-item')
         date = element.get_text().strip().split(', ')[1]
         if date:
             self.article.date = self.unify_date_format(date)
@@ -349,7 +350,9 @@ class HTMLParser:
         meta_tag = article_soup.find('meta', attrs={'meta': 'keywords'})
         topics = []
         if meta_tag:
-            topics = meta_tag['content'].split(', ')
+            content = meta_tag.get('content')
+            if content:
+                topics = content.split(', ')
         self.article.topics = topics
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
@@ -368,8 +371,8 @@ class HTMLParser:
             'Сентября': 9, 'Октября': 10, 'Ноября': 11, 'Декабря': 12
         }
         parts = date_str.split()
-        new_date_str = f"{int(parts[0]):02d}.{month_names[parts[1]]:02d}.{int(parts[2])} 00:00"
-        return datetime.datetime.strptime(new_date_str, '%d.%m.%Y %H:%M')
+        new_date_str = f"{int(parts[2])}-{month_names[parts[1]]:02d}-{int(parts[0]):02d} 00:00:00"
+        return datetime.datetime.strptime(new_date_str, '%Y-%m-%d %H:%M:%S')
 
     def parse(self) -> Union[Article, bool, list]:
         """
@@ -409,10 +412,12 @@ def main() -> None:
     crawler.find_articles()
     urls = crawler.urls
     for index, url in enumerate(urls):
-        parser = HTMLParser(full_url=url, article_id=index, config=config)
+        parser = HTMLParser(full_url=url, article_id=index + 1, config=config)
         article = parser.parse()
-        to_raw(article)
-        to_meta(article)
+        if isinstance(article, Article):
+            to_raw(article)
+            to_meta(article)
+            print(article)
 
 
 
