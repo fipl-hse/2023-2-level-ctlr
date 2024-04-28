@@ -1,21 +1,22 @@
 """
 Crawler implementation.
 """
+import datetime
+import json
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
 import pathlib
-from typing import Pattern, Union
-from core_utils.config_dto import ConfigDTO
-import json
 import re
-from bs4 import BeautifulSoup
-from pathlib import Path
 import shutil
-import requests
-import datetime
-from core_utils.article.article import Article
-from core_utils.article.io import to_raw, to_meta
-from core_utils.constants import CRAWLER_CONFIG_PATH, ASSETS_PATH
+from pathlib import Path
+from typing import Pattern, Union
 
+import requests
+from bs4 import BeautifulSoup
+
+from core_utils.article.article import Article
+from core_utils.article.io import to_meta, to_raw
+from core_utils.config_dto import ConfigDTO
+from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 
 
 class IncorrectSeedURLError(Exception):
