@@ -237,10 +237,8 @@ class Crawler:
             str: Url from HTML
         """
         tags = article_bs.find_all('a', class_='news-listing__item-link')
-        url = ''
-        for element in tags:
-            url = element['href']
-        return url
+        urls = [tag['href'] for tag in tags]
+        return urls[-1] if urls else ''
 
     def find_articles(self) -> None:
         """
@@ -255,8 +253,9 @@ class Crawler:
                     continue
 
                 soup = BeautifulSoup(response.text, 'lxml')
-                urls.append(self._extract_url(soup))
-
+                url = self._extract_url(soup)
+                if url:
+                    urls.append(url)
         self.urls.extend(urls)
 
     def get_search_urls(self) -> list:
