@@ -7,10 +7,10 @@ import json
 import pathlib
 import re
 import shutil
-from typing import Pattern, Union, Optional
+from typing import Pattern, Union
 
 import requests
-from bs4 import BeautifulSoup, Tag, NavigableString
+from bs4 import BeautifulSoup
 
 from core_utils.article.article import Article
 from core_utils.article.io import to_meta, to_raw
