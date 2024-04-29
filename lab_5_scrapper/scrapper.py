@@ -248,8 +248,8 @@ class Crawler:
         """
         urls = []
         while len(urls) < self.config.get_num_articles():
-            for url in self.get_search_urls():
-                response = make_request(url, self.config)
+            for element in self.get_search_urls():
+                response = make_request(element, self.config)
 
                 if not response.ok:
                     continue
