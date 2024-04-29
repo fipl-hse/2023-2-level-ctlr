@@ -337,6 +337,9 @@ class HTMLParser:
         for rus_month, eng_month in months_dict.items():
             date_str = date_str.replace(rus_month, eng_month)
 
+        if 'Тема' in date_str:
+            date_str = date_str[:date_str.index('Тема')]
+
         count = 0
         for el in reversed(date_str):
             if not el.isdigit():
