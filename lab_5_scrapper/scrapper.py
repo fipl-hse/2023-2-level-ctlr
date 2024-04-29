@@ -327,10 +327,12 @@ class HTMLParser:
 
         date = article_soup.find('time')
         if date:
-            date = str(date.get("datetime"))
-            if isinstance(date, str):
-                date_str = date[:-6].replace('T', ' ')
-                self.article.date = self.unify_date_format(date_str)
+            date = date.get("datetime")
+            date_str = date[:-6].replace('T', ' ')
+            self.article.date = self.unify_date_format(date_str)
+        else:
+            date_example = '2024-01-01 00:00:00'
+            self.article.date = self.unify_date_format(date_example)
 
         keyword_class = article_soup.find_all(class_ ='tag tag-outline-primary')
         self.article.topics = []
