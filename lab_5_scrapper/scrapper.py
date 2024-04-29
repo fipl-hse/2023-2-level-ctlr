@@ -326,8 +326,9 @@ class HTMLParser:
             self.article.author.append(author)
 
         date = article_soup.find('time', itemprop='datePublished').string
-        date_str = date[:-6].replace('T', ' ')
-        self.article.date = self.unify_date_format(str(date_str))
+        if date:
+            date_str = date[:-6].replace('T', ' ')
+            self.article.date = self.unify_date_format(str(date_str))
 
         keyword_class = article_soup.find_all(class_ ='tag tag-outline-primary')
         if keyword_class:
