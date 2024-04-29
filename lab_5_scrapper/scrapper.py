@@ -330,11 +330,12 @@ class HTMLParser:
             self.article.date = self.unify_date_format(date_str)
 
         keyword_class = article_soup.find_all(class_ ='tag tag-outline-primary')
-        self.article.topics = []
-        for key in keyword_class:
-            if key not in self.article.topics:
-                keyword = key.string.strip()
-                self.article.topics.append(keyword)
+        if keyword_class:
+            self.article.topics = []
+            for key in keyword_class:
+                if key not in self.article.topics:
+                    keyword = key.string.strip()
+                    self.article.topics.append(keyword)
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
