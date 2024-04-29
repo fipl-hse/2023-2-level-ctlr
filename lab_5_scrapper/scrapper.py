@@ -7,19 +7,17 @@ import json
 import pathlib
 import random
 import re
-import requests
 import shutil
-
-from bs4 import BeautifulSoup
-from selenium import webdriver
 from time import sleep
 from typing import Pattern, Union
+
+import requests
+from bs4 import BeautifulSoup
 
 from core_utils import constants
 from core_utils.article.article import Article
 from core_utils.article.io import to_meta, to_raw
 from core_utils.config_dto import ConfigDTO
-
 
 class IncorrectSeedURLError(Exception):
     """
@@ -72,6 +70,14 @@ class Config:
         self.config_dto = self._extract_config_content()
         self._validate_config_content()
 
+        self._seed_urls = self.config_dto.seed_urls
+        self._num_articles = self.config_dto.total_articles
+        self._headers = self.config_dto.headers
+        self._encoding = self.config_dto.encoding
+        self._timeout = self.config_dto.timeout
+        self._should_verify_certificate = self.config_dto.should_verify_certificate
+        self._headless_mode = self.config_dto.headless_mode
+
     def _extract_config_content(self) -> ConfigDTO:
         """
         Get config values.
@@ -104,7 +110,6 @@ class Config:
             raise IncorrectNumberOfArticlesError
 
         if (
-            self.config_dto.total_articles > 0 and
             self.config_dto.total_articles > 150
         ):
             raise NumberOfArticlesOutOfRangeError  
@@ -133,7 +138,7 @@ class Config:
         Returns:
             list[str]: Seed urls
         """
-        return self.config_dto.seed_urls
+        return self._seed_urls
 
     def get_num_articles(self) -> int:
         """
@@ -142,7 +147,7 @@ class Config:
         Returns:
             int: Total number of articles to scrape
         """
-        return self.config_dto.total_articles
+        return self._num_articles
 
     def get_headers(self) -> dict[str, str]:
         """
@@ -151,7 +156,7 @@ class Config:
         Returns:
             dict[str, str]: Headers
         """
-        return self.config_dto.headers
+        return self._headers
 
     def get_encoding(self) -> str:
         """
@@ -160,7 +165,7 @@ class Config:
         Returns:
             str: Encoding
         """
-        return self.config_dto.encoding
+        return self._encoding
 
     def get_timeout(self) -> int:
         """
@@ -169,7 +174,7 @@ class Config:
         Returns:
             int: Number of seconds to wait for response
         """
-        return self.config_dto.timeout
+        return self._timeout
 
     def get_verify_certificate(self) -> bool:
         """
@@ -178,7 +183,7 @@ class Config:
         Returns:
             bool: Whether to verify certificate or not
         """
-        return self.config_dto.should_verify_certificate
+        return self._should_verify_certificate
 
     def get_headless_mode(self) -> bool:
         """
@@ -187,8 +192,7 @@ class Config:
         Returns:
             bool: Whether to use headless mode or not
         """
-        return self.config_dto.headless_mode
-    
+        return self._headless_mode
 
 def make_request(url: str, config: Config) -> requests.models.Response:
     """
@@ -313,15 +317,14 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        title = article_soup.title.text.strip()
+        title = article_soup.find('title').string.strip()
         self.article.title = title
 
         author = article_soup.find('div', itemprop='author').text
-        self.article.author = author
+        self.article.author.append(author)
 
         date = article_soup.find('time')
         date = date.get('datetime')
-        # date = datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S%z")
         self.article.date = self.unify_date_format(date)
 
         keyword_class = article_soup.find_all(class_ ='tag tag-outline-primary')
@@ -371,34 +374,6 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
         shutil.rmtree(base_path)
     base_path.mkdir(parents=True)
 
-class CrawlerRecursive(Crawler):
-    """
-    The Crawler in a recursive manner.
-
-    """
-
-    def __init__(self, configuration: Config) -> None:
-        super().__init__(configuration)
-        self.start_url = 'https://www.securitylab.ru/news/547738.php' #self.config.get_seed_urls()[0]
-        self.driver = webdriver.Edge()
-        self.scroll_timeout = self.config.config_dto.timeout
-
-
-    def find_articles(self) -> None:
-        page_count = 0
-        domain = 'https://www.securitylab.ru'
-        url = self.start_url
-
-        while page_count < self.self.config.get_num_articles():
-            response = requests.get(domain + url, self.config.config_dto.headers)
-            soup = BeautifulSoup(response.text, 'lxml')
-            self._extract_url(soup).append(self.urls)
-            self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-            sleep(self.timeout)
-            page_count += 1
-        self.driver.quit()
-        print(self.urls)
-
 def main() -> None:
     """
     Entrypoint for scrapper module.
@@ -415,21 +390,104 @@ def main() -> None:
             to_raw(article)
             to_meta(article)
 
+class CrawlerRecursive(Crawler):
+    """
+    The Crawler in a recursive manner.
+
+    """
+
+    def __init__(self, configuration: Config) -> None:
+        '''
+        Recursive Crawler implementation.
+        '''
+
+        super().__init__(configuration)
+        self.start_url = self.config.get_seed_urls()[0]
+        self.crawling_path = pathlib.Path('tmp/crawled_urls.json')
+        self.parsing_path = pathlib.Path('tmp/parsed_urls.json')
+        self.all_urls = [self.start_url]
+        self.domain = 'https://www.securitylab.ru'
+        self.num_of_urls = 0
+        self.parsed_urls = []
+
+    def save_crawled_urls(self) -> None:
+        '''
+        '''
+        json_info = {'all_urls': self.all_urls, 'article_urls': self.urls, 'num_of_crawled_urls': self.num_of_urls}
+
+        with open (self.path, 'w', encoding='utf-8') as f:
+            json.dump(json_info, f, indent=3)
+
+    def find_articles(self) -> None:
+        '''
+        '''
+        if len(self.urls) < self.config._num_articles:
+            url = self.all_urls[self.num_of_urls]
+
+            response = make_request(url, self.config)
+            if not response.ok:
+                return 'response is not ok'
+
+            soup = BeautifulSoup(response.text, 'lxml')
+            links = soup.find_all('a')
+            for link in links:
+                link = link.get('href')
+                if link and (link.startswith('/') or link.startswith('page')):
+                    if (self.domain + link) not in self.all_urls:
+                        sleep(random.randint(1, 5))
+                        if link.startswith('page'):
+                            self.all_urls.append(self.domain + '/news/' + link)
+                        else:
+                            self.all_urls.append(self.domain + link)
+
+                        self.save_crawled_urls()
+                        extr = self._extract_url(soup)
+                        if extr and extr not in self.urls and len(self.urls) < self.config._num_articles:
+                            self.urls.append(extr)
+                            self.save_crawled_urls()
+        
+            if len(self.urls) < self.config._num_articles:
+                self.num_of_urls += 1
+            self.find_articles()
+
+
 def recursive_main() -> None:
     """
     Entrypoint for scrapper module.
     """
-    prepare_environment(constants.ASSETS_PATH)
     configuration = Config(constants.CRAWLER_CONFIG_PATH)
-    crawler = Crawler(configuration)
+    crawler = CrawlerRecursive(configuration)
+
+    if crawler.crawling_path.exists():
+        with open(crawler.crawling_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            crawler.all_urls = data['all_urls']
+            crawler.urls = data['article_urls']
+            crawler.num_of_urls = data['num_of_crawled_urls']
+            crawler.save_crawled_urls
+        with open(crawler.parsing_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            crawler.parsed_urls = data['parsed_urls']
+    else:
+        prepare_environment(constants.ASSETS_PATH)
+
     crawler.find_articles()
 
     for i, url in enumerate(crawler.urls):
-        parser = HTMLParser(url, i, configuration)
-        article = parser.parse()
-        if isinstance(article, Article):
-            to_raw(article)
-            to_meta(article)
+        if url not in crawler.parsed_urls:
+            parser = HTMLParser(url, i, configuration)
+            article = parser.parse()                
+            if isinstance(article, Article):
+                to_raw(article)
+                to_meta(article)
+                crawler.parsed_urls.append(url)
+                json_info = {'parsed_urls': crawler.parsed_urls}
+                with open (crawler.parsing_path, 'w', encoding='utf-8') as f:
+                    json.dump(json_info, f, indent=3)
+
+    if crawler.num_of_urls == 0:
+        print('not a single page were parsed fully')
+    print(crawler.urls[:crawler.num_of_urls], 'were parsed')
 
 if __name__ == "__main__":
     recursive_main()
