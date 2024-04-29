@@ -246,7 +246,8 @@ class Crawler:
         links = article_bs.find_all('a')
         for link in links:
             link = link.get('href')
-            if link and link.startswith('/news/') and link.endswith('php'):
+            if (link and link.startswith('/news/')
+                and link.endswith('php')):
                 url = 'https://www.securitylab.ru' + link
                 if url not in self.urls:
                     return url
@@ -348,8 +349,6 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
-        
-        
         formatted_date = datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
         return formatted_date
         
@@ -490,14 +489,6 @@ def recursive_main() -> None:
             if isinstance(article, Article):
                 to_raw(article)
                 to_meta(article)
-                crawler.parsed_urls.append(url)
-                json_info = {'parsed_urls': crawler.parsed_urls}
-                with open (crawler.parsing_path, 'w', encoding='utf-8') as f:
-                    json.dump(json_info, f, indent=3)
-
-    if crawler.num_of_urls == 0:
-        print('not a single page were parsed fully')
-    print(crawler.urls[:crawler.num_of_urls], 'were parsed')
 
 if __name__ == "__main__":
     recursive_main()
