@@ -417,6 +417,7 @@ class CrawlerRecursive(Crawler):
 
     def save_crawled_urls(self) -> None:
         '''
+        Save the json information about crawling
         '''
         json_info = {'all_urls': self.all_urls, 'article_urls': self.urls, 'num_of_crawled_urls': self.num_of_urls}
 
@@ -425,9 +426,12 @@ class CrawlerRecursive(Crawler):
 
     def find_articles(self) -> None:
         '''
+        Find articles using RecursiveCrawler
         '''
         if len(self.urls) < self.config._num_articles:
-            url = self.all_urls[self.num_of_urls]
+            if len(self.all_urls) != 0: 
+                url = self.all_urls[self.num_of_urls]
+            url = self.start_url
 
             response = make_request(url, self.config)
             if not response.ok:
@@ -496,4 +500,4 @@ def recursive_main() -> None:
     print(crawler.urls[:crawler.num_of_urls], 'were parsed')
 
 if __name__ == "__main__":
-    main()
+    recursive_main()
