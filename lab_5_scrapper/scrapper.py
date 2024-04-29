@@ -325,14 +325,9 @@ class HTMLParser:
         if author:
             self.article.author.append(author)
 
-        date = article_soup.find('time')
-        if date:
-            date = str(date.get("datetime"))
-            date_str = date[:-6].replace('T', ' ')
+        date_str = article_soup.find('time').string
+        if date_str:
             self.article.date = self.unify_date_format(date_str)
-        else:
-            date_example = '2024-01-01 00:00:00'
-            self.article.date = self.unify_date_format(date_example)
 
         keyword_class = article_soup.find_all(class_ ='tag tag-outline-primary')
         self.article.topics = []
@@ -351,8 +346,19 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
-        return datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
-
+        
+        month_names = {
+            'января': '01', 'февраля': '02', 'марта': '03', 'апреля': '04',
+            'мая': '05', 'июня': '06', 'июля': '07', 'августа': '08',
+            'cентября': '09', 'октября': '10', 'ноября': '11', 'декабря': '12'
+        }
+        for i in month_names:
+            if i in date_str:
+                date_str = date_str.replace(i, month_names[i])
+                break
+        date_str = date_str[-4:] + '-'+ date_str[11:13] + '-' + date_str[8:10] + " " + date_str[:5]
+        return datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M')  #2021-01-26 07:30:00.
+        
     def parse(self) -> Union[Article, bool, list]:
         """
         Parse each article.
