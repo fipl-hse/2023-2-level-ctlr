@@ -19,6 +19,7 @@ from core_utils.article.article import Article
 from core_utils.article.io import to_meta, to_raw
 from core_utils.config_dto import ConfigDTO
 
+
 class IncorrectSeedURLError(Exception):
     """
     Seed URL does not match standard pattern.
@@ -490,4 +491,4 @@ def recursive_main() -> None:
     print(crawler.urls[:crawler.num_of_urls], 'were parsed')
 
 if __name__ == "__main__":
-    recursive_main()
+    main()
