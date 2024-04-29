@@ -325,8 +325,8 @@ class HTMLParser:
         self.article.author.append(author)
 
         date = article_soup.find('time')
-        date = str(date.get('datetime'))
-        self.article.date = self.unify_date_format(date)
+        date = date.get('datetime')
+        self.article.date = self.unify_date_format(str(date))
 
         keyword_class = article_soup.find_all(class_ ='tag tag-outline-primary')
         self.article.topics = []
