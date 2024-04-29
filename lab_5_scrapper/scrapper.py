@@ -322,11 +322,12 @@ class HTMLParser:
         self.article.title = title
 
         author = article_soup.find('div', itemprop='author').text
-        self.article.author.append(author)
+        if author:
+            self.article.author.append(author)
 
         date = article_soup.find('time')
         if date:
-            date = date.get("datetime")
+            date = str(date.get("datetime"))
             self.article.date = self.unify_date_format(str(date))
 
         keyword_class = article_soup.find_all(class_ ='tag tag-outline-primary')
@@ -347,8 +348,7 @@ class HTMLParser:
             datetime.datetime: Datetime object
         """
         date_str = date_str[:-6].replace('T', ' ')
-        formatted_date = datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
-        return formatted_date
+        return datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
 
     def parse(self) -> Union[Article, bool, list]:
         """
