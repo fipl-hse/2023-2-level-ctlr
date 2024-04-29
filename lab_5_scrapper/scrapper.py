@@ -325,9 +325,9 @@ class HTMLParser:
         if author:
             self.article.author.append(author)
 
-        date_str = article_soup.find('time').string
-        if date_str:
-            self.article.date = self.unify_date_format(date_str)
+        date = article_soup.find('time', itemprop='datePublished').string
+        date_str = date[:-6].replace('T', ' ')
+        self.article.date = self.unify_date_format(str(date_str))
 
         keyword_class = article_soup.find_all(class_ ='tag tag-outline-primary')
         if keyword_class:
@@ -348,17 +348,9 @@ class HTMLParser:
             datetime.datetime: Datetime object
         """
         
-        month_names = {
-            'января': '01', 'февраля': '02', 'марта': '03', 'апреля': '04',
-            'мая': '05', 'июня': '06', 'июля': '07', 'августа': '08',
-            'cентября': '09', 'октября': '10', 'ноября': '11', 'декабря': '12'
-        }
-        for i in month_names:
-            if i in date_str:
-                date_str = date_str.replace(i, month_names[i])
-                break
-        date_str = date_str[-4:] + '-'+ date_str[11:13] + '-' + date_str[8:10] + " " + date_str[:5]
-        return datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M')  #2021-01-26 07:30:00.
+        
+        formatted_date = datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+        return formatted_date
         
     def parse(self) -> Union[Article, bool, list]:
         """
@@ -427,7 +419,7 @@ class CrawlerRecursive(Crawler):
         '''
         json_info = {'all_urls': self.all_urls, 'article_urls': self.urls, 'num_of_crawled_urls': self.num_of_urls}
 
-        with open (self.path, 'w', encoding='utf-8') as f:
+        with open (self.crawling_path, 'w', encoding='utf-8') as f:
             json.dump(json_info, f, indent=3)
 
     def find_articles(self) -> None:
@@ -477,6 +469,7 @@ def recursive_main() -> None:
             crawler.urls = data['article_urls']
             crawler.num_of_urls = data['num_of_crawled_urls']
             crawler.save_crawled_urls
+    if crawler.parsing_path.exists():
         with open(crawler.parsing_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
             crawler.parsed_urls = data['parsed_urls']
