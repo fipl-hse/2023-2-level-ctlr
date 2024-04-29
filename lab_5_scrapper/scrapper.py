@@ -239,6 +239,7 @@ class Crawler:
         """
         self.config = config
         self.urls = []
+        self.url_pattern = "https://www.hij.ru"
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -250,27 +251,26 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        all_urls = article_bs.find_all('a', class_='magazine_articles__item-fulllink')
-        for url in all_urls:
-            full_url = self.config.get_seed_urls()[0][0:18] + str(url.get('href'))
-            if full_url not in self.urls:
-                return full_url
-            else:
-                continue
+        url = article_bs.find('a', class_='magazine_articles__item-fulllink')
+        full_url = self.url_pattern + str(url.get('href'))
+        return full_url
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
-        seeds = self.config.get_seed_urls()
+        seeds = self.get_search_urls()
         for seed in seeds:
             response = make_request(seed, self.config)
             if not response.ok:
                 continue
             soup = BeautifulSoup(response.text, 'lxml')
-            while len(self.urls) < self.config.get_num_articles():
-                article_url = self._extract_url(soup)
-                self.urls.append(article_url)
+            all_urls = soup.find(class_="magazine_articles")
+            for url in all_urls.find_all(class_="magazine_articles__item magazine_articles__item--fulllinked"):
+                if len(self.urls) == self.config.get_num_articles():
+                    break
+                if self._extract_url(url) and self._extract_url(url) not in self.urls:
+                    self.urls.append(self._extract_url(url))
 
     def get_search_urls(self) -> list:
         """
