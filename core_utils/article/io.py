@@ -101,20 +101,3 @@ def from_meta(path: Union[pathlib.Path, str],
     # intentionally leave it empty
     article.text = ''
     return article
-
-
-def to_json(article: Article,
-            patterns_found: dict[str, list[tuple[list[str], str]]]) -> None:
-    """
-    Saves patterns as json.
-
-    Args:
-        article (Article): Article instance
-        patterns_found (dict[str, list[tuple[list[str], str]]]): Found patterns
-    """
-    with open(article.get_pattern_path(), 'w', encoding='utf-8') as meta_file:
-        json.dump(patterns_found,
-                  meta_file,
-                  indent=4,
-                  ensure_ascii=False,
-                  separators=(',', ': '))
