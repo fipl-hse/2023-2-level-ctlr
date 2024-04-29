@@ -14,7 +14,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from core_utils.article.article import Article
-from core_utils.article.io import to_raw
+from core_utils.article.io import to_raw, to_meta
 from core_utils.config_dto import ConfigDTO
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 
@@ -78,8 +78,11 @@ class Config:
         """
         Ensure configuration parameters are not corrupt.
         """
-        if (not isinstance(self.extract.total_articles, int) and
-                self.extract.total_articles <= 0):
+        if (not isinstance(self.extract.seed_urls, list) or
+                not all(re.match(r"https?://(www.)?portamur\.ru/news", url) for url in self.extract.seed_urls)):
+            raise IncorrectSeedURLError
+
+        if not isinstance(self.extract.total_articles, int) or self.extract.total_articles <= 0:
             raise IncorrectNumberOfArticlesError
 
         if not 1 <= self.extract.total_articles <= 150:
@@ -91,16 +94,12 @@ class Config:
         if not (self.extract.encoding, str):
             raise IncorrectEncodingError
 
-        if (not (self.extract.timeout, int) and
-                1 >= self.extract.timeout >= 60):
+        if not (self.extract.timeout, int) or not 1 <= self.extract.timeout < 60:
             raise IncorrectTimeoutError
 
-        if not (self.extract.should_verify_certificate, bool):
+        if not (self.extract.should_verify_certificate, bool) \
+                or not isinstance(self.extract.headless_mode, bool):
             raise IncorrectVerifyError
-
-        for url in self.extract.seed_urls:
-            if not re.match(r"https?://(www.)?portamur\.ru/news", url):
-                raise IncorrectSeedURLError
 
     def get_seed_urls(self) -> list[str]:
         """
@@ -282,6 +281,8 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        title_res = ''
+        title = article_soup.find('div', class_="meta")
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -301,10 +302,10 @@ class HTMLParser:
         Returns:
             Union[Article, bool, list]: Article instance
         """
-        response = make_request(url = self.full_url, config=self.config)
-        if response == 200:
-            article_bs = BeautifulSoup(response.text, 'lxml')
-            self._fill_article_with_text(article_soup=article_bs)
+        response = make_request(url=self.full_url, config=self.config)
+        # if response == 200:
+        article_bs = BeautifulSoup(response.text, parser='lxml')
+        self._fill_article_with_text(article_soup=article_bs)
         return self.article
 
 
@@ -334,6 +335,7 @@ def main() -> None:
         articles = parser.parse()
         if isinstance(articles, Article):
             to_raw(article=articles)
+            to_meta(articles)
 
 
 if __name__ == "__main__":
