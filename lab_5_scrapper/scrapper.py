@@ -337,14 +337,10 @@ class HTMLParser:
         for rus_month, eng_month in months_dict.items():
             date_str = date_str.replace(rus_month, eng_month)
 
-        if ' Тема' in date_str:
-            date_str = date_str[:date_str.index(' Тема')]
+        date_str = date_str[:date_str.index(':') + 3]
 
         if date_str:
             date = datetime.datetime.strptime(date_str, MY_DATE_FORMAT)
-
-        else:
-            date = datetime.datetime(2000, 1, 1, 1, 1, 1)
 
         return date
 
