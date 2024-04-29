@@ -325,7 +325,7 @@ class HTMLParser:
         self.article.author.append(author)
 
         date = article_soup.find('time')
-        date = date.get('datetime')
+        date = date.get('datetime').string
         self.article.date = self.unify_date_format(date)
 
         keyword_class = article_soup.find_all(class_ ='tag tag-outline-primary')
@@ -427,7 +427,7 @@ class CrawlerRecursive(Crawler):
 
             response = make_request(url, self.config)
             if not response.ok:
-                return 'response is not ok'
+                return
 
             soup = BeautifulSoup(response.text, 'lxml')
             links = soup.find_all('a')
