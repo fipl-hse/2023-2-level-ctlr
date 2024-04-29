@@ -337,25 +337,17 @@ class HTMLParser:
         for rus_month, eng_month in months_dict.items():
             date_str = date_str.replace(rus_month, eng_month)
 
-        if 'Тема' in date_str:
-            date_str = date_str[:date_str.index('Тема')]
-
-        count = 0
-        for el in reversed(date_str):
-            if not el.isdigit():
-                count += 1
-            else:
-                break
-
-        date_str = date_str[:-count]
+        if ' Тема' in date_str:
+            date_str = date_str[:date_str.index(' Тема')]
 
         if date_str:
             date = datetime.datetime.strptime(date_str, MY_DATE_FORMAT)
 
         else:
-            date = datetime.datetime(2024, 4, 25, 8, 0, 0)
+            date = datetime.datetime(2000, 1, 1, 1, 1, 1)
 
         return date
+
     def parse(self) -> Union[Article, bool, list]:
         """
         Parse each article.
