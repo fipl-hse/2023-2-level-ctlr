@@ -327,7 +327,7 @@ class HTMLParser:
 
         date = article_soup.find('time')
         if date:
-            date = date.get("datetime")
+            date = str(date.get("datetime"))
             date_str = date[:-6].replace('T', ' ')
             self.article.date = self.unify_date_format(date_str)
         else:
