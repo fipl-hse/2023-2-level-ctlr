@@ -15,7 +15,7 @@ from lab_6_pipeline.tests.utils import pipeline_test_files_setup
 
 class TextProcessingPipelineScoreEightReferenceProcess(unittest.TestCase):
     """
-    Tests for preprocessing of texts for 8 marks for StanzaAnalyzer.
+    Tests for preprocessing of texts for StanzaAnalyzer.
     """
 
     @classmethod
@@ -67,8 +67,7 @@ class TextProcessingPipelineScoreEightReferenceProcess(unittest.TestCase):
     @pytest.mark.lab_6_pipeline
     def test_conllu_tokens_are_formatted(self) -> None:
         """
-        Ensure that reference and processed conllu files have equal len of tokens and
-        the same tokens.
+        Ensure that reference and processed conllu files have equal tokens and length.
         """
         tokens = [
             "Красивая",
@@ -110,7 +109,7 @@ class TextProcessingPipelineScoreEightReferenceProcess(unittest.TestCase):
     @pytest.mark.lab_6_pipeline
     def test_empty_line_in_to_conllu_method(self) -> None:
         """
-        Checks number of empty lines in conllu files.
+        Check number of empty lines in conllu files.
         """
         self.assertEqual(self.conllu_reference[-2:], self.conllu_processed[-2:])
 

@@ -1,7 +1,7 @@
 """
 Tests for validation dataset of raw texts.
 """
-# pylint: disable=consider-using-with
+# pylint: disable=consider-using-with,no-name-in-module
 import json
 import pathlib
 import shutil
