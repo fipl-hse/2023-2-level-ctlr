@@ -1,6 +1,7 @@
 """
 Tests for POS frequency pipeline.
 """
+# pylint: disable=no-name-in-module
 import json
 import shutil
 import unittest
@@ -9,10 +10,9 @@ import pytest
 from admin_utils.test_params import PIPE_TEST_FILES_FOLDER, TEST_PATH
 
 from core_utils.article import article
-from core_utils.article.article import ArtifactType
 from lab_6_pipeline import pipeline
 from lab_6_pipeline.pipeline import (CorpusManager, EmptyFileError, POSFrequencyPipeline,
-                                     StanzaAnalyzer, TextProcessingPipeline)
+                                     StanzaAnalyzer)
 from lab_6_pipeline.tests.utils import pipeline_test_files_setup
 
 
@@ -31,21 +31,11 @@ class PosFrequencyPipelineTests(unittest.TestCase):
                         "reference_score_eight_test.conllu",
                         TEST_PATH / "1_stanza_conllu.conllu")
 
-#         path = PIPE_TEST_FILES_FOLDER / "reference_score_eight_test.txt"
-#         with path.open("r", encoding="utf-8") as reference:
-#             self.reference = reference.read()
-#         path = TEST_PATH / "1_stanza_conllu.txt"
-#         with path.open("r", encoding="utf-8") as processed:
-#             self.processed = processed.read()
-
         article.ASSETS_PATH = TEST_PATH
         pipeline.ASSETS_PATH = TEST_PATH
 
         cls.corpus_manager = CorpusManager(path_to_raw_txt_data=TEST_PATH)
         path = cls.corpus_manager.get_articles()[1].get_meta_file_path()
-#         print(cls.corpus_manager.get_articles()[1].get_meta())
-#         print(cls.corpus_manager.get_articles()[1].get_raw_text())
-#         print(path)
         with open(path, 'r', encoding='utf-8') as meta_file:
             meta = json.load(meta_file)
         print(meta)
@@ -72,8 +62,8 @@ class PosFrequencyPipelineTests(unittest.TestCase):
         """
         failed = False
         try:
-            article = self.corpus_manager.get_articles()[1]
-            path = article.get_meta_file_path()
+            one_article = self.corpus_manager.get_articles()[1]
+            path = one_article.get_meta_file_path()
             with open(path, 'r', encoding='utf-8') as meta_file:
                 json.load(meta_file)
         except json.decoder.JSONDecodeError:
@@ -91,8 +81,8 @@ class PosFrequencyPipelineTests(unittest.TestCase):
         """
         Ensure frequencies are counted correctly.
         """
-        article = self.corpus_manager.get_articles()[1]
-        path = article.get_meta_file_path()
+        one_article = self.corpus_manager.get_articles()[1]
+        path = one_article.get_meta_file_path()
         print(path)
         with open(path, 'r', encoding='utf-8') as meta_file:
             frequencies = json.load(meta_file)['pos_frequencies']
@@ -129,7 +119,7 @@ class PosFrequencyPipelineTests(unittest.TestCase):
         """
         Ensure that POS pipe raises EmptyFileError.
         """
-        with open(TEST_PATH / f"1_stanza_conllu.conllu", 'w',
+        with open(TEST_PATH / "1_stanza_conllu.conllu", 'w',
                   encoding='utf-8') as file:
             file.write('')
 

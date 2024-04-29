@@ -3,16 +3,16 @@ Article implementation.
 """
 # pylint: disable=no-name-in-module
 
+import datetime
 import enum
 import pathlib
 import re
 import string
-from datetime import datetime
 
 from core_utils.constants import ASSETS_PATH
 
 
-def date_from_meta(date_txt: str) -> datetime:
+def date_from_meta(date_txt: str) -> datetime.datetime:
     """
     Convert text date to datetime object.
 
@@ -22,7 +22,9 @@ def date_from_meta(date_txt: str) -> datetime:
     Returns:
         datetime.datetime: Datetime object
     """
-    return datetime.strptime(date_txt, "%Y-%m-%d %H:%M:%S")
+    if not date_txt:
+        return datetime.datetime.now()
+    return datetime.datetime.strptime(date_txt, "%Y-%m-%d %H:%M:%S")
 
 
 def get_article_id_from_filepath(path: pathlib.Path) -> int:
@@ -69,7 +71,7 @@ class Article:
     Article class implementation.
     """
     #: A date
-    date: datetime | None
+    date: datetime.datetime | None
 
     #: ConLLU information
     _conllu_info: str

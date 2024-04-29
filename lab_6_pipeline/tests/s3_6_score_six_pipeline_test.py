@@ -1,8 +1,6 @@
 """
 Tests for processing text.
 """
-import os
-import re
 import shutil
 import unittest
 
@@ -40,8 +38,8 @@ class TextProcessingPipelineScoreSixReferenceProcess(unittest.TestCase):
             self.conllu_reference = ref.read()
 
         path = TEST_PATH / "1_udpipe_conllu.conllu"
-        with path.open("r", encoding="utf-8") as proc:
-            self.conllu_processed = proc.read()
+        with path.open("r", encoding="utf-8") as file:
+            self.conllu_processed = file.read()
 
     @pytest.mark.mark6
     @pytest.mark.mark8
@@ -52,16 +50,14 @@ class TextProcessingPipelineScoreSixReferenceProcess(unittest.TestCase):
         """
         Ensure that reference and processed conllu files have equal number of lines.
         """
-        message = (
+        special_message = (
             f"Number of lines in reference "
             f"{self.conllu_reference} and processed "
             f"{self.conllu_processed} texts is different"
         )
-        self.assertEqual(
-            len(self.conllu_reference.split("\n")),
-            len(self.conllu_processed.split("\n")),
-            msg=message,
-        )
+        self.assertEqual(len(self.conllu_reference.split("\n")),
+                         len(self.conllu_processed.split("\n")),
+                         msg=special_message)
 
     @pytest.mark.mark6
     @pytest.mark.mark8
@@ -72,39 +68,23 @@ class TextProcessingPipelineScoreSixReferenceProcess(unittest.TestCase):
         """
         Ensure that reference and processed conllu files have equal tokens and length.
         """
-        tokens = [
-            "Красивая",
-            "-",
-            "мама",
-            "красиво",
-            ",",
-            "училась",
-            "в",
-            "ПДД",
-            "и",
-            "ЖКУ",
-            "по",
-            "адресу",
-            "Львовская",
-            "10",
-            "лет",
-            "с",
-            "почтой",
-            "test",
-            ".",
+        ref_tokens = ["Красивая", "-", "мама", "красиво", ",",
+                      "училась", "в", "ПДД", "и", "ЖКУ", "по",
+                      "адресу", "Львовская", "10", "лет", "с",
+                      "почтой", "test", ".",
         ]
 
-        formatted_lines_number = list(
+        format_lines_number = list(
             i for i in self.conllu_processed.split("\n") if i.split("\t")[0].isnumeric()
         )
-        self.assertEqual(len(tokens), len(formatted_lines_number))
+        self.assertEqual(len(ref_tokens), len(format_lines_number))
 
-        for token_id, token in enumerate(tokens):
+        for token_id, token in enumerate(ref_tokens):
             msg = (
                 f"In conllu files, all tokens must be in lines\n"
-                f"{token} is not in {formatted_lines_number[token_id]} at the second place"
+                f"{token} is not in {format_lines_number[token_id]} at the second place"
             )
-            self.assertEqual(token, formatted_lines_number[token_id].split("\t")[1], msg=msg)
+            self.assertEqual(token, format_lines_number[token_id].split("\t")[1], msg=msg)
 
     @pytest.mark.mark6
     @pytest.mark.mark8

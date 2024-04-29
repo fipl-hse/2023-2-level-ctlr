@@ -1,6 +1,7 @@
 """
 Utils for lab_6_pipeline tests.
 """
+# pylint: disable=too-few-public-methods
 import shutil
 
 from admin_utils.test_params import PIPE_TEST_FILES_FOLDER, TEST_PATH

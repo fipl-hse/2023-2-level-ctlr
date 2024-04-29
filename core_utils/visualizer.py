@@ -16,6 +16,7 @@ try:
     import networkx as nx
     from networkx import DiGraph
 except ImportError:  # pragma: no cover
+    DiGraph = None  # type: ignore
     print('No libraries installed. Failed to import.')
 
 from core_utils.article.article import Article

@@ -1,17 +1,13 @@
 """
 Tests udpipe analyzer.
 """
-import os
-import re
-import shutil
+# pylint: disable=assignment-from-no-return
 import unittest
 
 import pytest
-from admin_utils.test_params import PIPE_TEST_FILES_FOLDER, TEST_PATH
+from admin_utils.test_params import PIPE_TEST_FILES_FOLDER
 
-from core_utils.article import article
-from lab_6_pipeline.pipeline import CorpusManager, TextProcessingPipeline, UDPipeAnalyzer
-from lab_6_pipeline.tests.utils import pipeline_test_files_setup
+from lab_6_pipeline.pipeline import UDPipeAnalyzer
 
 
 class UDPipeAnalyzerTest(unittest.TestCase):
@@ -28,7 +24,8 @@ class UDPipeAnalyzerTest(unittest.TestCase):
             self.conllu_reference = ref.read()
 
         self.texts = [
-            "Красивая - мама красиво, училась в ПДД и ЖКУ по адресу Львовская 10 лет с почтой test ."
+            "Красивая - мама красиво, училась в ПДД и ЖКУ"
+            " по адресу Львовская 10 лет с почтой test ."
         ]
         self.udpipe_analyzer = UDPipeAnalyzer()
 
