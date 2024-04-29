@@ -318,7 +318,6 @@ class HTMLParser:
             texts.append(paragraph.text)
         self.article.text = ''.join(texts)
 
-
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
         Find meta information of article.
