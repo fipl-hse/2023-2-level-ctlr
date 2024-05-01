@@ -5,14 +5,57 @@ Crawler implementation.
 import datetime
 import json
 import pathlib
+import requests
 import shutil
+import time
+from bs4 import BeautifulSoup
 from core_utils.config_dto import ConfigDTO
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
-
-import requests
-from bs4 import BeautifulSoup
-
+from core_utils.article.article import Article
+from random import randrange
 from typing import Pattern, Union
+
+
+class IncorrectSeedURLError(Exception):
+    """
+    Seed URLs do not belong to the website being scrapped.
+    """
+
+
+class NumberOfArticlesOutOfRangeError(Exception):
+    """
+    The number of articles to be collected is not positive or is greater than 150.
+    """
+
+
+class IncorrectNumberOfArticlesError(Exception):
+    """
+    The number of articles to be collected is not an integer number.
+    """
+
+
+class IncorrectHeadersError(Exception):
+    """
+    Headers are not presented as a dictionary.
+    """
+
+
+class IncorrectEncodingError(Exception):
+    """
+    Encoding is not specified as a string.
+    """
+
+
+class IncorrectTimeoutError(Exception):
+    """
+    The timeout is not a positive integer number or is greater than 60.
+    """
+
+
+class IncorrectVerifyError(Exception):
+    """
+    The verify certificate value is not boolean.
+    """
 
 
 class Config:
@@ -47,19 +90,19 @@ class Config:
         Ensure configuration parameters are not corrupt.
         """
         if not all(seed.startswith('https://www.fontanka.ru/') for seed in self.config.seed_urls):
-            raise Exception('IncorrectSeedURLError')
+            raise IncorrectSeedURLError
         if self.config.total_articles < 1 or self.config.total_articles > 150:
-            raise Exception('NumberOfArticlesOutOfRangeError')
+            raise NumberOfArticlesOutOfRangeError
         if not isinstance(self.config.total_articles, int):
-            raise Exception('IncorrectNumberOfArticlesError')
+            raise IncorrectNumberOfArticlesError
         if not isinstance(self.config.headers, dict):
-            raise Exception('IncorrectHeadersError')
+            raise IncorrectHeadersError
         if not isinstance(self.config.encoding, str):
-            raise Exception('IncorrectEncodingError')
+            raise IncorrectEncodingError
         if self.config.timeout < 1 or self.config.timeout > 60:
-            raise Exception('IncorrectTimeoutError')
+            raise IncorrectTimeoutError
         if not isinstance(self.config.headless_mode, bool):
-            raise Exception('IncorrectVerifyError')
+            raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
         """
@@ -136,9 +179,11 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
+    verify = config.get_verify_certificate()
     headers = config.get_headers()
     timeout = config.get_timeout()
-    return requests.get(url=url, headers=headers, timeout=timeout)
+    time.sleep(randrange(1, 10))
+    return requests.get(url=url, verify=verify, headers=headers, timeout=timeout)
 
 
 class Crawler:
@@ -156,6 +201,7 @@ class Crawler:
             config (Config): Configuration
         """
         self.config = config
+        self.urls = []
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -167,11 +213,28 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
+        articles = article_bs.find_all('a', class_='IFcb')
+        url = ''
+        for article in articles:
+            url = 'https://www.fontanka.ru' + article.get('href')
+            if url not in self.urls:
+                break
+        return url
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
+        goal = self.config.get_num_articles()
+        while len(self.urls) < goal:
+            for seed in self.get_search_urls():
+                response = make_request(seed, self.config)
+                if not response.ok:
+                    continue
+                soup = BeautifulSoup(response.text, 'html.parser')
+                url = self._extract_url(soup)
+                if url:
+                    self.urls.append(url)
 
     def get_search_urls(self) -> list:
         """
@@ -180,6 +243,7 @@ class Crawler:
         Returns:
             list: seed_urls param
         """
+        return self.config.get_seed_urls()
 
 
 # 10
@@ -200,6 +264,10 @@ class HTMLParser:
             article_id (int): Article id
             config (Config): Configuration
         """
+        self.full_url = full_url
+        self.article_id = article_id
+        self.config = config
+        self.article = Article(url=full_url, article_id=article_id)
 
     def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
         """
@@ -208,6 +276,8 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        content = article_soup.find(itemprop='ArticleBody').find_all('p')
+        self.article.text = '\n'.join(content)
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -216,6 +286,18 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        self.article.title = article_soup.find('h1').text
+
+        topics = article_soup.find(class_='ANf9').find_all('a')
+        self.article.topics = [topic.text for topic in topics]
+
+        author = [a.text for a in article_soup.find_all('p', itemprop='name')]
+        if not author:
+            author = ['NOT FOUND']
+        self.article.author = author
+
+        date = article_soup.find(itemprop='datePublished').text
+        self.article.date = self.unify_date_format(date)
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -227,6 +309,23 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
+        # 1 мая 2024, 14:49
+        date = date_str.split()
+        month = {'января': '01',
+                 'февраля': '02',
+                 'марта': '03',
+                 'апреля': '04',
+                 'мая': '05',
+                 'июня': '06',
+                 'июля': '07',
+                 'августа': '08',
+                 'сентября': '09',
+                 'октября': '10',
+                 'ноября': '11',
+                 'декабря': '12'
+                 }
+        date[1] = month[date[1]]
+        return datetime.datetime.strptime(''.join(date), '%d %m %Y, %H:%M')
 
     def parse(self) -> Union[Article, bool, list]:
         """
@@ -235,6 +334,12 @@ class HTMLParser:
         Returns:
             Union[Article, bool, list]: Article instance
         """
+        response = make_request(url=self.full_url, config=self.config)
+        if response.ok:
+            soup = BeautifulSoup(response.text)
+            self._fill_article_with_text(soup)
+            self._fill_article_with_meta_information(soup)
+        return self.article
 
 
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
@@ -246,7 +351,7 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     """
     if not ASSETS_PATH.exists():
         shutil.rmtree(ASSETS_PATH)
-    ASSETS_PATH.mkdir(exist_ok=True, parents=True)
+    ASSETS_PATH.mkdir(parents=True)
 
 
 def main() -> None:
