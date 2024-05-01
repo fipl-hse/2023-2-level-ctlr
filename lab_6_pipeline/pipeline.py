@@ -128,8 +128,9 @@ class TextProcessingPipeline(PipelineProtocol):
             from_meta(article.get_meta_file_path(), article)
             from_raw(article.get_raw_text_path(), article)
             to_cleaned(article)
-            self.analyzer.analyze(article.text)
-            self.analyzer.to_conllu(article)
+            if self.analyzer:
+                self.analyzer.analyze(article.text)
+                self.analyzer.to_conllu(article)
 
 
 class UDPipeAnalyzer(LibraryWrapper):
@@ -152,9 +153,10 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
-        spacy_udpipe.load_from_path(lang="ru", path=str(UDPIPE_MODEL_PATH))
-        abstraction = AbstractCoNLLUAnalyzer()
-        return abstraction
+        nlp = spacy_udpipe.load_from_path(lang="ru", path=str(UDPIPE_MODEL_PATH))
+        spacy_udpipe.UDPipeModel(lang="ru", path=UDPIPE_MODEL_PATH)
+
+        return AbstractCoNLLUAnalyzer()
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument | str]:
         """
@@ -180,9 +182,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         """
         with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU),
                   'w', encoding='utf-8') as f:
-            f.write(f'# sent_id = {article.article_id}\n')
-            f.write(f'# text = {article.text}\n')
-            f.write(f'{article.get_conllu_text(include_morphological_tags=True)}\n\n')
+            self._analyzer.write(split_by_sentence(article.text), 'conllu')
 
 
 class StanzaAnalyzer(LibraryWrapper):
@@ -325,7 +325,13 @@ class PatternSearchPipeline(PipelineProtocol):
         """
 
 
-def main() -> None:
+def main4() -> None:
+    corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
+    pipeline = TextProcessingPipeline(corpus_manager)
+    pipeline.run()
+
+
+def main6() -> None:
     """
     Entrypoint for pipeline module.
     """
@@ -336,4 +342,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main6()
