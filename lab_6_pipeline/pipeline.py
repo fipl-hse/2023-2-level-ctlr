@@ -3,13 +3,14 @@ Pipeline for CONLL-U formatting.
 """
 # pylint: disable=too-few-public-methods, unused-import, undefined-variable, too-many-nested-blocks
 import pathlib
-import re
+import spacy_udpipe
 
 from networkx import DiGraph
 
-from core_utils.article.article import Article, get_article_id_from_filepath
-from core_utils.article.io import from_meta, from_raw
-from core_utils.constants import ASSETS_PATH
+from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
+                                        split_by_sentence)
+from core_utils.article.io import from_meta, from_raw, to_cleaned
+from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
 
@@ -79,19 +80,17 @@ class CorpusManager:
         """
         Register each dataset entry.
         """
-        files = list(self.path_to_raw_txt_data.iterdir())
-        metas = [file for file in files if 'meta.json' in file.name]
-        raws = [file for file in files if 'raw.txt' in file.name]
-
-        metas.sort(key=lambda x: int(get_article_id_from_filepath(x)))
-        raws.sort(key=lambda x: int(get_article_id_from_filepath(x)))
-
-        for index, (meta, raw) in enumerate(zip(metas, raws)):
-            article = Article(url=None, article_id=index+1)
-            from_meta(meta, article)
-            from_raw(raw, article)
-
-            self._storage[index + 1] = article
+        files = [file for file in self.path_to_raw_txt_data.iterdir()
+                   if 'raw.txt' in file.name]
+        self._storage = {
+            get_article_id_from_filepath(file):
+            from_raw(
+                path=file,
+                article=Article(url=None,
+                                article_id=get_article_id_from_filepath(file))
+            )
+            for file in files
+        }
 
     def get_articles(self) -> dict:
         """
@@ -118,11 +117,19 @@ class TextProcessingPipeline(PipelineProtocol):
             corpus_manager (CorpusManager): CorpusManager instance
             analyzer (LibraryWrapper | None): Analyzer instance
         """
+        self._corpus = corpus_manager
+        self.analyzer = analyzer
 
     def run(self) -> None:
         """
         Perform basic preprocessing and write processed text to files.
         """
+        for article in self._corpus.get_articles().values():
+            from_meta(article.get_meta_file_path(), article)
+            from_raw(article.get_raw_text_path(), article)
+            to_cleaned(article)
+            self.analyzer.analyze(article.text)
+            self.analyzer.to_conllu(article)
 
 
 class UDPipeAnalyzer(LibraryWrapper):
@@ -136,6 +143,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         """
         Initialize an instance of the UDPipeAnalyzer class.
         """
+        self._analyzer = self._bootstrap()
 
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
@@ -144,6 +152,9 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
+        spacy_udpipe.load_from_path(lang="ru", path=str(UDPIPE_MODEL_PATH))
+        abstraction = AbstractCoNLLUAnalyzer()
+        return abstraction
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument | str]:
         """
@@ -155,6 +166,10 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument | str]: List of documents
         """
+        new_texts = []
+        for text in texts:
+            new_texts.append(str(self._analyzer(text)))
+        return new_texts
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -163,6 +178,11 @@ class UDPipeAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
+        with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU),
+                  'w', encoding='utf-8') as f:
+            f.write(f'# sent_id = {article.article_id}\n')
+            f.write(f'# text = {article.text}\n')
+            f.write(f'{article.get_conllu_text(include_morphological_tags=True)}\n\n')
 
 
 class StanzaAnalyzer(LibraryWrapper):
@@ -310,7 +330,9 @@ def main() -> None:
     Entrypoint for pipeline module.
     """
     corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
-    pipeline = TextProcessingPipeline(corpus_manager)
+    udpipe_analyzer = UDPipeAnalyzer()
+    pipeline = TextProcessingPipeline(corpus_manager, udpipe_analyzer)
+    pipeline.run()
 
 
 if __name__ == "__main__":
