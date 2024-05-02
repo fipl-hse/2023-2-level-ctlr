@@ -5,14 +5,17 @@ Pipeline for CONLL-U formatting.
 import pathlib
 
 import spacy_udpipe
+import stanza
 from networkx import DiGraph
+from stanza.utils.conll import CoNLL
 
 from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
                                         split_by_sentence)
-from core_utils.article.io import from_meta, from_raw, to_cleaned
+from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
 from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
+from core_utils.visualizer import visualize
 
 
 class InconsistentDatasetError(Exception):
@@ -125,7 +128,6 @@ class TextProcessingPipeline(PipelineProtocol):
         Perform basic preprocessing and write processed text to files.
         """
         for article in self._corpus.get_articles().values():
-            from_meta(article.get_meta_file_path(), article)
             from_raw(article.get_raw_text_path(), article)
             to_cleaned(article)
             if self.analyzer:
@@ -176,12 +178,12 @@ class UDPipeAnalyzer(LibraryWrapper):
                                   '0' if token.dep_ == 'ROOT' else str(token.head.i + 1),
                                   token.dep_,
                                   '_',
-                                  'SpaceAfter=No' if not token.whitespace_ else '_'])
+                                  '_' if token.whitespace_ else 'SpaceAfter=No'])
                         for token in self._analyzer(text)]
 
             sentences.append(f"# sent_id = {num + 1}\n"
                              f"# text = {text}\n" +
-                             "\n".join(sentence + ['', '']))
+                             "\n".join(sentence + ['', '']))  # two newlines at the end
         return sentences
 
     def to_conllu(self, article: Article) -> None:
@@ -193,8 +195,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         """
         with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU),
                   'w', encoding='utf-8') as f:
-            con = article.get_conllu_info()
-            f.writelines(con)
+            f.writelines(article.get_conllu_info())
 
 
 class StanzaAnalyzer(LibraryWrapper):
@@ -208,6 +209,7 @@ class StanzaAnalyzer(LibraryWrapper):
         """
         Initialize an instance of the StanzaAnalyzer class.
         """
+        self._analyzer = self._bootstrap()
 
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
@@ -216,6 +218,8 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
+        stanza.download(lang="ru", processors='tokenize,lemma,pos,depparse')
+        return stanza.Pipeline(lang="ru", processors='tokenize,lemma,pos,depparse')
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument]:
         """
@@ -227,6 +231,7 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument]: List of documents
         """
+        return [self._analyzer(text) for text in texts]
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -235,6 +240,25 @@ class StanzaAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
+        with open(article.get_file_path(kind=ArtifactType.STANZA_CONLLU),
+                  'w', encoding='utf-8', newline='\n') as f:
+            for index, sentence in enumerate(article.get_conllu_info()):
+                f.write(f"# text = {sentence.text}\n"
+                        f"# sent_id = {index}\n")
+                tokens_connlu = ['	'.join([str(token["id"]),
+                                           token["text"],
+                                           token["lemma"],
+                                           token["upos"],
+                                           '_',
+                                           token["feats"] if "feats" in token.keys() else '_',
+                                           str(token["head"]),
+                                           token["deprel"],
+                                           '_',
+                                           f'start_char={token["start_char"]}'
+                                           f'|end_char={token["end_char"]}'
+                                           ])
+                                 for token in sentence.sentences[0].doc.to_dict()[0]]
+                f.write('\n'.join(tokens_connlu + ['', '']))  # two newlines at the end
 
     def from_conllu(self, article: Article) -> CoNLLUDocument:
         """
@@ -246,6 +270,7 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             CoNLLUDocument: Document ready for parsing
         """
+        return CoNLL.conll2doc(input_file=article.get_file_path(kind=ArtifactType.STANZA_CONLLU))
 
 
 class POSFrequencyPipeline:
@@ -261,11 +286,26 @@ class POSFrequencyPipeline:
             corpus_manager (CorpusManager): CorpusManager instance
             analyzer (LibraryWrapper): Analyzer instance
         """
+        self._corpus = ucorpus_manager
+        self._analyzer = analyzer
 
     def run(self) -> None:
         """
         Visualize the frequencies of each part of speech.
         """
+        for num, article in self._corpus.get_articles().items():
+            size = article.get_file_path(kind=ArtifactType.STANZA_CONLLU)\
+                              .stat().st_size
+            if size == 0:
+                raise EmptyFileError
+            from_meta(article.get_meta_file_path(), article)
+
+            article.set_pos_info(self._count_frequencies(article))
+            to_meta(article)
+
+            visualize(article=article,
+                      path_to_save=self._corpus.path_to_raw_txt_data /
+                                   f'{article.article_id}_image.png')
 
     def _count_frequencies(self, article: Article) -> dict[str, int]:
         """
@@ -277,6 +317,11 @@ class POSFrequencyPipeline:
         Returns:
             dict[str, int]: POS frequencies
         """
+        tokens = [token.to_dict()[0] for token in
+                  self._analyzer.from_conllu(article).iter_tokens()]
+        all_pos = [token["upos"] for token in tokens]
+        return {pos: all_pos.count(pos)
+                for pos in set(all_pos)}
 
 
 class PatternSearchPipeline(PipelineProtocol):
@@ -342,9 +387,15 @@ def main() -> None:
     Entrypoint for pipeline module.
     """
     corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
-    udpipe_analyzer = UDPipeAnalyzer()
-    pipeline = TextProcessingPipeline(corpus_manager, udpipe_analyzer)
+    pipeline = TextProcessingPipeline(corpus_manager, UDPipeAnalyzer())
     pipeline.run()
+
+    stanza_analyzer = StanzaAnalyzer()
+    pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
+    pipeline.run()
+
+    visualizer = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
+    visualizer.run()
 
 
 if __name__ == "__main__":
