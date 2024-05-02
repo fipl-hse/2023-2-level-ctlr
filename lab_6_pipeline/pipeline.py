@@ -3,8 +3,8 @@ Pipeline for CONLL-U formatting.
 """
 # pylint: disable=too-few-public-methods, unused-import, undefined-variable, too-many-nested-blocks
 import pathlib
-import spacy_udpipe
 
+import spacy_udpipe
 from networkx import DiGraph
 
 from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
@@ -166,7 +166,6 @@ class UDPipeAnalyzer(LibraryWrapper):
             list[StanzaDocument | str]: List of documents
         """
         sentences = []
-
         for num, text in enumerate(texts):
             sentence = ['	'.join([str(token.i + 1),
                                   token.text,
