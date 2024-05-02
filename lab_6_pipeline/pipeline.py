@@ -7,8 +7,6 @@ import spacy_udpipe
 
 from networkx import DiGraph
 
-import admin_utils.test_params
-import core_utils.constants
 from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
                                         split_by_sentence)
 from core_utils.article.io import from_meta, from_raw, to_cleaned
@@ -131,7 +129,7 @@ class TextProcessingPipeline(PipelineProtocol):
             from_raw(article.get_raw_text_path(), article)
             to_cleaned(article)
             if self.analyzer:
-                self.analyzer.analyze(article.text)
+                article.set_conllu_info(self.analyzer.analyze(split_by_sentence(article.text)))
                 self.analyzer.to_conllu(article)
 
 
@@ -155,10 +153,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
-        nlp = spacy_udpipe.load_from_path(lang="ru", path=str(UDPIPE_MODEL_PATH))
-        spacy_udpipe.UDPipeModel(lang="ru", path=UDPIPE_MODEL_PATH)
-
-        return AbstractCoNLLUAnalyzer()
+        return spacy_udpipe.load_from_path(lang="ru", path=str(UDPIPE_MODEL_PATH))
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument | str]:
         """
@@ -170,7 +165,25 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument | str]: List of documents
         """
-        return [str(self._analyzer(text)) for text in texts]
+        sentences = []
+
+        for num, text in enumerate(texts):
+            sentence = ['	'.join([str(token.i + 1),
+                                  token.text,
+                                  token.lemma_,
+                                  token.pos_,
+                                  '_',
+                                  str(token.morph) if token.morph else '_',
+                                  '0' if token.dep_ == 'ROOT' else str(token.head.i + 1),
+                                  token.dep_,
+                                  '_',
+                                  'SpaceAfter=No' if not token.whitespace_ else '_'])
+                        for token in self._analyzer(text)]
+
+            sentences.append(f"# sent_id = {num + 1}\n"
+                             f"# text = {text}\n" +
+                             "\n".join(sentence + ['', '']))
+        return sentences
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -181,7 +194,8 @@ class UDPipeAnalyzer(LibraryWrapper):
         """
         with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU),
                   'w', encoding='utf-8') as f:
-            self._analyzer.write(split_by_sentence(article.text), 'conllu')
+            con = article.get_conllu_info()
+            f.writelines(con)
 
 
 class StanzaAnalyzer(LibraryWrapper):
@@ -240,7 +254,7 @@ class POSFrequencyPipeline:
     Count frequencies of each POS in articles, update meta info and produce graphic report.
     """
 
-    def __init__(self, corpus_manager: CorpusManager, analyzer: LibraryWrapper) -> None:
+    def __init__(self, ucorpus_manager: CorpusManager, analyzer: LibraryWrapper) -> None:
         """
         Initialize an instance of the POSFrequencyPipeline class.
 
@@ -329,10 +343,10 @@ def main() -> None:
     Entrypoint for pipeline module.
     """
     corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
-    pipeline = TextProcessingPipeline(corpus_manager)
+    udpipe_analyzer = UDPipeAnalyzer()
+    pipeline = TextProcessingPipeline(corpus_manager, udpipe_analyzer)
     pipeline.run()
 
 
 if __name__ == "__main__":
-    print(admin_utils.test_params.PROJECT_ROOT)
     main()
