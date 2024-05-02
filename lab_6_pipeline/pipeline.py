@@ -7,6 +7,8 @@ import spacy_udpipe
 
 from networkx import DiGraph
 
+import admin_utils.test_params
+import core_utils.constants
 from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
                                         split_by_sentence)
 from core_utils.article.io import from_meta, from_raw, to_cleaned
@@ -24,6 +26,12 @@ class InconsistentDatasetError(Exception):
 class EmptyDirectoryError(Exception):
     """
     Directory is empty.
+    """
+
+
+class EmptyFileError(Exception):
+    """
+    File is empty.
     """
 
 
@@ -321,10 +329,10 @@ def main() -> None:
     Entrypoint for pipeline module.
     """
     corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
-    udpipe_analyzer = UDPipeAnalyzer()
-    pipeline = TextProcessingPipeline(corpus_manager, udpipe_analyzer)
+    pipeline = TextProcessingPipeline(corpus_manager)
     pipeline.run()
 
 
 if __name__ == "__main__":
+    print(admin_utils.test_params.PROJECT_ROOT)
     main()
