@@ -50,17 +50,16 @@ class CorpusManager:
         Validate folder with assets.
         """
         if not self.path_to_raw_txt_data.exists():
-            raise FileNotFoundError
+            raise FileNotFoundError  # built-in
 
         if not self.path_to_raw_txt_data.is_dir():
             raise NotADirectoryError  # built-in
 
-        files = list(self.path_to_raw_txt_data.iterdir())
-        if not files:
+        if not any(self.path_to_raw_txt_data.iterdir()):
             raise EmptyDirectoryError
 
-        metas = [file for file in files if 'meta.json' in file.name]
-        raws = [file for file in files if 'raw.txt' in file.name]
+        metas = list(self.path_to_raw_txt_data.glob('*_meta.json'))
+        raws = list(self.path_to_raw_txt_data.glob('*_raw.txt'))
         if len(metas) != len(raws):
             raise InconsistentDatasetError
 
@@ -68,9 +67,6 @@ class CorpusManager:
         raws.sort(key=lambda x: int(get_article_id_from_filepath(x)))
 
         for index, (meta, raw) in enumerate(zip(metas, raws)):
-            if not meta.exists() or not raw.exists():
-                raise FileNotFoundError  # built-in
-
             if index + 1 != get_article_id_from_filepath(meta) \
                     or index + 1 != get_article_id_from_filepath(raw)\
                     or meta.stat().st_size == 0 or raw.stat().st_size == 0:
@@ -80,8 +76,6 @@ class CorpusManager:
         """
         Register each dataset entry.
         """
-        files = [file for file in self.path_to_raw_txt_data.iterdir()
-                   if 'raw.txt' in file.name]
         self._storage = {
             get_article_id_from_filepath(file):
             from_raw(
@@ -89,7 +83,7 @@ class CorpusManager:
                 article=Article(url=None,
                                 article_id=get_article_id_from_filepath(file))
             )
-            for file in files
+            for file in self.path_to_raw_txt_data.glob('*_raw.txt')
         }
 
     def get_articles(self) -> dict:
@@ -168,10 +162,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument | str]: List of documents
         """
-        new_texts = []
-        for text in texts:
-            new_texts.append(str(self._analyzer(text)))
-        return new_texts
+        return [str(self._analyzer(text)) for text in texts]
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -325,13 +316,7 @@ class PatternSearchPipeline(PipelineProtocol):
         """
 
 
-def main4() -> None:
-    corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
-    pipeline = TextProcessingPipeline(corpus_manager)
-    pipeline.run()
-
-
-def main6() -> None:
+def main() -> None:
     """
     Entrypoint for pipeline module.
     """
@@ -342,4 +327,4 @@ def main6() -> None:
 
 
 if __name__ == "__main__":
-    main6()
+    main()
