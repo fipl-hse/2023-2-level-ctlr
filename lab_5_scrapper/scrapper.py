@@ -103,7 +103,7 @@ class Config:
                     )
                 ):
             raise IncorrectSeedURLError
-    
+
         if (
             not isinstance(self.config_dto.total_articles, int)
             or self.config_dto.total_articles <= 0
@@ -113,8 +113,8 @@ class Config:
         if (
             self.config_dto.total_articles > 150
         ):
-            raise NumberOfArticlesOutOfRangeError  
-        
+            raise NumberOfArticlesOutOfRangeError
+
         if not isinstance(self.config_dto.headers, dict):
             raise IncorrectHeadersError
 
@@ -266,7 +266,7 @@ class Crawler:
             extr = self._extract_url(soup)
             while extr and len(self.urls) < self.config.get_num_articles():
                 self.urls.append(extr)
-                extr = self._extract_url(soup)        
+                extr = self._extract_url(soup)
 
     def get_search_urls(self) -> list:
         """
@@ -351,7 +351,7 @@ class HTMLParser:
         """
         formatted_date = datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
         return formatted_date
-        
+
     def parse(self) -> Union[Article, bool, list]:
         """
         Parse each article.
@@ -418,17 +418,19 @@ class CrawlerRecursive(Crawler):
         '''
         Save the json information about crawling
         '''
-        json_info = {'all_urls': self.all_urls, 'article_urls': self.urls, 'num_of_crawled_urls': self.num_of_urls}
+        json_info = {'all_urls': self.all_urls,
+                     'article_urls': self.urls,
+                     'num_of_crawled_urls': self.num_of_urls}
 
         with open (self.crawling_path, 'w', encoding='utf-8') as f:
             json.dump(json_info, f, indent=3)
 
     def find_articles(self) -> None:
-        '''
+        """
         Find articles using RecursiveCrawler
-        '''
-        if len(self.urls) < self.config._num_articles:
-            if len(self.all_urls) != 0: 
+        """
+        if len(self.urls) < self.config.get_num_articles:
+            if len(self.all_urls) != 0:
                 url = self.all_urls[self.num_of_urls]
             url = self.start_url
 
@@ -450,11 +452,12 @@ class CrawlerRecursive(Crawler):
 
                         self.save_crawled_urls()
                         extr = self._extract_url(soup)
-                        if extr and extr not in self.urls and len(self.urls) < self.config._num_articles:
+                        if (extr and extr not in self.urls
+                            and len(self.urls) < self.config.get_num_articles):
                             self.urls.append(extr)
                             self.save_crawled_urls()
-        
-            if len(self.urls) < self.config._num_articles:
+
+            if len(self.urls) < self.config.get_num_articles:
                 self.num_of_urls += 1
             self.find_articles()
 
@@ -485,10 +488,10 @@ def recursive_main() -> None:
     for i, url in enumerate(crawler.urls):
         if url not in crawler.parsed_urls:
             parser = HTMLParser(url, i, configuration)
-            article = parser.parse()                
+            article = parser.parse()
             if isinstance(article, Article):
                 to_raw(article)
                 to_meta(article)
 
 if __name__ == "__main__":
-    recursive_main()
+    main()
