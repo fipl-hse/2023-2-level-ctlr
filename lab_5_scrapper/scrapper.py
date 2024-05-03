@@ -9,6 +9,7 @@ import requests
 import shutil
 import time
 from bs4 import BeautifulSoup
+from core_utils.article import io
 from core_utils.config_dto import ConfigDTO
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 from core_utils.article.article import Article
@@ -71,8 +72,8 @@ class Config:
             path_to_config (pathlib.Path): Path to configuration.
         """
         self.path_to_config = path_to_config
-        self._validate_config_content()
         self.config = self._extract_config_content()
+        self._validate_config_content()
 
     def _extract_config_content(self) -> ConfigDTO:
         """
@@ -349,17 +350,25 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    if not ASSETS_PATH.exists():
-        shutil.rmtree(ASSETS_PATH)
-    ASSETS_PATH.mkdir(parents=True)
+    if not base_path.exists():
+        shutil.rmtree(base_path)
+    base_path.mkdir(parents=True)
 
 
 def main() -> None:
     """
     Entrypoint for scrapper module.
     """
-    configuration = Config(path_to_config=CRAWLER_CONFIG_PATH)
-    prepare_environment()
+    config = Config(path_to_config=CRAWLER_CONFIG_PATH)
+    crawler = Crawler(config)
+    prepare_environment(ASSETS_PATH)
+
+    crawler.find_articles()
+    for i, url in enumerate(crawler.urls):
+        parser = HTMLParser(full_url=url, article_id=i + 1, config=config)
+        article = parser.parse()
+        io.to_raw(article)
+        io.to_meta(article)
 
 
 if __name__ == "__main__":
