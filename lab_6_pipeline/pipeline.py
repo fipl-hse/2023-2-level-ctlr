@@ -218,7 +218,6 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
-        stanza.download(lang="ru", processors='tokenize,lemma,pos,depparse')
         return stanza.Pipeline(lang="ru", processors='tokenize,lemma,pos,depparse')
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument]:
@@ -293,7 +292,7 @@ class POSFrequencyPipeline:
         """
         Visualize the frequencies of each part of speech.
         """
-        for num, article in self._corpus.get_articles().items():
+        for article_id, article in self._corpus.get_articles().items():
             if article.get_file_path(kind=ArtifactType.STANZA_CONLLU)\
                               .stat().st_size == 0:
                 raise EmptyFileError
@@ -304,7 +303,7 @@ class POSFrequencyPipeline:
 
             visualize(article=article,
                       path_to_save=self._corpus.path_to_raw_txt_data /
-                                   f'{num}_image.png')
+                                   f'{article_id}_image.png')
 
     def _count_frequencies(self, article: Article) -> dict[str, int]:
         """
