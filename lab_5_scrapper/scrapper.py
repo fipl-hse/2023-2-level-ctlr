@@ -475,7 +475,7 @@ def recursive_main() -> None:
             crawler.all_urls = data['all_urls']
             crawler.urls = data['article_urls']
             crawler.num_of_urls = data['num_of_crawled_urls']
-            crawler.save_crawled_urls
+            #crawler.save_crawled_urls
     if crawler.parsing_path.exists():
         with open(crawler.parsing_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
