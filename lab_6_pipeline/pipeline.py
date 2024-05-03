@@ -294,9 +294,8 @@ class POSFrequencyPipeline:
         Visualize the frequencies of each part of speech.
         """
         for num, article in self._corpus.get_articles().items():
-            size = article.get_file_path(kind=ArtifactType.STANZA_CONLLU)\
-                              .stat().st_size
-            if size == 0:
+            if article.get_file_path(kind=ArtifactType.STANZA_CONLLU)\
+                              .stat().st_size == 0:
                 raise EmptyFileError
             from_meta(article.get_meta_file_path(), article)
 
@@ -305,7 +304,7 @@ class POSFrequencyPipeline:
 
             visualize(article=article,
                       path_to_save=self._corpus.path_to_raw_txt_data /
-                                   f'{article.article_id}_image.png')
+                                   f'{num}_image.png')
 
     def _count_frequencies(self, article: Article) -> dict[str, int]:
         """
