@@ -232,8 +232,7 @@ class Crawler:
         if link and '/news/' in link:
             if 'https' in link:
                 return str(link)
-            else:
-                return self.url_pattern + str(article_bs.get('href'))
+            return self.url_pattern + str(article_bs.get('href'))
         return ''
 
     def find_articles(self) -> None:
