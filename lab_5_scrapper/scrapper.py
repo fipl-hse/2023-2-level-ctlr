@@ -327,10 +327,16 @@ class HTMLParser:
         """
         self.article.title = article_soup.find('h1').text
 
-        author = article_soup.find("span").text
-        if not isinstance(author, str) or not author:
-            author = 'NOT FOUND'
-        self.article.author = [author[7:-5:]]
+        authors = article_soup.find(name='div', class_='field field-text field-multiple person field-name-authors')
+        if authors is not None:
+            for author in authors:
+                author_txt = author.text.strip()
+                if author_txt:
+                    self.article.author.append(author_txt)
+                else:
+                    self.article.author.append('NOT FOUND')
+        else:
+            self.article.author.append('NOT FOUND')
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -342,7 +348,6 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
-        return datetime.datetime.strptime(date_str, '%d.%m.%Y')
 
     def parse(self) -> Union[Article, bool, list]:
         """
