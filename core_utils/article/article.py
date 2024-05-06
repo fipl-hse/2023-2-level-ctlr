@@ -179,7 +179,7 @@ class Article:
         Returns:
             str: Cleaned text.
         """
-        return self.text.lower().translate(str.maketrans('', '', string.punctuation))
+        return self.text.lower().translate(str.maketrans('', '', string.punctuation + '()[]{}«»'))
 
     def _date_to_text(self) -> str:
         """
