@@ -3,7 +3,29 @@ Pipeline for CONLL-U formatting.
 """
 # pylint: disable=too-few-public-methods, unused-import, undefined-variable, too-many-nested-blocks
 import pathlib
+from core_utils.constants import ASSETS_PATH
+from core_utils.article.article import (Article, get_article_id_from_filepath)
 
+
+class FileNotFoundError(Exception):
+    """
+    File does not exist.
+    """
+
+class NotADirectoryError(Exception):
+    """
+    Path does not lead to directory.
+    """
+
+class InconsistentDatasetError(Exception):
+    """
+    IDs contain slips, number of meta and raw files is not equal, files are empty.
+    """
+
+class EmptyDirectoryError(Exception):
+    """
+    Directory is empty.
+    """
 
 class CorpusManager:
     """
@@ -17,16 +39,45 @@ class CorpusManager:
         Args:
             path_to_raw_txt_data (pathlib.Path): Path to raw txt data
         """
+        self.path_to_raw_txt_data = path_to_raw_txt_data 
+        self._validate_dataset()
+        self._scan_dataset()
 
     def _validate_dataset(self) -> None:
         """
         Validate folder with assets.
         """
+        if not self.path_to_raw_txt_data.exists():
+            raise FileNotFoundError
+
+        if not self.path_to_raw_txt_data.is_dir():
+            raise NotADirectoryError
+
+        if not self.path_to_raw_txt_data.iterdir():
+            raise EmptyDirectoryError
+
+        meta_files = list(self.path_to_raw_txt_data.glob('*meta.json'))
+        raw_files = list(self.path_to_raw_txt_data.glob('*raw.txt'))
+        if len(meta_files) != len(raw_files):
+            raise InconsistentDatasetError
+
+        for path in (meta_files + raw_files):
+            if int(path.stem.split('_')[0]) > len(meta_files):
+                raise InconsistentDatasetError
+
+        for file in self.path_to_raw_txt_data.iterdir():
+            if file.is_file() and file.stat().st_size == 0:
+                raise InconsistentDatasetError
+
+        return None
 
     def _scan_dataset(self) -> None:
         """
         Register each dataset entry.
         """
+        for path in self.path_to_raw_txt_data.glob('*raw.txt'):
+            id = get_article_id_from_filepath(path)
+            self._storage[id] = Article(url=None, article_id=id)
 
     def get_articles(self) -> dict:
         """
@@ -35,7 +86,7 @@ class CorpusManager:
         Returns:
             dict: Storage params
         """
-
+        return self._storage
 
 class TextProcessingPipeline(PipelineProtocol):
     """
@@ -243,6 +294,8 @@ def main() -> None:
     """
     Entrypoint for pipeline module.
     """
+    corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
+
 
 
 if __name__ == "__main__":
