@@ -20,31 +20,45 @@ from core_utils.config_dto import ConfigDTO
 
 
 class IncorrectSeedURLError(Exception):
-    pass
+    """
+    IncorrectSeedURLError
+    """
 
 
 class NumberOfArticlesOutOfRangeError(Exception):
-    pass
+    """
+    NumberOfArticlesOutOfRangeError
+    """
 
 
 class IncorrectNumberOfArticlesError(Exception):
-    pass
+    """
+    IncorrectNumberOfArticlesError
+    """
 
 
 class IncorrectHeadersError(Exception):
-    pass
+    """
+    IncorrectNumberOfArticlesError
+    """
 
 
 class IncorrectEncodingError(Exception):
-    pass
+    """
+    IncorrectEncodingError
+    """
 
 
 class IncorrectTimeoutError(Exception):
-    pass
+    """
+    IncorrectTimeoutError
+    """
 
 
 class IncorrectVerifyError(Exception):
-    pass
+    """
+    IncorrectVerifyError
+    """
 
 
 class Config:
@@ -87,7 +101,9 @@ class Config:
             headers=config["headers"],
             encoding=config["encoding"],
             timeout=config["timeout"],
-            should_verify_certificate=config["should_verify_certificate"],
+            should_verify_certificate=(
+                config["should_verify_certificate"]
+            ),
             headless_mode=config["headless_mode"])
 
     def _validate_config_content(self) -> None:
@@ -101,7 +117,8 @@ class Config:
             if not (isinstance(seed_url, str) and ('https://' or 'www.') in seed_url):
                 raise IncorrectSeedURLError
 
-        if not isinstance(self.config_dto.total_articles, int) or self.config_dto.total_articles <= 0:
+        if not isinstance(self.config_dto.total_articles, int) \
+                or self.config_dto.total_articles <= 0:
             raise IncorrectNumberOfArticlesError
 
         if not 0 < self.config_dto.total_articles < 150:
@@ -232,7 +249,8 @@ class Crawler:
         if link and '/news/' in link:
             if 'https' in link:
                 return str(link)
-            return self.url_pattern + str(article_bs.get('href'))
+            return self.url_pattern \
+                + str(article_bs.get('href'))
         return ''
 
     def find_articles(self) -> None:
@@ -263,6 +281,7 @@ class Crawler:
         """
         return self.config.get_seed_urls()
 
+
 # 10
 # 4, 6, 8, 10
 
@@ -291,11 +310,13 @@ class HTMLParser:
         Find text of article.
 
         Args:
-            article_soup (bs4.BeautifulSoup): BeautifulSoup instance
+            article_soup (bs4.BeautifulSoup):
+            BeautifulSoup instance
         """
         raw_text = ""
         headline = article_soup.find(
-            class_="large-9 large-offset-1 medium-10 medium-offset-1 small-12 columns news-text js-mediator-article")
+            class_="large-9 large-offset-1 medium-10 medium-offset-1 " + \
+                   "small-12 columns news-text js-mediator-article")
         if headline:
             raw_text = ''.join([headline.text.strip() for headline in headline])
 
