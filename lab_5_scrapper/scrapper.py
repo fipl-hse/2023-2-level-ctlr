@@ -294,11 +294,6 @@ class HTMLParser:
     def __init__(self, full_url: str, article_id: int, config: Config) -> None:
         """
         Initialize an instance of the HTMLParser class.
-
-        Args:
-            full_url (str): Site url
-            article_id (int): Article id
-            config (Config): Configuration
         """
         self.full_url = full_url
         self.article_id = article_id
@@ -315,7 +310,7 @@ class HTMLParser:
         """
         raw_text = ""
         headline = article_soup.find(
-            class_="large-9 large-offset-1 medium-10 medium-offset-1 " + \
+            class_="large-9 large-offset-1 medium-10 medium-offset-1 " +
                    "small-12 columns news-text js-mediator-article")
         if headline:
             raw_text = ''.join([headline.text.strip() for headline in headline])
