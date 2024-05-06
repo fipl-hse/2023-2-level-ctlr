@@ -265,7 +265,9 @@ class Crawler:
 
             soup = BeautifulSoup(response.text, 'lxml')
 
-            for div in soup.find(class_="second-news large-12 columns padding-left-0").find_all("a"):
+            for div in soup\
+                    .find(class_="second-news large-12 columns padding-left-0") \
+                    .find_all("a"):
                 if self._extract_url(div) and self._extract_url(div) not in self.urls:
                     self.urls.append(self._extract_url(div))
 
@@ -320,15 +322,11 @@ class HTMLParser:
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
         Find meta information of article.
-
-        Args:
-            article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        self.article.author = ["NOT FOUND"]  # there are not any authors in the articles in my web-site,
-        # at least I didn't find any
-        # What should I do in this case?
+        self.article.author = ["NOT FOUND"]
 
-        post_titles = article_soup.find(class_='news-title')
+        post_titles = article_soup\
+            .find(class_='news-title')
         if post_titles:
             self.article.title = post_titles.text.strip()
 
@@ -352,9 +350,6 @@ class HTMLParser:
             day, month, time = post_date.split()
             month_number = month_dict.get(month)
             date = f'2024-{month_number}-{day} {time}'
-            # I am not sure about the year,
-            # because I do not have this information in the date of the article publication
-            # Can I just do like this? Because if there is no year written, it will be automatically 1900
             self.article.date = self.unify_date_format(date)
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
