@@ -4,6 +4,18 @@ Pipeline for CONLL-U formatting.
 # pylint: disable=too-few-public-methods, unused-import, undefined-variable
 import pathlib
 from typing import List
+import spacy
+from core_utils.article.article import Article
+from core_utils.constants import ASSETS_PATH
+from pathlib import Path
+
+
+class InconsistentDatasetError(Exception):
+    pass
+
+
+class EmptyDirectoryError(Exception):
+    pass
 
 
 class CorpusManager:
@@ -18,16 +30,46 @@ class CorpusManager:
         Args:
             path_to_raw_txt_data (pathlib.Path): Path to raw txt data
         """
+        self.path_to_raw_txt_data = Path(path_to_raw_txt_data)
+        self._storage = {}
+
+        self._validate_dataset()
+        self._scan_dataset()
 
     def _validate_dataset(self) -> None:
         """
         Validate folder with assets.
         """
+        if not self.path_to_raw_txt_data.exists():
+            raise FileNotFoundError
+
+        if not self.path_to_raw_txt_data.is_dir():
+            raise NotADirectoryError
+
+        files_in_dir = list(self.path_to_raw_txt_data.glob("*"))
+
+        meta_files = [file for file in files_in_dir if file.name.endswith("json")]
+        raw_files = [file for file in files_in_dir if file.name.endswith("txt")]
+
+        if len(meta_files) != len(raw_files):
+            raise InconsistentDatasetError
+
+        for meta_file, raw_file in zip(meta_files, raw_files):
+            if meta_file.stat().st_size == 0 or raw_file.stat().st_size == 0:
+                raise InconsistentDatasetError
+
+        if not meta_files or not raw_files:
+            raise EmptyDirectoryError
 
     def _scan_dataset(self) -> None:
         """
         Register each dataset entry.
         """
+        for file_path in self.path_to_raw_txt_data.glob("*_raw.txt"):
+            article_id = int(file_path.stem.split("_")[0])
+            article = Article(url=None, article_id=article_id)
+            print(article)
+            self._storage[article_id] = article
 
     def get_articles(self) -> dict:
         """
@@ -36,6 +78,7 @@ class CorpusManager:
         Returns:
             dict: Storage params
         """
+        return self._storage
 
 
 class ConlluToken:
@@ -119,7 +162,7 @@ class ConlluSentence(SentenceProtocol):
         """
 
 
-# pylint: disable=too-few-public-methods
+pylint: disable=too-few-public-methods
 
 
 class MorphologicalAnalysisPipeline:
@@ -152,10 +195,15 @@ class MorphologicalAnalysisPipeline:
         """
 
 
+
 def main() -> None:
     """
     Entrypoint for pipeline module.
     """
+    corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
+    corpus_manager._scan_dataset()
+    corpus_manager.get_articles()
+    corpus_manager._validate_dataset()
 
 
 if __name__ == "__main__":

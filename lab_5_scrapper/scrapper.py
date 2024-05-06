@@ -335,12 +335,19 @@ class HTMLParser:
         if post_date:
             post_date = post_date.replace(' в ', ' ')
             day, month, time = post_date.split()
-            month_name_eng = month_dict.get(month)
-            date = f'2024-{month_name_eng}-{day} {time}'
+            month_number = month_dict.get(month)
+            date = f'2024-{month_number}-{day} {time}'
             # I am not sure about the year,
             # because I do not have this information in the date of the article publication
             # Can I just do like this? Because if there is no year written, it will be automatically 1900
             self.article.date = self.unify_date_format(date)
+        networks_links = article_soup.find('div', class_='news-share margin-left-0 margin-right-0 margin-bottom-2 padding-right-0')
+        for tag_a in networks_links.find_all('a'):
+            link = tag_a['href']
+            if "javascript:sharePopup" in link:
+                link = link.replace("javascript:sharePopup", '')
+                print(link)
+
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
