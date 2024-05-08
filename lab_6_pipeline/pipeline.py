@@ -128,7 +128,6 @@ class TextProcessingPipeline(PipelineProtocol):
         Perform basic preprocessing and write processed text to files.
         """
         for article in self._corpus.get_articles().values():
-            from_raw(article.get_raw_text_path(), article)
             to_cleaned(article)
             if self.analyzer:
                 article.set_conllu_info(self.analyzer.analyze(split_by_sentence(article.text)))
@@ -255,6 +254,7 @@ class StanzaAnalyzer(LibraryWrapper):
                                            '_',
                                            f'start_char={token["start_char"]}'
                                            f'|end_char={token["end_char"]}'
+                                           f'|{token["misc"] if "misc" in token.keys() else ""}'
                                            ])
                                  for token in sentence.sentences[0].doc.to_dict()[0]]
                 f.write('\n'.join(tokens_connlu + ['', '']))  # two newlines at the end
