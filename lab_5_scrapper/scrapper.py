@@ -326,17 +326,22 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         self.article.title = article_soup.find('h1').text
-
-        authors = article_soup.find(name='div', class_='field field-text field-multiple person field-name-authors')
-        if authors is not None:
+        self.article.author = []
+        authors = article_soup.find_all(class_="field field-text field-multiple person field-name-authors")
+        if authors:
             for author in authors:
-                author_txt = author.text.strip()
-                if author_txt:
-                    self.article.author.append(author_txt)
-                else:
-                    self.article.author.append('NOT FOUND')
+                tmp = author.find('span').text.split(' ')[-1]
+                # author = ' '.join([i for i in tmp if i])
+                self.article.author.append(tmp)
         else:
-            self.article.author.append('NOT FOUND')
+            self.article.author.append("NOT FOUND")
+
+        #authors = article_soup.find(class_="field field-text field-multiple person field-name-authors")
+        #if authors:
+            #for author in authors:
+            #authors = 'NOT FOUND'
+        #self.article.author = [author[10:]]
+
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """

@@ -1,7 +1,5 @@
 {
     "seed_urls": [
-      "https://www.comnews.ru/",
-      "https://www.comnews.ru/news",
       "https://www.comnews.ru/news?page=1",
       "https://www.comnews.ru/news?page=2",
       "https://www.comnews.ru/news?page=3",
