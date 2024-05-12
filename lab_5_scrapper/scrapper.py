@@ -290,13 +290,6 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        # title = ''
-        # meta = article_soup.find_all('div', class_="meta")
-        # for el in meta:
-        #     if el.find('h1'):
-        #         title = el.find('h1').text
-        # title += '\n' + article_soup.find('div', class_="preview").text
-        # title = [article_soup.title.text, article_soup.find('div', class_="preview").text]
         self.article.title = article_soup.title.text
         date = article_soup.find('div', class_='data').find(class_='date')
         self.article.date = self.unify_date_format(date.text)
