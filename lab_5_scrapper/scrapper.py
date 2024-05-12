@@ -254,8 +254,8 @@ class Crawler:
                 soup = BeautifulSoup(response.text, 'lxml')
                 extracted_urls = self._extract_url(soup)
                 self.urls.append(extracted_urls)
-                if len(self.urls) >= self.config.get_num_articles():
-                    break
+                # if len(self.urls) >= self.config.get_num_articles():
+                #     break
 
     def get_search_urls(self) -> list:
         """
@@ -307,8 +307,7 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         self.article.title = article_soup.title.text
-        date1 = article_soup.find('div', class_='data')
-        date = date1.find(class_='date')
+        date = article_soup.find('div', class_='data').find('div', class_='date')
         self.article.date = self.unify_date_format(date.text)
         self.article.topics = []
         self.article.author = ["NOT FOUND"]
