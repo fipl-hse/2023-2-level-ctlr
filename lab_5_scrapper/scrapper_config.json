@@ -12,7 +12,7 @@
     "accept-language": "ru,en;q=0.9",
     "cookie": "__ddg1_=Ua1seebcGMFxDlVfk5Mc; fontanka_ab_31=A; fontanka_ab_main_page_4redesign=B; ngs_uid=wxPcFWYTANuDuyVIByWJAg==; _ym_uid=1707246751961235024; _ym_d=1712521436; tmr_lvid=226237b4891b037f30fe663e90c1dc83; tmr_lvidTS=1707246751517; ngs_analytics_uid=wxPcEmYTANsxL7kqCf9jAg==; _ga=GA1.1.1990955855.1712521436; _ym_isad=2; chash=H9wjRdf3PE; _ym_visorc=b; adrdel=1; adrcid=AGdUl_HajoTDydr3biV17pw; jtnews_block_display_fullscreen=2; jtnews_disable_fullscreen=true; domain_sid=Xz1BPpaVf3hw1pUxh88xJ%3A1712565131328; tmr_detect=0%7C1712565133832; _ga_L3X39F5J22=GS1.1.1712564537.2.1.1712565182.9.0.0"
   },
-  "total_articles_to_find_and_parse": 100,
+  "total_articles_to_find_and_parse": 20,
   "encoding": "utf-8",
   "timeout": 5,
   "should_verify_certificate": true,
