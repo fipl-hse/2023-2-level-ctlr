@@ -11,7 +11,7 @@ import time
 from bs4 import BeautifulSoup
 from core_utils.article import io
 from core_utils.config_dto import ConfigDTO
-from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
+from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH, TIMEOUT_LOWER_LIMIT, TIMEOUT_UPPER_LIMIT
 from core_utils.article.article import Article
 from random import randrange
 from typing import Pattern, Union
@@ -19,43 +19,43 @@ from typing import Pattern, Union
 
 class IncorrectSeedURLError(Exception):
     """
-    Seed URLs do not belong to the website being scrapped.
+    All the seed URLs must belong to the website being scrapped.
     """
 
 
 class NumberOfArticlesOutOfRangeError(Exception):
     """
-    The number of articles to be collected is not positive or is greater than 150.
+    The number of articles to be collected must be a positive number less than 150.
     """
 
 
 class IncorrectNumberOfArticlesError(Exception):
     """
-    The number of articles to be collected is not an integer number.
+    The number of articles to be collected must be a positive integer number.
     """
 
 
 class IncorrectHeadersError(Exception):
     """
-    Headers are not presented as a dictionary.
+    Headers must be presented as a dictionary.
     """
 
 
 class IncorrectEncodingError(Exception):
     """
-    Encoding is not specified as a string.
+    Encoding must be specified as a string.
     """
 
 
 class IncorrectTimeoutError(Exception):
     """
-    The timeout is not a positive integer number or is greater than 60.
+    The timeout must be a positive integer number less than the set limit.
     """
 
 
 class IncorrectVerifyError(Exception):
     """
-    The verify certificate value is not boolean.
+    The verify certificate value must be boolean.
     """
 
 
@@ -73,6 +73,13 @@ class Config:
         """
         self.path_to_config = path_to_config
         self.config = self._extract_config_content()
+        self._seed_urls = self.config.seed_urls
+        self._num_articles = self.config.total_articles
+        self._headers = self.config.headers
+        self._encoding = self.config.encoding
+        self._timeout = self.config.timeout
+        self._should_verify_certificate = self.config.should_verify_certificate
+        self._headless_mode = self.config.headless_mode
         self._validate_config_content()
 
     def _extract_config_content(self) -> ConfigDTO:
@@ -90,19 +97,25 @@ class Config:
         """
         Ensure configuration parameters are not corrupt.
         """
-        if not all(seed.startswith('https://www.fontanka.ru/') for seed in self.config.seed_urls):
+        if not (isinstance(self._seed_urls, list)
+                and all(isinstance(seed, str)
+                        and seed.startswith('https://www.fontanka.ru/') for seed in self._seed_urls)):
             raise IncorrectSeedURLError
-        if self.config.total_articles < 1 or self.config.total_articles > 150:
-            raise NumberOfArticlesOutOfRangeError
-        if not isinstance(self.config.total_articles, int):
+        if not isinstance(self._num_articles, int) or self._num_articles < 1:
             raise IncorrectNumberOfArticlesError
-        if not isinstance(self.config.headers, dict):
+        if self._num_articles > 150:
+            raise NumberOfArticlesOutOfRangeError
+        if not isinstance(self._headers, dict):
             raise IncorrectHeadersError
-        if not isinstance(self.config.encoding, str):
+        if not isinstance(self._encoding, str):
             raise IncorrectEncodingError
-        if self.config.timeout < 1 or self.config.timeout > 60:
+        if (not isinstance(self._timeout, int)
+                or self._timeout < TIMEOUT_LOWER_LIMIT
+                or self._timeout > TIMEOUT_UPPER_LIMIT):
             raise IncorrectTimeoutError
-        if not isinstance(self.config.headless_mode, bool):
+        if not isinstance(self._headless_mode, bool):
+            raise IncorrectVerifyError
+        if not isinstance(self._should_verify_certificate, bool):
             raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
@@ -112,7 +125,7 @@ class Config:
         Returns:
             list[str]: Seed urls
         """
-        return self.config.seed_urls
+        return self._seed_urls
 
     def get_num_articles(self) -> int:
         """
@@ -121,7 +134,7 @@ class Config:
         Returns:
             int: Total number of articles to scrape
         """
-        return self.config.total_articles
+        return self._num_articles
 
     def get_headers(self) -> dict[str, str]:
         """
@@ -130,7 +143,7 @@ class Config:
         Returns:
             dict[str, str]: Headers
         """
-        return self.config.headers
+        return self._headers
 
     def get_encoding(self) -> str:
         """
@@ -139,7 +152,7 @@ class Config:
         Returns:
             str: Encoding
         """
-        return self.config.encoding
+        return self._encoding
 
     def get_timeout(self) -> int:
         """
@@ -148,7 +161,7 @@ class Config:
         Returns:
             int: Number of seconds to wait for response
         """
-        return self.config.timeout
+        return self._timeout
 
     def get_verify_certificate(self) -> bool:
         """
@@ -157,7 +170,7 @@ class Config:
         Returns:
             bool: Whether to verify certificate or not
         """
-        return self.config.should_verify_certificate
+        return self._should_verify_certificate
 
     def get_headless_mode(self) -> bool:
         """
@@ -166,7 +179,7 @@ class Config:
         Returns:
             bool: Whether to use headless mode or not
         """
-        return self.config.headless_mode
+        return self._headless_mode
 
 
 def make_request(url: str, config: Config) -> requests.models.Response:
