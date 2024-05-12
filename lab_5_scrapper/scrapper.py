@@ -196,7 +196,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     verify = config.get_verify_certificate()
     headers = config.get_headers()
     timeout = config.get_timeout()
-    time.sleep(randrange(1, 10))
+    time.sleep(randrange(1, 5))
     return requests.get(url=url, verify=verify, headers=headers, timeout=timeout)
 
 
@@ -227,7 +227,7 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        articles = article_bs.find_all('a', class_='IFcb')
+        articles = article_bs.select('a[href^="/2024/"]')
         url = ''
         for article in articles:
             url = 'https://www.fontanka.ru' + article.get('href')
@@ -290,8 +290,8 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        content = article_soup.find(itemprop='ArticleBody').find_all('p')
-        self.article.text = '\n'.join(content)
+        content = article_soup.find(itemprop='articleBody').find_all('p')
+        self.article.text = '\n'.join([ptag.text for ptag in content])
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -302,7 +302,7 @@ class HTMLParser:
         """
         self.article.title = article_soup.find('h1').text
 
-        topics = article_soup.find(class_='ANf9').find_all('a')
+        topics = article_soup.select('a[href^="/text/tags"]')
         self.article.topics = [topic.text for topic in topics]
 
         author = [a.text for a in article_soup.find_all('p', itemprop='name')]
@@ -310,7 +310,7 @@ class HTMLParser:
             author = ['NOT FOUND']
         self.article.author = author
 
-        date = article_soup.find(itemprop='datePublished').text
+        date = article_soup.find('span', itemprop='datePublished').text
         self.article.date = self.unify_date_format(date)
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
@@ -339,7 +339,7 @@ class HTMLParser:
                  'декабря': '12'
                  }
         date[1] = month[date[1]]
-        return datetime.datetime.strptime(''.join(date), '%d %m %Y, %H:%M')
+        return datetime.datetime.strptime(' '.join(date), '%d %m %Y, %H:%M')
 
     def parse(self) -> Union[Article, bool, list]:
         """
@@ -363,7 +363,7 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    if not base_path.exists():
+    if base_path.exists():
         shutil.rmtree(base_path)
     base_path.mkdir(parents=True)
 
