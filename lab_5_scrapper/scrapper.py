@@ -62,6 +62,13 @@ class Config:
         self.path_to_config = path_to_config
         self.extract = self._extract_config_content()
         self._validate_config_content()
+        self._seed_urls = self.extract.seed_urls
+        self._num_articles = self.extract.total_articles
+        self._headers = self.extract.headers
+        self._encoding = self.extract.encoding
+        self._timeout = self.extract.timeout
+        self._should_verify_certificate = self.extract.should_verify_certificate
+        self._headless_mode = self.extract.headless_mode
 
     def _extract_config_content(self) -> ConfigDTO:
         """
@@ -78,8 +85,8 @@ class Config:
         """
         Ensure configuration parameters are not corrupt.
         """
-        if (not isinstance(self.extract.seed_urls, list) or
-                not all(re.match(r"https?://(www.)?portamur\.ru/news", url) for url in self.extract.seed_urls)):
+        if not isinstance(self.extract.seed_urls, list) or \
+                not all(re.match(r"https?://(www.)?portamur\.ru/news", url) for url in self.extract.seed_urls):
             raise IncorrectSeedURLError
 
         if not isinstance(self.extract.total_articles, int) or self.extract.total_articles <= 0:
@@ -88,16 +95,16 @@ class Config:
         if not 1 <= self.extract.total_articles <= 150:
             raise NumberOfArticlesOutOfRangeError
 
-        if not (self.extract.headers, dict):
+        if not isinstance(self.extract.headers, dict):
             raise IncorrectHeadersError
 
-        if not (self.extract.encoding, str):
+        if not isinstance(self.extract.encoding, str):
             raise IncorrectEncodingError
 
-        if not (self.extract.timeout, int) or not 1 <= self.extract.timeout < 60:
+        if not isinstance(self.extract.timeout, int) or not 1 <= self.extract.timeout < 60:
             raise IncorrectTimeoutError
 
-        if not (self.extract.should_verify_certificate, bool) \
+        if not isinstance(self.extract.should_verify_certificate, bool) \
                 or not isinstance(self.extract.headless_mode, bool):
             raise IncorrectVerifyError
 
@@ -108,7 +115,7 @@ class Config:
         Returns:
             list[str]: Seed urls
         """
-        return self.extract.seed_urls
+        return self._seed_urls
 
     def get_num_articles(self) -> int:
         """
@@ -117,7 +124,7 @@ class Config:
         Returns:
             int: Total number of articles to scrape
         """
-        return self.extract.total_articles
+        return self._num_articles
 
     def get_headers(self) -> dict[str, str]:
         """
@@ -126,7 +133,7 @@ class Config:
         Returns:
             dict[str, str]: Headers
         """
-        return self.extract.headers
+        return self._headers
 
     def get_encoding(self) -> str:
         """
@@ -135,7 +142,7 @@ class Config:
         Returns:
             str: Encoding
         """
-        return self.extract.encoding
+        return self._encoding
 
     def get_timeout(self) -> int:
         """
@@ -144,7 +151,7 @@ class Config:
         Returns:
             int: Number of seconds to wait for response
         """
-        return self.extract.timeout
+        return self._timeout
 
     def get_verify_certificate(self) -> bool:
         """
@@ -153,7 +160,7 @@ class Config:
         Returns:
             bool: Whether to verify certificate or not
         """
-        return self.extract.should_verify_certificate
+        return self._should_verify_certificate
 
     def get_headless_mode(self) -> bool:
         """
@@ -162,7 +169,7 @@ class Config:
         Returns:
             bool: Whether to use headless mode or not
         """
-        return self.extract.headless_mode
+        return self._headless_mode
 
 
 def make_request(url: str, config: Config) -> requests.models.Response:
@@ -177,7 +184,9 @@ def make_request(url: str, config: Config) -> requests.models.Response:
         requests.models.Response: A response from a request
     """
     time.sleep(random.randrange(1, 3))
-    return requests.get(url=url, timeout=config.get_timeout(), headers=config.get_headers(),
+    return requests.get(url=url,
+                        headers=config.get_headers(),
+                        timeout=config.get_timeout(),
                         verify=config.get_verify_certificate())
 
 
@@ -271,8 +280,8 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        text = article_soup.find('div', class_="text")
-        self.article.text = text.text
+        text_found = [div.text.strip() for div in article_soup.find('div', class_="text")]
+        self.article.text = ''.join(text_found)
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -281,9 +290,15 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        title = article_soup.find('div', class_="meta")
-        self.article.title = title.text
-        date = article_soup.find('p', class_="date")
+        # title = ''
+        # meta = article_soup.find_all('div', class_="meta")
+        # for el in meta:
+        #     if el.find('h1'):
+        #         title = el.find('h1').text
+        # title += '\n' + article_soup.find('div', class_="preview").text
+        # title = [article_soup.title.text, article_soup.find('div', class_="preview").text]
+        self.article.title = article_soup.title.text
+        date = article_soup.find('div', class_='data').find(class_='date')
         self.article.date = self.unify_date_format(date.text)
         self.article.topics = []
         self.article.author = ["NOT FOUND"]
@@ -298,7 +313,7 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
-        date_str = ''
+        date = ''
         months = {
             "января": "Jan",
             "февраля": "Feb",
@@ -315,8 +330,8 @@ class HTMLParser:
         }
         for ru, en in months.items():
             if ru in date_str:
-                date_str.replace(ru, en)
-        return datetime.datetime.strptime(date_str, "%d %m %y, %H:%M")
+                date = date_str.replace(ru, en)
+        return datetime.datetime.strptime(date, "%d %b %Y, %H:%M")
 
     def parse(self) -> Union[Article, bool, list]:
         """
@@ -358,7 +373,7 @@ def main() -> None:
         parser = HTMLParser(full_url=url, article_id=index, config=config)
         articles = parser.parse()
         if isinstance(articles, Article):
-            to_raw(article=articles)
+            to_raw(articles)
             to_meta(articles)
 
 
