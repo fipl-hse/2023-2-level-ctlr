@@ -20,31 +20,45 @@ from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 
 
 class IncorrectSeedURLError(Exception):
-    pass
+    """
+    The seed-url is not appropriate.
+    """
 
 
 class NumberOfArticlesOutOfRangeError(Exception):
-    pass
+    """
+    Total number of articles is out of range from 1 to 150.
+    """
 
 
 class IncorrectNumberOfArticlesError(Exception):
-    pass
+    """
+    Total number of articles to parse is not integer.
+    """
 
 
 class IncorrectHeadersError(Exception):
-    pass
+    """
+    Headers are not in a form of dictionary.
+    """
 
 
 class IncorrectEncodingError(Exception):
-    pass
+    """
+    Encoding must be specified as a string.
+    """
 
 
 class IncorrectTimeoutError(Exception):
-    pass
+    """
+    Timeout value must be a positive integer less than 60.
+    """
 
 
 class IncorrectVerifyError(Exception):
-    pass
+    """
+    Verify certificate value must either be True or False.
+    """
 
 
 class Config:
@@ -86,7 +100,8 @@ class Config:
         Ensure configuration parameters are not corrupt.
         """
         if not isinstance(self.extract.seed_urls, list) or \
-                not all(re.match(r"https?://(www.)?portamur\.ru/news", url) for url in self.extract.seed_urls):
+                not all(re.match(r"https?://(www.)?portamur\.ru/news", url)
+                        for url in self.extract.seed_urls):
             raise IncorrectSeedURLError
 
         if not isinstance(self.extract.total_articles, int) or self.extract.total_articles <= 0:
