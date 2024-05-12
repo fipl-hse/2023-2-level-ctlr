@@ -3,18 +3,19 @@ Crawler implementation.
 """
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
 import datetime
+import json
 import pathlib
 import random
+import re
 import shutil
 import time
 from typing import Pattern, Union
-import json
-import re
+
 import requests
 from bs4 import BeautifulSoup
 
 from core_utils.article.article import Article
-from core_utils.article.io import to_raw, to_meta
+from core_utils.article.io import to_meta, to_raw
 from core_utils.config_dto import ConfigDTO
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 
@@ -306,7 +307,8 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         self.article.title = article_soup.title.text
-        date = article_soup.find('div', class_='data').find(class_='date')
+        date1 = article_soup.find('div', class_='data')
+        date = date1.find(class_='date')
         self.article.date = self.unify_date_format(date.text)
         self.article.topics = []
         self.article.author = ["NOT FOUND"]
