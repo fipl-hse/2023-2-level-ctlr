@@ -281,8 +281,12 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        title_res = ''
         title = article_soup.find('div', class_="meta")
+        self.article.title = title.text
+        date = article_soup.find('p', class_="date")
+        self.article.date = self.unify_date_format(date.text)
+        self.article.topics = []
+        self.article.author = ["NOT FOUND"]
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -294,6 +298,25 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
+        date_str = ''
+        months = {
+            "января": "Jan",
+            "февраля": "Feb",
+            "марта": "Mar",
+            "апреля": "Apr",
+            "мая": "May",
+            "июня": "Jun",
+            "июля": "Jul",
+            "августа": "Aug",
+            "сентября": "Sep",
+            "октября": "Oct",
+            "ноября": "Nov",
+            "декабря": "Dec"
+        }
+        for ru, en in months.items():
+            if ru in date_str:
+                date_str.replace(ru, en)
+        return datetime.datetime.strptime(date_str, "%d %m %y, %H:%M")
 
     def parse(self) -> Union[Article, bool, list]:
         """
@@ -303,9 +326,10 @@ class HTMLParser:
             Union[Article, bool, list]: Article instance
         """
         response = make_request(url=self.full_url, config=self.config)
-        # if response == 200:
-        article_bs = BeautifulSoup(response.text, parser='lxml')
-        self._fill_article_with_text(article_soup=article_bs)
+        if response.ok:
+            article_bs = BeautifulSoup(response.text, 'lxml')
+            self._fill_article_with_text(article_soup=article_bs)
+            self._fill_article_with_meta_information(article_soup=article_bs)
         return self.article
 
 
