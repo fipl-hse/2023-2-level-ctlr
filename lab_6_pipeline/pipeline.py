@@ -184,7 +184,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         """
         with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU),
                   'w', encoding='utf-8') as f:
-            f.write(article.get_conllu_info())
+            f.writelines(article.get_conllu_info())
 
 
 class StanzaAnalyzer(LibraryWrapper):
@@ -229,7 +229,6 @@ class StanzaAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
-
         CoNLL.write_doc2conll(
             doc=article.get_conllu_info()[0],
             filename=article.get_file_path(kind=ArtifactType.STANZA_CONLLU),
