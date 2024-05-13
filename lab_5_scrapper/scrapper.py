@@ -332,7 +332,8 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
-        datetime_date = ''
+
+        date1 = ''
 
         months_dict = {
             "января": "January",
@@ -352,14 +353,10 @@ class HTMLParser:
         my_date_format = "%d %B %Y года, %H:%M"
 
         for rus_month, eng_month in months_dict.items():
-            date_str = date_str.replace(rus_month, eng_month)
+            date1 = date_str.replace(rus_month, eng_month)
 
-        date_str = date_str[:date_str.index(':') + 3]
-
-        if date_str:
-            datetime_date = datetime.datetime.strptime(date_str, my_date_format)
-
-        return datetime_date
+        date1 = date1[:date_str.index(':') + 3]
+        return datetime.datetime.strptime(date1, my_date_format)
 
     def parse(self) -> Union[Article, bool, list]:
         """
