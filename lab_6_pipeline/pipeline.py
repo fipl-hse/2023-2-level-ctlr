@@ -5,8 +5,9 @@ Pipeline for CONLL-U formatting.
 import pathlib
 
 import spacy_udpipe
-import stanza
 from networkx import DiGraph
+from stanza import Pipeline
+from stanza.models.common.doc import Document
 from stanza.utils.conll import CoNLL
 
 from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
@@ -154,7 +155,13 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
-        return spacy_udpipe.load_from_path(lang="ru", path=str(UDPIPE_MODEL_PATH))
+        model = spacy_udpipe.load_from_path(lang="ru", path=str(UDPIPE_MODEL_PATH))
+        model.add_pipe(
+            "conll_formatter",
+            last=True,
+            config={"conversion_maps": {"XPOS": {"": "_"}}, "include_headers": True}
+        )
+        return model
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument | str]:
         """
@@ -166,24 +173,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument | str]: List of documents
         """
-        sentences = []
-        for num, text in enumerate(texts):
-            sentence = ['	'.join([str(token.i + 1),
-                                  token.text,
-                                  token.lemma_,
-                                  token.pos_,
-                                  '_',
-                                  str(token.morph) if token.morph else '_',
-                                  '0' if token.dep_ == 'ROOT' else str(token.head.i + 1),
-                                  token.dep_,
-                                  '_',
-                                  '_' if token.whitespace_ else 'SpaceAfter=No'])
-                        for token in self._analyzer(text)]
-
-            sentences.append(f"# sent_id = {num + 1}\n"
-                             f"# text = {text}\n" +
-                             "\n".join(sentence + ['', '']))  # two newlines at the end
-        return sentences
+        return [f"{self._analyzer(text)._.conll_str}\n" for text in texts]
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -194,7 +184,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         """
         with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU),
                   'w', encoding='utf-8') as f:
-            f.writelines(article.get_conllu_info())
+            f.write(article.get_conllu_info())
 
 
 class StanzaAnalyzer(LibraryWrapper):
@@ -217,7 +207,8 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
-        return stanza.Pipeline(lang="ru", processors='tokenize,lemma,pos,depparse')
+        return Pipeline(lang="ru", processors='tokenize,pos,lemma,depparse',
+                               logging_level="INFO", download_method=None)
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument]:
         """
@@ -229,7 +220,7 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument]: List of documents
         """
-        return [self._analyzer(text) for text in texts]
+        return self._analyzer.process([Document([], text=' '.join(texts))])
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -238,26 +229,11 @@ class StanzaAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
-        with open(article.get_file_path(kind=ArtifactType.STANZA_CONLLU),
-                  'w', encoding='utf-8', newline='\n') as f:
-            for index, sentence in enumerate(article.get_conllu_info()):
-                f.write(f"# text = {sentence.text}\n"
-                        f"# sent_id = {index}\n")
-                tokens_connlu = ['	'.join([str(token["id"]),
-                                           token["text"],
-                                           token["lemma"],
-                                           token["upos"],
-                                           '_',
-                                           token["feats"] if "feats" in token.keys() else '_',
-                                           str(token["head"]),
-                                           token["deprel"],
-                                           '_',
-                                           f'start_char={token["start_char"]}'
-                                           f'|end_char={token["end_char"]}'
-                                           f'|{token["misc"] if "misc" in token.keys() else ""}'
-                                           ])
-                                 for token in sentence.sentences[0].doc.to_dict()[0]]
-                f.write('\n'.join(tokens_connlu + ['', '']))  # two newlines at the end
+
+        CoNLL.write_doc2conll(
+            doc=article.get_conllu_info()[0],
+            filename=article.get_file_path(kind=ArtifactType.STANZA_CONLLU),
+        )
 
     def from_conllu(self, article: Article) -> CoNLLUDocument:
         """
