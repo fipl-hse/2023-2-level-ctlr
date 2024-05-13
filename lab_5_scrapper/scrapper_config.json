@@ -1,7 +1,8 @@
 {
     "seed_urls": ["https://portamur.ru/news/archive/?day=02&month=04&year=2024",
     "https://portamur.ru/news/archive/?day=03&month=12&year=2023",
-    "https://portamur.ru/news/archive/?day=26&month=04&year=2024"],
+    "https://portamur.ru/news/archive/?day=26&month=04&year=2024",
+    "https://portamur.ru/news/archive/?day=09&month=05&year=2024"],
     "headers": {
         "Cookie": "stg_traffic_source_priority=2; stg_externalReferrer=https://yandex.ru/; stg_last_interaction=Mon%2C%2008%20Apr%202024%2011:19:30%20GMT; stg_returning_visitor=Mon%2C%2008%20Apr%202024%2011:19:30%20GMT",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36",
