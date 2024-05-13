@@ -307,8 +307,10 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         self.article.title = article_soup.title.text
-        date = article_soup.find('div', class_='data').find('div', class_='date')
-        self.article.date = self.unify_date_format(date.text)
+        date = article_soup.find_all('div', class_='data')
+        for el in date:
+            t = el.find('div', class_='date')
+            self.article.date = self.unify_date_format(t.text)
         self.article.topics = []
         self.article.author = ["NOT FOUND"]
 
