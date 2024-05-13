@@ -15,7 +15,6 @@ from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, Library
                                  PipelineProtocol, StanzaDocument, TreeNode)
 
 
-import stanza
 from networkx import DiGraph
 from stanza.utils.conll import CoNLL
 
