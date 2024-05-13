@@ -92,7 +92,7 @@ class Config:
         Returns:
             ConfigDTO: Config values
         """
-        with open(self.path_to_config, encoding=self._encoding) as config_file:
+        with open(self.path_to_config, 'r', encoding='utf-8') as config_file:
             config = json.load(config_file)
         return ConfigDTO(**config)
 
