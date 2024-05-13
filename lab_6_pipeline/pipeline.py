@@ -316,12 +316,8 @@ def main() -> None:
     Entrypoint for pipeline module.
     """
     corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
-    corpus_manager._validate_dataset()
-    corpus_manager._scan_dataset()
     pipeline = TextProcessingPipeline(corpus_manager)
     pipeline.run()
-
-
 
 
 if __name__ == "__main__":
