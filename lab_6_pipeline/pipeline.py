@@ -3,11 +3,11 @@ Pipeline for CONLL-U formatting.
 """
 # pylint: disable=too-few-public-methods, unused-import, undefined-variable, too-many-nested-blocks
 import pathlib
-import string
+import spacy_udpipe
 from core_utils.constants import ASSETS_PATH
 from core_utils.article.article import (Article, get_article_id_from_filepath, split_by_sentence)
 from core_utils.article.io import from_raw, to_cleaned
-from core_utils.pipeline import (LibraryWrapper, PipelineProtocol)
+from core_utils.pipeline import (AbstractCoNLLUAnalyzer, LibraryWrapper, PipelineProtocol)
 
 class FileNotFoundError(Exception):
     """
@@ -117,44 +117,45 @@ class TextProcessingPipeline(PipelineProtocol):
             from_raw(article.get_raw_text_path(), article)
             to_cleaned(article)
 
-# class UDPipeAnalyzer(LibraryWrapper):
-#     """
-#     Wrapper for udpipe library.
-#     """
+class UDPipeAnalyzer(LibraryWrapper):
+    """
+    Wrapper for udpipe library.
+    """
 
-#     _analyzer: AbstractCoNLLUAnalyzer
+    _analyzer: AbstractCoNLLUAnalyzer
 
-#     def __init__(self) -> None:
-#         """
-#         Initialize an instance of the UDPipeAnalyzer class.
-#         """
+    def __init__(self) -> None:
+        """
+        Initialize an instance of the UDPipeAnalyzer class.
+        """
+        self._analyzer = self._bootstrap()
 
-#     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
-#         """
-#         Load and set up the UDPipe model.
+    def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
+        """
+        Load and set up the UDPipe model.
 
-#         Returns:
-#             AbstractCoNLLUAnalyzer: Analyzer instance
-#         """
+        Returns:
+            AbstractCoNLLUAnalyzer: Analyzer instance
+        """
 
-#     def analyze(self, texts: list[str]) -> list[StanzaDocument | str]:
-#         """
-#         Process texts into CoNLL-U formatted markup.
+    def analyze(self, texts: list[str]) -> list[StanzaDocument | str]:
+        """
+        Process texts into CoNLL-U formatted markup.
 
-#         Args:
-#             texts (list[str]): Collection of texts
+        Args:
+            texts (list[str]): Collection of texts
 
-#         Returns:
-#             list[StanzaDocument | str]: List of documents
-#         """
+        Returns:
+            list[StanzaDocument | str]: List of documents
+        """
 
-#     def to_conllu(self, article: Article) -> None:
-#         """
-#         Save content to ConLLU format.
+    def to_conllu(self, article: Article) -> None:
+        """
+        Save content to ConLLU format.
 
-#         Args:
-#             article (Article): Article containing information to save
-#         """
+        Args:
+            article (Article): Article containing information to save
+        """
 
 
 # class StanzaAnalyzer(LibraryWrapper):
@@ -305,6 +306,7 @@ def main() -> None:
     pipeline = TextProcessingPipeline(corpus_manager)
     pipeline.run()
 
+    udpipe_analyzer = UDPipeAnalyzer()
 
 if __name__ == "__main__":
     main()
