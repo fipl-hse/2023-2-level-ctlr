@@ -116,14 +116,14 @@ class TextProcessingPipeline(PipelineProtocol):
             corpus_manager (CorpusManager): CorpusManager instance
             analyzer (LibraryWrapper | None): Analyzer instance
         """
-        self.corpus_manager = corpus_manager
+        self._corpus_manager = corpus_manager
         self.analyzer = analyzer
 
     def run(self) -> None:
         """
         Perform basic preprocessing and write processed text to files.
         """
-        articles = self.corpus_manager.get_articles().values()
+        articles = self._corpus_manager.get_articles().values()
 
         for article in articles:
             raw_texts = article.get_raw_text_path()
