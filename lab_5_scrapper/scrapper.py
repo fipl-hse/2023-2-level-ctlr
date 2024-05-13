@@ -253,9 +253,9 @@ class Crawler:
                 for a in div.find_all('a'):
                     if len(self.urls) == self.config.get_num_articles():
                         break
-                    url = self._extract_url(a)
-                    if url not in self.urls:
-                        self.urls.append(url)
+                    extract_url_result = self._extract_url(a)
+                    if extract_url_result not in self.urls:
+                        self.urls.append(extract_url_result)
 
     def get_search_urls(self) -> list:
         """
@@ -332,6 +332,7 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
+        datetime_date = ''
 
         months_dict = {
             "января": "January",
@@ -356,9 +357,9 @@ class HTMLParser:
         date_str = date_str[:date_str.index(':') + 3]
 
         if date_str:
-            date = datetime.datetime.strptime(date_str, my_date_format)
+            datetime_date = datetime.datetime.strptime(date_str, my_date_format)
 
-        return date
+        return datetime_date
 
     def parse(self) -> Union[Article, bool, list]:
         """
