@@ -93,7 +93,7 @@ class Config:
         Returns:
             ConfigDTO: Config values
         """
-        with open(self.path_to_config) as file:
+        with open(self.path_to_config, "r", encoding="utf-8") as file:
             config_dto = json.load(file)
         return ConfigDTO(**config_dto)
 
@@ -244,8 +244,8 @@ class Crawler:
         """
         Find articles.
         """
-        for i in self.get_search_urls():
-            response = make_request(i, self.config)
+        for one_url in self.get_search_urls():
+            response = make_request(one_url, self.config)
             if not response.ok:
                 continue
             obj = BeautifulSoup(response.text, 'lxml')
@@ -348,7 +348,7 @@ class HTMLParser:
             "декабря": "December"
         }
 
-        MY_DATE_FORMAT = "%d %B %Y года, %H:%M"
+        my_date_format = "%d %B %Y года, %H:%M"
 
         for rus_month, eng_month in months_dict.items():
             date_str = date_str.replace(rus_month, eng_month)
@@ -400,8 +400,8 @@ prepare_environment(ASSETS_PATH)
 crawler = Crawler(config=configuration)
 crawler.find_articles()
 
-for i, full_url in enumerate(crawler.urls, 1):
-    parser = HTMLParser(full_url=full_url, article_id=i, config=configuration)
+for i, url in enumerate(crawler.urls, 1):
+    parser = HTMLParser(full_url=url, article_id=i, config=configuration)
     article = parser.parse()
     if isinstance(article, Article):
         to_raw(article)
