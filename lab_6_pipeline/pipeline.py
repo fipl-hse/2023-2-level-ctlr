@@ -6,8 +6,8 @@ import pathlib
 
 import spacy_udpipe
 from networkx import DiGraph
-from stanza import Pipeline
 from stanza.models.common.doc import Document
+from stanza.pipeline.core import Pipeline
 from stanza.utils.conll import CoNLL
 
 from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
@@ -208,7 +208,7 @@ class StanzaAnalyzer(LibraryWrapper):
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
         return Pipeline(lang="ru", processors='tokenize,pos,lemma,depparse',
-                               logging_level="INFO", download_method=None)
+                        logging_level="INFO", download_method=None)
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument]:
         """
