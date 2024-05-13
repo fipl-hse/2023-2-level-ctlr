@@ -5,6 +5,7 @@ Pipeline for CONLL-U formatting.
 import pathlib
 
 import spacy_udpipe
+import stanza
 from networkx import DiGraph
 from stanza.models.common.doc import Document
 from stanza.pipeline.core import Pipeline
@@ -207,8 +208,10 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
-        return Pipeline(lang="ru", processors='tokenize,pos,lemma,depparse',
-                        logging_level="INFO", download_method=None)
+        stanza.download(lang='ru', processors='tokenize,pos,lemma,depparse',
+                        logging_level='INFO')
+        return Pipeline(lang='ru', processors='tokenize,pos,lemma,depparse',
+                        logging_level='INFO', download_method=None)
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument]:
         """
