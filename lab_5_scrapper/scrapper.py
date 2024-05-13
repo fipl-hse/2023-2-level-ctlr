@@ -92,7 +92,7 @@ class Config:
         Returns:
             ConfigDTO: Config values
         """
-        with open(self.path_to_config) as config_file:
+        with open(self.path_to_config, encoding=self._encoding) as config_file:
             config = json.load(config_file)
         return ConfigDTO(**config)
 
@@ -102,7 +102,8 @@ class Config:
         """
         if not (isinstance(self._seed_urls, list)
                 and all(isinstance(seed, str)
-                        and seed.startswith('https://www.fontanka.ru/') for seed in self._seed_urls)):
+                        and seed.startswith('https://www.fontanka.ru/')
+                        for seed in self._seed_urls)):
             raise IncorrectSeedURLError
         if not isinstance(self._num_articles, int) or self._num_articles < 1:
             raise IncorrectNumberOfArticlesError
@@ -383,8 +384,9 @@ def main() -> None:
     for i, url in enumerate(crawler.urls):
         parser = HTMLParser(full_url=url, article_id=i + 1, config=config)
         article = parser.parse()
-        io.to_raw(article)
-        io.to_meta(article)
+        if isinstance(article, Article):
+            io.to_raw(article)
+            io.to_meta(article)
 
 
 if __name__ == "__main__":
