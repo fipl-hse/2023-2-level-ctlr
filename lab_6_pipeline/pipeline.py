@@ -14,7 +14,7 @@ from core_utils.article.article import Article
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
 
-
+import stanza
 from networkx import DiGraph
 from stanza.utils.conll import CoNLL
 

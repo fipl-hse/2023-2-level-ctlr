@@ -3,3 +3,7 @@ lxml==4.9.2
 requests==2.31.0
 spacy==3.7.4
 stubs==1.0.0
+networkx==3.2.1
+spacy-conll==3.4.0
+spacy-udpipe==1.0.0
+stanza==1.8.2
