@@ -271,8 +271,7 @@ class Crawler:
                 if not response.ok:
                     continue
 
-                src = response.text
-                soup = BeautifulSoup(src, 'lxml')
+                soup = BeautifulSoup(response.text, 'lxml')
                 urls.append(self._extract_url(soup))
 
         self.urls.extend(urls)
@@ -372,6 +371,7 @@ class HTMLParser:
         for i in keywords:
             self.article.topics.append(i.text)
 
+
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
         Unify date format.
@@ -428,6 +428,8 @@ def main() -> None:
         if isinstance(article, Article):
             to_raw(article)
             to_meta(article)
+
+    print("Ready")
 
 
 if __name__ == "__main__":
