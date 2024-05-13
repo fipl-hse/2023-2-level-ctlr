@@ -104,8 +104,8 @@ class Config:
         if not isinstance(self.config_dto.seed_urls, list):
             raise IncorrectSeedURLError('"seed_urls" is not a list')
 
-        for url in self.config_dto.seed_urls:
-            if not re.match(r"https?://(www.)?vremyan\.ru/analitycs", url):
+        for line in self.config_dto.seed_urls:
+            if not re.match(r"https?://(www.)?vremyan\.ru/analitycs", line):
                 raise IncorrectSeedURLError('seed URL does not match standard pattern')
 
         if (not isinstance(self.config_dto.total_articles, int) or
@@ -356,7 +356,7 @@ class HTMLParser:
         date_str = date_str[:date_str.index(':') + 3]
 
         if date_str:
-            date = datetime.datetime.strptime(date_str, MY_DATE_FORMAT)
+            date = datetime.datetime.strptime(date_str, my_date_format)
 
         return date
 
