@@ -10,7 +10,7 @@ from stanza import Pipeline, Document
 from stanza.utils.conll import CoNLL
 
 from core_utils.article.io import to_cleaned, from_raw
-from core_utils.constants import UDPIPE_MODEL_PATH
+from core_utils.constants import UDPIPE_MODEL_PATH, ASSETS_PATH
 
 try:
     from networkx import DiGraph
@@ -18,7 +18,7 @@ except ImportError:  # pragma: no cover
     DiGraph = None  # type: ignore
     print('No libraries installed. Failed to import.')
 
-from core_utils.article.article import Article, get_article_id_from_filepath
+from core_utils.article.article import Article, get_article_id_from_filepath, ArtifactType, split_by_sentence
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
 
@@ -116,6 +116,7 @@ class TextProcessingPipeline(PipelineProtocol):
             analyzer (LibraryWrapper | None): Analyzer instance
         """
         self._corpus = corpus_manager
+        self._analyzer = analyzer
 
     def run(self) -> None:
         """
@@ -123,6 +124,11 @@ class TextProcessingPipeline(PipelineProtocol):
         """
         for article in self._corpus.get_articles().values():
             to_cleaned(article)
+            if self._analyzer:
+                text_list = split_by_sentence(article.text)
+                text_analyzed = self._analyzer.analyze(text_list)
+                article.set_conllu_info(text_analyzed)
+                self._analyzer.to_conllu(article)
 
 
 class UDPipeAnalyzer(LibraryWrapper):
@@ -136,6 +142,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         """
         Initialize an instance of the UDPipeAnalyzer class.
         """
+        self._analyzer = self._bootstrap()
 
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
@@ -144,17 +151,14 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
-        model = spacy_udpipe.load_from_path(
-            lang="ru",
-            path=str(UDPIPE_MODEL_PATH)
-        )
-        model.add_pipe(
-            "conll_formatter",
-            last=True,
-            config={"conversion_maps": {"XPOS": {"": "_"}}, "include_headers": True},
-        )
-
-        return self._analyzer
+        model = spacy_udpipe.load_from_path(lang="ru",
+                                            path=str(UDPIPE_MODEL_PATH)
+                                            )
+        model.add_pipe("conll_formatter",
+                       last=True,
+                       config={"conversion_maps": {"XPOS": {"": "_"}}, "include_headers": True},
+                       )
+        return model
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument | str]:
         """
@@ -166,8 +170,12 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument | str]: List of documents
         """
+        doc_list = []
         for text in texts:
-            analyzed = model.process(Document([], text=text))
+            analyzed_text = self._analyzer(text)
+            conllu_annotation = analyzed_text._.conll_str
+            doc_list.append(conllu_annotation)
+        return doc_list
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -176,10 +184,9 @@ class UDPipeAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
-        CoNLL.write_doc2conll(
-            doc=article,
-            filename=path,
-        )
+        with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU), 'w', encoding='utf-8') as annotation_file:
+            annotation_file.writelines(article.get_conllu_info())
+            annotation_file.write("\n")
 
 
 class StanzaAnalyzer(LibraryWrapper):
@@ -201,17 +208,17 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
-        language = "ru"
-        processors = "tokenize,pos,lemma,depparse"
-        stanza.download(lang=language, processors=processors, logging_level="INFO")
-        model = Pipeline(
-            lang=language,
-            processors=processors,
-            logging_level="INFO",
-            download_method=None
-        )
-
-        return self._analyzer
+        # language = "ru"
+        # processors = "tokenize,pos,lemma,depparse"
+        # stanza.download(lang=language, processors=processors, logging_level="INFO")
+        # model = Pipeline(
+        #     lang=language,
+        #     processors=processors,
+        #     logging_level="INFO",
+        #     download_method=None
+        # )
+        #
+        # return self._analyzer
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument]:
         """
@@ -337,6 +344,9 @@ def main() -> None:
     """
     Entrypoint for pipeline module.
     """
+    corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
+    pipeline = TextProcessingPipeline(corpus_manager,UDPipeAnalyzer())
+    pipeline.run()
 
 
 if __name__ == "__main__":
