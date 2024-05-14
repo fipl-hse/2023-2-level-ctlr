@@ -6,11 +6,11 @@ import pathlib
 
 import spacy_udpipe
 import stanza
-from stanza import Pipeline, Document
+from stanza import Document, Pipeline
 from stanza.utils.conll import CoNLL
 
-from core_utils.article.io import to_cleaned, from_raw
-from core_utils.constants import UDPIPE_MODEL_PATH, ASSETS_PATH
+from core_utils.article.io import from_raw, to_cleaned
+from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
 
 try:
     from networkx import DiGraph
@@ -18,7 +18,8 @@ except ImportError:  # pragma: no cover
     DiGraph = None  # type: ignore
     print('No libraries installed. Failed to import.')
 
-from core_utils.article.article import Article, get_article_id_from_filepath, ArtifactType, split_by_sentence
+from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
+                                        split_by_sentence)
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
 
