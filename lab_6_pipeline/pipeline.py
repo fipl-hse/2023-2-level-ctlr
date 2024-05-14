@@ -9,7 +9,7 @@ import stanza
 from stanza import Pipeline, Document
 from stanza.utils.conll import CoNLL
 
-from core_utils.article.io import to_cleaned
+from core_utils.article.io import to_cleaned, from_raw
 from core_utils.constants import UDPIPE_MODEL_PATH
 
 try:
@@ -85,7 +85,10 @@ class CorpusManager:
         """
         for file in self.path_to_raw_txt_data.glob('*_raw.txt'):
             article_id = get_article_id_from_filepath(file)
-            self._storage[article_id] = Article(url=None, article_id=article_id)
+            self._storage[article_id] = from_raw(path=file,
+                                                 article=Article(url=None,
+                                                                 article_id=get_article_id_from_filepath(file))
+                                                 )
 
     def get_articles(self) -> dict:
         """
@@ -103,7 +106,7 @@ class TextProcessingPipeline(PipelineProtocol):
     """
 
     def __init__(
-        self, corpus_manager: CorpusManager, analyzer: LibraryWrapper | None = None
+            self, corpus_manager: CorpusManager, analyzer: LibraryWrapper | None = None
     ) -> None:
         """
         Initialize an instance of the TextProcessingPipeline class.
@@ -278,7 +281,7 @@ class PatternSearchPipeline(PipelineProtocol):
     """
 
     def __init__(
-        self, corpus_manager: CorpusManager, analyzer: LibraryWrapper, pos: tuple[str, ...]
+            self, corpus_manager: CorpusManager, analyzer: LibraryWrapper, pos: tuple[str, ...]
     ) -> None:
         """
         Initialize an instance of the PatternSearchPipeline class.
@@ -301,7 +304,7 @@ class PatternSearchPipeline(PipelineProtocol):
         """
 
     def _add_children(
-        self, graph: DiGraph, subgraph_to_graph: dict, node_id: int, tree_node: TreeNode
+            self, graph: DiGraph, subgraph_to_graph: dict, node_id: int, tree_node: TreeNode
     ) -> None:
         """
         Add children to TreeNode.
