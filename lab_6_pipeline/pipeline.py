@@ -4,8 +4,9 @@ Pipeline for CONLL-U formatting.
 # pylint: disable=too-few-public-methods, unused-import, undefined-variable, too-many-nested-blocks
 import pathlib
 import spacy_udpipe
-from core_utils.constants import ASSETS_PATH
-from core_utils.article.article import (Article, get_article_id_from_filepath, split_by_sentence)
+from core_utils.constants import (ASSETS_PATH, UDPIPE_MODEL_PATH)
+from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
+                                        split_by_sentence)
 from core_utils.article.io import from_raw, to_cleaned
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
@@ -144,6 +145,18 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
+        model = spacy_udpipe.load_from_path(
+            lang="ru",
+            path=str(UDPIPE_MODEL_PATH)
+        )
+
+        model.add_pipe(
+            "conll_formatter",
+            last=True,
+            config={"conversion_maps": {"XPOS": {"": "_"}}, "include_headers": True},
+        )
+
+        return model.analyze_pipes()
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument | str]:
         """
@@ -155,6 +168,14 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument | str]: List of documents
         """
+        conllu_texts = []
+
+        for text in texts:
+            analyzed_text = self._analyzer(text)
+            conllu_annotation = analyzed_text._.conll_str
+            conllu_texts.append(conllu_annotation)
+
+        return conllu_texts
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -163,7 +184,10 @@ class UDPipeAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
-
+        with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU), 'w',
+                encoding='utf-8') as annotation_file:
+            annotation_file.writelines(Article.get_conllu_info())
+            annotation_file.write("\n")
 
 # class StanzaAnalyzer(LibraryWrapper):
 #     """
@@ -310,10 +334,9 @@ def main() -> None:
     Entrypoint for pipeline module.
     """
     corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
-    pipeline = TextProcessingPipeline(corpus_manager)
-    pipeline.run()
-
     udpipe_analyzer = UDPipeAnalyzer()
+    pipeline = TextProcessingPipeline(corpus_manager, udpipe_analyzer)
+    pipeline.run()
 
 if __name__ == "__main__":
     main()
