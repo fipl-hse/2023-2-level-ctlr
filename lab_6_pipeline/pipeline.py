@@ -6,7 +6,8 @@ import pathlib
 
 import spacy_udpipe
 import stanza
-from networkx import DiGraph
+from networkx.algorithms.isomorphism.vf2userfunc import GraphMatcher
+from networkx.classes.digraph import DiGraph
 from stanza.models.common.doc import Document
 from stanza.pipeline.core import Pipeline
 from stanza.utils.conll import CoNLL
@@ -274,8 +275,8 @@ class POSFrequencyPipeline:
             if article.get_file_path(kind=ArtifactType.STANZA_CONLLU)\
                               .stat().st_size == 0:
                 raise EmptyFileError
-            from_meta(article.get_meta_file_path(), article)
 
+            from_meta(article.get_meta_file_path(), article)
             article.set_pos_info(self._count_frequencies(article))
             to_meta(article)
 
@@ -293,11 +294,37 @@ class POSFrequencyPipeline:
         Returns:
             dict[str, int]: POS frequencies
         """
-        tokens = [token.to_dict()[0] for token in
-                  self._analyzer.from_conllu(article).iter_tokens()]
-        all_pos = [token["upos"] for token in tokens]
-        return {pos: all_pos.count(pos)
-                for pos in set(all_pos)}
+        pos_freq = {}
+        for conllu_sentence in self._analyzer.from_conllu(article).sentences:
+            for word in conllu_sentence.words:
+                word_feature = word.to_dict()["upos"]
+                if word_feature not in pos_freq:
+                    pos_freq[word_feature] = 0
+                pos_freq[word_feature] += 1
+        return pos_freq
+
+
+def check_graph_pattern(ideal_graph: DiGraph, graph: DiGraph) -> bool:
+    """
+    Check if the pattern of found graph is the same as the searched pattern.
+    """
+    if len(ideal_graph.nodes) != len(graph.nodes) or \
+            len(ideal_graph.nodes) - 1 != len(graph.edges):
+        return False
+    for ideal_label, label in zip(dict(ideal_graph.nodes(data="label")).values(),
+                                  dict(graph.nodes(data="label")).values()):
+        if ideal_label != label:
+            return False
+    return True
+
+
+def treenode_to_dict(node: TreeNode) -> dict:
+    dict_node = {'upos': node.upos,
+                 'text': node.text,
+                 'children': []}
+    for child_treenode in node.children:
+        dict_node['children'].append(treenode_to_dict(child_treenode))
+    return dict_node
 
 
 class PatternSearchPipeline(PipelineProtocol):
@@ -316,6 +343,16 @@ class PatternSearchPipeline(PipelineProtocol):
             analyzer (LibraryWrapper): Analyzer instance
             pos (tuple[str, ...]): Root, Dependency, Child part of speech
         """
+        self._corpus = corpus_manager
+        self._analyzer = analyzer
+        self._node_labels = pos
+
+        self.ideal_graph = DiGraph()
+        self.ideal_graph.add_nodes_from(
+            (index, {'label': label})
+            for index, label in enumerate(self._node_labels)
+        )
+        self.ideal_graph.add_edges_from((index, index + 1) for index in range(len(self._node_labels) - 1))
 
     def _make_graphs(self, doc: CoNLLUDocument) -> list[DiGraph]:
         """
@@ -327,6 +364,25 @@ class PatternSearchPipeline(PipelineProtocol):
         Returns:
             list[DiGraph]: Graphs for the sentences in the document
         """
+        graphs = []
+        for conllu_sent in doc.sentences:
+            digraph = DiGraph()
+            for word in conllu_sent.words:
+                word = word.to_dict()
+                digraph.add_node(
+                    word['id'],
+                    label=word['upos'],
+                    text=word['text'],
+                )
+
+                digraph.add_edge(
+                    word['id'],
+                    word['head'],
+                    label=word["deprel"]
+                )
+
+            graphs.append(digraph)
+        return graphs
 
     def _add_children(
         self, graph: DiGraph, subgraph_to_graph: dict, node_id: int, tree_node: TreeNode
@@ -340,6 +396,36 @@ class PatternSearchPipeline(PipelineProtocol):
             node_id (int): ID of root node of the match
             tree_node (TreeNode): Root node of the match
         """
+        children = tuple(graph.successors(node_id))
+        if not children:
+            return
+
+        if tree_node.upos not in self._node_labels \
+                or tree_node.upos == self._node_labels[-1]:
+            return
+        next_pos = self._node_labels[self._node_labels.index(tree_node.upos) + 1]
+
+        for child_id in children:
+            child_node_info = dict(graph.nodes(data='True'))[child_id]
+            if not child_node_info or child_node_info['label'] != next_pos:
+                continue
+            child_node = TreeNode(
+                child_node_info['label'],
+                child_node_info['text'],
+                []
+            )
+            tree_node.children.append(child_node)
+            subgraph_to_graph['nodes'][child_id] = {'label': child_node_info['label']}
+            subgraph_to_graph['edges'].append((node_id, child_id,
+                                               {'label': dict(graph.edges)[(node_id, child_node)]['label']}))
+            self._add_children(graph,
+                               subgraph_to_graph,
+                               child_id,
+                               child_node)
+
+        if not subgraph_to_graph['children'] or tree_node.upos not in self._node_labels:
+            subgraph_to_graph = {}
+        return
 
     def _find_pattern(self, doc_graphs: list) -> dict[int, list[TreeNode]]:
         """
@@ -351,11 +437,44 @@ class PatternSearchPipeline(PipelineProtocol):
         Returns:
             dict[int, list[TreeNode]]: A dictionary with pattern matches
         """
+        found_patterns = {}
+        for (sentence_id, graph) in enumerate(doc_graphs):
+            patterns = []
+            for node_id, attrs in graph.nodes(data=True):
+                tree_node = TreeNode(attrs.get('upos'),
+                                     attrs.get('text'),
+                                     [])
+
+                subgraph = {'nodes': {node_id: {'label': tree_node.upos}},
+                            'edges': []}
+                self._add_children(graph, subgraph, node_id, tree_node)
+
+                if not subgraph:
+                    continue
+                di_subgraph = DiGraph()
+                di_subgraph.add_nodes_from(pair for pair in subgraph['nodes'].items())
+                di_subgraph.add_edges_from(trio for trio in subgraph['edges'])
+
+                if GraphMatcher(self.ideal_graph, di_subgraph,
+                                node_match=check_graph_pattern):
+                    patterns.append(tree_node)
+            if patterns:
+                found_patterns[int(sentence_id)] = patterns
+        return found_patterns
 
     def run(self) -> None:
         """
         Search for a pattern in documents and writes found information to JSON file.
         """
+        for article in self._corpus.get_articles().values():
+            conllu_doc = self._analyzer.from_conllu(article)
+            graphs = self._make_graphs(conllu_doc)
+            pattern_matches = self._find_pattern(graphs)
+            dict_matches = {}
+            for sentence_id, matches in pattern_matches.items():
+                dict_matches[sentence_id] = [treenode_to_dict(match) for match in matches]
+            article.set_patterns_info(dict_matches)
+            to_meta(article)
 
 
 def main() -> None:
@@ -370,8 +489,12 @@ def main() -> None:
     pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
     pipeline.run()
 
-    visualizer = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
-    visualizer.run()
+    visualizer_pos = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
+    visualizer_pos.run()
+
+    visualizer_patterns = PatternSearchPipeline(corpus_manager, stanza_analyzer,
+                                                ("VERB", "NOUN", "ADP"))
+    visualizer_patterns.run()
 
 
 if __name__ == "__main__":
