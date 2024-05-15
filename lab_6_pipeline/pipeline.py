@@ -319,6 +319,9 @@ def check_graph_pattern(ideal_graph: DiGraph, graph: DiGraph) -> bool:
 
 
 def treenode_to_dict(node: TreeNode) -> dict:
+    """
+    Change deep TreeNode to deep dictionary for the to_meta fuction.
+    """
     dict_node = {'upos': node.upos,
                  'text': node.text,
                  'children': []}
@@ -352,7 +355,8 @@ class PatternSearchPipeline(PipelineProtocol):
             (index, {'label': label})
             for index, label in enumerate(self._node_labels)
         )
-        self.ideal_graph.add_edges_from((index, index + 1) for index in range(len(self._node_labels) - 1))
+        self.ideal_graph.add_edges_from((index, index + 1)
+                                        for index in range(len(self._node_labels) - 1))
 
     def _make_graphs(self, doc: CoNLLUDocument) -> list[DiGraph]:
         """
@@ -417,7 +421,9 @@ class PatternSearchPipeline(PipelineProtocol):
             tree_node.children.append(child_node)
             subgraph_to_graph['nodes'][child_id] = {'label': child_node_info['label']}
             subgraph_to_graph['edges'].append((node_id, child_id,
-                                               {'label': dict(graph.edges)[(node_id, child_node)]['label']}))
+                                               {'label': dict(graph.edges)
+                                                            [(node_id, child_node)]
+                                                            ['label']}))
             self._add_children(graph,
                                subgraph_to_graph,
                                child_id,
