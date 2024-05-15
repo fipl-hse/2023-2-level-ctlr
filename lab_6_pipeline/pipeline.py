@@ -264,7 +264,7 @@ class POSFrequencyPipeline:
             corpus_manager (CorpusManager): CorpusManager instance
             analyzer (LibraryWrapper): Analyzer instance
         """
-        self._corpus = ucorpus_manager
+        self._corpus = corpus_manager
         self._analyzer = analyzer
 
     def run(self) -> None:
