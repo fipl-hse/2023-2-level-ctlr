@@ -7,7 +7,7 @@ import pathlib
 import spacy_udpipe
 from networkx import DiGraph
 
-from core_utils.article.article import (Article, get_article_id_from_filepath, ArtifactType,
+from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
                                         split_by_sentence)
 from core_utils.article.io import from_raw, to_cleaned
 from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
