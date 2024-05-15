@@ -256,7 +256,7 @@ class POSFrequencyPipeline:
     Count frequencies of each POS in articles, update meta info and produce graphic report.
     """
 
-    def __init__(self, ucorpus_manager: CorpusManager, analyzer: LibraryWrapper) -> None:
+    def __init__(self, corpus_manager: CorpusManager, analyzer: LibraryWrapper) -> None:
         """
         Initialize an instance of the POSFrequencyPipeline class.
 
