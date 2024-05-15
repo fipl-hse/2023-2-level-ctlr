@@ -304,20 +304,6 @@ class POSFrequencyPipeline:
         return pos_freq
 
 
-def check_graph_pattern(ideal_graph: DiGraph, graph: DiGraph) -> bool:
-    """
-    Check if the pattern of found graph is the same as the searched pattern.
-    """
-    if len(ideal_graph.nodes) != len(graph.nodes) or \
-            len(ideal_graph.nodes) - 1 != len(graph.edges):
-        return False
-    for ideal_label, label in zip(dict(ideal_graph.nodes(data="label")).values(),
-                                  dict(graph.nodes(data="label")).values()):
-        if ideal_label != label:
-            return False
-    return True
-
-
 def treenode_to_dict(node: TreeNode) -> dict:
     """
     Change deep TreeNode to deep dictionary for the to_meta fuction.
@@ -380,8 +366,8 @@ class PatternSearchPipeline(PipelineProtocol):
                 )
 
                 digraph.add_edge(
-                    word['id'],
                     word['head'],
+                    word['id'],
                     label=word["deprel"]
                 )
 
@@ -404,13 +390,15 @@ class PatternSearchPipeline(PipelineProtocol):
         if not children:
             return
 
-        if tree_node.upos not in self._node_labels \
-                or tree_node.upos == self._node_labels[-1]:
+        if tree_node.upos not in self._node_labels or \
+                tree_node.upos == self._node_labels[-1]:
             return
+
         next_pos = self._node_labels[self._node_labels.index(tree_node.upos) + 1]
+        graph_nodes = dict(graph.nodes(data=True))
 
         for child_id in children:
-            child_node_info = dict(graph.nodes(data='True'))[child_id]
+            child_node_info = graph_nodes[child_id]
             if not child_node_info or child_node_info['label'] != next_pos:
                 continue
             child_node = TreeNode(
@@ -422,15 +410,12 @@ class PatternSearchPipeline(PipelineProtocol):
             subgraph_to_graph['nodes'][child_id] = {'label': child_node_info['label']}
             subgraph_to_graph['edges'].append((node_id, child_id,
                                                {'label': dict(graph.edges)
-                                                            [(node_id, child_node)]
+                                                            [(node_id, child_id)]
                                                             ['label']}))
             self._add_children(graph,
                                subgraph_to_graph,
                                child_id,
                                child_node)
-
-        if not subgraph_to_graph['children'] or tree_node.upos not in self._node_labels:
-            subgraph_to_graph = {}
         return
 
     def _find_pattern(self, doc_graphs: list) -> dict[int, list[TreeNode]]:
@@ -447,7 +432,7 @@ class PatternSearchPipeline(PipelineProtocol):
         for (sentence_id, graph) in enumerate(doc_graphs):
             patterns = []
             for node_id, attrs in graph.nodes(data=True):
-                tree_node = TreeNode(attrs.get('upos'),
+                tree_node = TreeNode(attrs.get('label'),
                                      attrs.get('text'),
                                      [])
 
@@ -455,14 +440,10 @@ class PatternSearchPipeline(PipelineProtocol):
                             'edges': []}
                 self._add_children(graph, subgraph, node_id, tree_node)
 
-                if not subgraph:
-                    continue
                 di_subgraph = DiGraph()
                 di_subgraph.add_nodes_from(pair for pair in subgraph['nodes'].items())
                 di_subgraph.add_edges_from(trio for trio in subgraph['edges'])
-
-                if GraphMatcher(self.ideal_graph, di_subgraph,
-                                node_match=check_graph_pattern):
+                if GraphMatcher(self.ideal_graph, di_subgraph).is_isomorphic():
                     patterns.append(tree_node)
             if patterns:
                 found_patterns[int(sentence_id)] = patterns
