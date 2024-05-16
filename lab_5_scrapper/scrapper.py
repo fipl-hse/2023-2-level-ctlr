@@ -5,7 +5,16 @@ Crawler implementation.
 import pathlib
 from typing import Pattern, Union
 
+import pathlib
+import json
+#import requests
+import datetime
+import shutil
+from typing import Pattern, Union
+#from bs4 import BeautifulSoup
 
+from core_utils.config_dto import ConfigDTO
+from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 class Config:
     """
     Class for unpacking and validating configurations.
@@ -18,6 +27,11 @@ class Config:
         Args:
             path_to_config (pathlib.Path): Path to configuration.
         """
+        self.CRAWLER_CONFIG_PATH = path_to_config
+        self.ConfigDTO = self._extract_config_content()
+        self._validate_config_content()
+        prepare_environment(ASSETS_PATH)
+
 
     def _extract_config_content(self) -> ConfigDTO:
         """
@@ -26,11 +40,28 @@ class Config:
         Returns:
             ConfigDTO: Config values
         """
+        config = json.load(self.CRAWLER_CONFIG_PATH.open())
+        config_DTO = ConfigDTO(**config)
+        return config_DTO
 
     def _validate_config_content(self) -> None:
         """
         Ensure configuration parameters are not corrupt.
         """
+        if not all(seed.startswith('https://antropogenez.ru/news/') for seed in self.config_DTO.seed_urls):
+            raise Exception('IncorrectSeedURLError')
+        if self.config_DTO.total_articles < 1 or self.config_DTO.total_articles > 150:
+            raise Exception('NumberOfArticlesOutOfRangeError')
+        if not isinstance(self.config_DTO.total_articles, int):
+            raise Exception('IncorrectNumberOfArticlesError')
+        if not isinstance(self.config_DTO.headers, dict):
+            raise Exception('IncorrectHeadersError')
+        if not isinstance(self.config_DTO.encoding, str):
+            raise Exception('IncorrectEncodingError')
+        if self.config_DTO.timeout < 1 or self.config_DTO.timeout > 60:
+            raise Exception('IncorrectTimeoutError')
+        if not isinstance(self.config_DTO.headless_mode, bool):
+            raise Exception('IncorrectVerifyError')
 
     def get_seed_urls(self) -> list[str]:
         """
@@ -39,6 +70,7 @@ class Config:
         Returns:
             list[str]: Seed urls
         """
+        return self.config_DTO.seed_urls
 
     def get_num_articles(self) -> int:
         """
@@ -47,6 +79,7 @@ class Config:
         Returns:
             int: Total number of articles to scrape
         """
+        return self.config_DTO.total_articles
 
     def get_headers(self) -> dict[str, str]:
         """
@@ -55,6 +88,7 @@ class Config:
         Returns:
             dict[str, str]: Headers
         """
+        return self.config_DTO.headers
 
     def get_encoding(self) -> str:
         """
@@ -63,6 +97,7 @@ class Config:
         Returns:
             str: Encoding
         """
+        return self.config_DTO.encoding
 
     def get_timeout(self) -> int:
         """
@@ -71,6 +106,7 @@ class Config:
         Returns:
             int: Number of seconds to wait for response
         """
+        return self.config_DTO.timeout
 
     def get_verify_certificate(self) -> bool:
         """
@@ -79,6 +115,7 @@ class Config:
         Returns:
             bool: Whether to verify certificate or not
         """
+        return self.config_DTO.should_verify_certificate
 
     def get_headless_mode(self) -> bool:
         """
@@ -87,9 +124,10 @@ class Config:
         Returns:
             bool: Whether to use headless mode or not
         """
+        return self.config_DTO.headless_mode
 
 
-def make_request(url: str, config: Config) -> requests.models.Response:
+#def make_request(url: str, config: Config) -> requests.models.Response:
     """
     Deliver a response from a request with given configuration.
 
@@ -117,7 +155,7 @@ class Crawler:
             config (Config): Configuration
         """
 
-    def _extract_url(self, article_bs: BeautifulSoup) -> str:
+    #def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
         Find and retrieve url from HTML.
 
@@ -146,7 +184,7 @@ class Crawler:
 # 4, 6, 8, 10
 
 
-class HTMLParser:
+#class HTMLParser:
     """
     HTMLParser implementation.
     """
@@ -161,7 +199,7 @@ class HTMLParser:
             config (Config): Configuration
         """
 
-    def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
+    #def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
         """
         Find text of article.
 
@@ -169,7 +207,7 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
 
-    def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
+    #def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
         Find meta information of article.
 
@@ -188,7 +226,7 @@ class HTMLParser:
             datetime.datetime: Datetime object
         """
 
-    def parse(self) -> Union[Article, bool, list]:
+    #def parse(self) -> Union[Article, bool, list]:
         """
         Parse each article.
 
