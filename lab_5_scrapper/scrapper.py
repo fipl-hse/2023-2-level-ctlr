@@ -3,7 +3,15 @@ Crawler implementation.
 """
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
 import pathlib
+import json
+import requests
+import datetime
+import shutil
 from typing import Pattern, Union
+from bs4 import BeautifulSoup
+
+from core_utils.config_dto import ConfigDTO
+from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 
 
 class Config:
@@ -18,6 +26,10 @@ class Config:
         Args:
             path_to_config (pathlib.Path): Path to configuration.
         """
+        self.CRAWLER_CONFIG_PATH = path_to_config
+        self.config_DTO = self._extract_config_content()
+        self._validate_config_content()
+        prepare_environment(ASSETS_PATH)
 
     def _extract_config_content(self) -> ConfigDTO:
         """
@@ -26,11 +38,29 @@ class Config:
         Returns:
             ConfigDTO: Config values
         """
+        config = json.load(self.CRAWLER_CONFIG_PATH.open())
+        config_DTO = ConfigDTO(**config)
+
+        return config_DTO
 
     def _validate_config_content(self) -> None:
         """
         Ensure configuration parameters are not corrupt.
         """
+        if not all(seed.startswith('https://xn--80ady2a0c.xn--p1ai/calendar/2024/04/?utm_calendar_last_news') for seed in self.config_DTO.seed_urls):
+            raise Exception('IncorrectSeedURLError')
+        if self.config_DTO.total_articles < 1 or self.config_DTO.total_articles > 150:
+            raise Exception('NumberOfArticlesOutOfRangeError')
+        if not isinstance(self.config_DTO.total_articles, int):
+            raise Exception('IncorrectNumberOfArticlesError')
+        if not isinstance(self.config_DTO.headers, dict):
+            raise Exception('IncorrectHeadersError')
+        if not isinstance(self.config_DTO.encoding, str):
+            raise Exception('IncorrectEncodingError')
+        if self.config_DTO.timeout < 1 or self.config_DTO.timeout > 60:
+            raise Exception('IncorrectTimeoutError')
+        if not isinstance(self.config_DTO.headless_mode, bool):
+            raise Exception('IncorrectVerifyError')
 
     def get_seed_urls(self) -> list[str]:
         """
@@ -40,6 +70,8 @@ class Config:
             list[str]: Seed urls
         """
 
+        return self.config_DTO.seed_urls
+
     def get_num_articles(self) -> int:
         """
         Retrieve total number of articles to scrape.
@@ -47,6 +79,7 @@ class Config:
         Returns:
             int: Total number of articles to scrape
         """
+        return self.config_DTO.total_articles
 
     def get_headers(self) -> dict[str, str]:
         """
@@ -55,6 +88,7 @@ class Config:
         Returns:
             dict[str, str]: Headers
         """
+        return self.config_DTO.headers
 
     def get_encoding(self) -> str:
         """
@@ -63,6 +97,7 @@ class Config:
         Returns:
             str: Encoding
         """
+        return self.config_DTO.encoding
 
     def get_timeout(self) -> int:
         """
@@ -71,6 +106,7 @@ class Config:
         Returns:
             int: Number of seconds to wait for response
         """
+        return self.config_DTO.timeout
 
     def get_verify_certificate(self) -> bool:
         """
@@ -79,6 +115,7 @@ class Config:
         Returns:
             bool: Whether to verify certificate or not
         """
+        return self.config_DTO.should_verify_certificate
 
     def get_headless_mode(self) -> bool:
         """
@@ -87,6 +124,7 @@ class Config:
         Returns:
             bool: Whether to use headless mode or not
         """
+        return self.config_DTO.headless_mode
 
 
 def make_request(url: str, config: Config) -> requests.models.Response:
@@ -100,6 +138,10 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
+    return requests.get(url,
+                        headers=config.get_headers(),
+                        timeout=config.get_timeout()
+                        )
 
 
 class Crawler:
@@ -204,6 +246,9 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
+    if base_path.exists():
+        shutil.rmtree(base_path)
+    base_path.mkdir(exist_ok=True, parents=True)
 
 
 def main() -> None:
