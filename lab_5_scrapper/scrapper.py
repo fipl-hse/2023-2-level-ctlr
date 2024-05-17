@@ -327,7 +327,6 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
-        # 1 мая 2024, 14:49
         date = date_str.split()
         month = {'января': '01',
                  'февраля': '02',
