@@ -231,10 +231,13 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        articles = article_bs.select('a[href^="/2024/"]')
+        section = article_bs.find_all('section')[1]
+        articles = section.select('a[href^="/2024/"]')
         url = ''
         for article in articles:
             url = 'https://www.fontanka.ru' + article.get('href')
+            if 'all.comments' in url or 'erid' in url:
+                continue
             if url not in self.urls:
                 break
         return url
@@ -294,8 +297,10 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        content = article_soup.find(itemprop='articleBody').find_all('p')
-        self.article.text = '\n'.join([ptag.text for ptag in content])
+        body = article_soup.find(itemprop='articleBody')
+        if body:
+            content = body.find_all('p')
+            self.article.text = '\n'.join([p_tag.text for p_tag in content])
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -352,10 +357,11 @@ class HTMLParser:
             Union[Article, bool, list]: Article instance
         """
         response = make_request(url=self.full_url, config=self.config)
-        if response.ok:
-            soup = BeautifulSoup(response.text)
-            self._fill_article_with_text(soup)
-            self._fill_article_with_meta_information(soup)
+        if not response.ok:
+            return False
+        soup = BeautifulSoup(response.text, features="lxml")
+        self._fill_article_with_text(soup)
+        self._fill_article_with_meta_information(soup)
         return self.article
 
 
@@ -380,12 +386,14 @@ def main() -> None:
     prepare_environment(ASSETS_PATH)
 
     crawler.find_articles()
-    for i, url in enumerate(crawler.urls):
-        parser = HTMLParser(full_url=url, article_id=i + 1, config=config)
+    i = 1
+    for url in crawler.urls:
+        parser = HTMLParser(full_url=url, article_id=i, config=config)
         article = parser.parse()
         if isinstance(article, Article):
             io.to_raw(article)
             io.to_meta(article)
+            i += 1
 
 
 if __name__ == "__main__":
