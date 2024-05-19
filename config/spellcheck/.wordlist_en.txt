@@ -851,7 +851,6 @@ mozilla
 much
 multiple
 must
-mypy
 name
 named
 names
@@ -1462,7 +1461,6 @@ under
 underscore
 understand
 understanding
-undirected
 unified
 unify
 unite
