@@ -3,29 +3,30 @@ Pipeline for CONLL-U formatting.
 """
 # pylint: disable=too-few-public-methods, unused-import, undefined-variable, too-many-nested-blocks
 import pathlib
+from core_utils.article.io import from_raw, to_cleaned
 from core_utils.constants import ASSETS_PATH
 
+# try:
+#     from networkx import DiGraph
+# except ImportError:  # pragma: no cover
+#     DiGraph = None  # type: ignore
+#     print('No libraries installed. Failed to import.')
+
+from core_utils.article.article import Article, get_article_id_from_filepath
+from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
+                                 PipelineProtocol, StanzaDocument, TreeNode)
 
 class EmptyDirectoryError(Exception):
     """
-     Directory is empty
+     Directory is empty.
     """
 
 
 class InconsistentDatasetError(Exception):
     """
-    IDs contain slips, number of meta and raw files is not equal, files are empty
+    IDs contain slips, number of meta and raw files is not equal, files are empty.
     """
 
-try:
-    from networkx import DiGraph
-except ImportError:  # pragma: no cover
-    DiGraph = None  # type: ignore
-    print('No libraries installed. Failed to import.')
-
-from core_utils.article.article import Article
-from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
-                                 PipelineProtocol, StanzaDocument, TreeNode)
 
 
 class CorpusManager:
@@ -44,6 +45,7 @@ class CorpusManager:
         self._storage = {}
 
         self._validate_dataset()
+        self._scan_dataset()
 
     def _validate_dataset(self) -> None:
         """
@@ -55,14 +57,30 @@ class CorpusManager:
         if not self.path_to_raw_txt_data.is_dir():
             raise NotADirectoryError
 
-        if
+        if not any(self.path_to_raw_txt_data.iterdir()):
+            raise EmptyDirectoryError
 
+        raw_files = list(self.path_to_raw_txt_data.glob("*_raw.txt"))
+        meta_files = list(self.path_to_raw_txt_data.glob("*_meta.json"))
+        if len(raw_files) != len(meta_files):
+            raise InconsistentDatasetError
 
+        sorted_raw = sorted(raw_files)
+        sorted_meta = sorted(meta_files)
+
+        for ind, (raw, meta) in enumerate(zip(sorted_raw, sorted_meta), 1):
+            if ind != get_article_id_from_filepath(raw) or\
+                ind != get_article_id_from_filepath(meta) or\
+                raw.stat().st_size == 0 or meta.stat().st_size == 0:
+                raise InconsistentDatasetError
 
     def _scan_dataset(self) -> None:
         """
         Register each dataset entry.
         """
+        for file in list(self.path_to_raw_txt_data.glob("*_raw.txt")):
+            i = get_article_id_from_filepath(file)
+            self._storage[i] = from_raw(file, Article(None, i))
 
     def get_articles(self) -> dict:
         """
@@ -71,6 +89,7 @@ class CorpusManager:
         Returns:
             dict: Storage params
         """
+        return self._storage
 
 
 class TextProcessingPipeline(PipelineProtocol):
@@ -88,11 +107,14 @@ class TextProcessingPipeline(PipelineProtocol):
             corpus_manager (CorpusManager): CorpusManager instance
             analyzer (LibraryWrapper | None): Analyzer instance
         """
+        self._corpus = corpus_manager
+        self.analyzer = analyzer
 
     def run(self) -> None:
         """
         Perform basic preprocessing and write processed text to files.
         """
+
 
 
 class UDPipeAnalyzer(LibraryWrapper):
@@ -106,6 +128,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         """
         Initialize an instance of the UDPipeAnalyzer class.
         """
+
 
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
