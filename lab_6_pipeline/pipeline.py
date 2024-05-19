@@ -3,6 +3,8 @@ Pipeline for CONLL-U formatting.
 """
 # pylint: disable=too-few-public-methods, unused-import, undefined-variable, too-many-nested-blocks
 import pathlib
+from copy import deepcopy
+from dataclasses import asdict
 
 import spacy_udpipe
 import stanza
@@ -12,8 +14,7 @@ from stanza.models.common.doc import Document
 from stanza.pipeline.core import Pipeline
 from stanza.utils.conll import CoNLL
 
-from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
-                                        split_by_sentence)
+from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath)
 from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
 from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
@@ -130,10 +131,15 @@ class TextProcessingPipeline(PipelineProtocol):
         """
         Perform basic preprocessing and write processed text to files.
         """
-        for article in self._corpus.get_articles().values():
+        documents = []
+        if self.analyzer:
+            documents = self.analyzer.analyze([article.text for article
+                                               in self._corpus.get_articles().values()])
+
+        for num, article in enumerate(self._corpus.get_articles().values()):
             to_cleaned(article)
-            if self.analyzer:
-                article.set_conllu_info(self.analyzer.analyze(split_by_sentence(article.text)))
+            if self.analyzer and documents:
+                article.set_conllu_info(documents[num])
                 self.analyzer.to_conllu(article)
 
 
@@ -186,7 +192,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         """
         with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU),
                   'w', encoding='utf-8') as f:
-            f.writelines(article.get_conllu_info())
+            f.write(article.get_conllu_info())
 
 
 class StanzaAnalyzer(LibraryWrapper):
@@ -224,7 +230,7 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument]: List of documents
         """
-        return self._analyzer.process([Document([], text=' '.join(texts))])
+        return self._analyzer.process([Document([], text=text) for text in texts])
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -234,7 +240,7 @@ class StanzaAnalyzer(LibraryWrapper):
             article (Article): Article containing information to save
         """
         CoNLL.write_doc2conll(
-            doc=article.get_conllu_info()[0],
+            doc=article.get_conllu_info(),
             filename=article.get_file_path(kind=ArtifactType.STANZA_CONLLU),
         )
 
@@ -296,24 +302,12 @@ class POSFrequencyPipeline:
         """
         pos_freq = {}
         for conllu_sentence in self._analyzer.from_conllu(article).sentences:
-            for word in conllu_sentence.words:
-                word_feature = word.to_dict()["upos"]
-                if word_feature not in pos_freq:
-                    pos_freq[word_feature] = 0
-                pos_freq[word_feature] += 1
+            words = [word.to_dict().get('upos') for word in conllu_sentence.words]
+            pos_freq.update({
+                word: pos_freq.get(word, 0) + words.count(word)
+                for word in set(words)
+            })
         return pos_freq
-
-
-def treenode_to_dict(node: TreeNode) -> dict:
-    """
-    Change deep TreeNode to deep dictionary for the to_meta fuction.
-    """
-    dict_node = {'upos': node.upos,
-                 'text': node.text,
-                 'children': []}
-    for child_treenode in node.children:
-        dict_node['children'].append(treenode_to_dict(child_treenode))
-    return dict_node
 
 
 class PatternSearchPipeline(PipelineProtocol):
@@ -387,31 +381,26 @@ class PatternSearchPipeline(PipelineProtocol):
             tree_node (TreeNode): Root node of the match
         """
         children = tuple(graph.successors(node_id))
-        if not children:
+        if not children or tree_node.children:
             return
 
         if tree_node.upos not in self._node_labels or \
                 tree_node.upos == self._node_labels[-1]:
             return
 
-        next_pos = self._node_labels[self._node_labels.index(tree_node.upos) + 1]
-        graph_nodes = dict(graph.nodes(data=True))
+        if not tuple(graph.predecessors(node_id)):
+            subgraph_to_graph['base_nodes'].append(tree_node)
+        else:
+            subgraph_to_graph['other_nodes'].append(tree_node)
 
         for child_id in children:
-            child_node_info = graph_nodes[child_id]
-            if not child_node_info or child_node_info['label'] != next_pos:
-                continue
+            child_node_info = dict(graph.nodes(data=True))[child_id]
             child_node = TreeNode(
-                child_node_info['label'],
-                child_node_info['text'],
+                child_node_info.get('label'),
+                child_node_info.get('text', ''),
                 []
             )
             tree_node.children.append(child_node)
-            subgraph_to_graph['nodes'][child_id] = {'label': child_node_info['label']}
-            subgraph_to_graph['edges'].append((node_id, child_id,
-                                               {'label': dict(graph.edges)
-                                                            [(node_id, child_id)]
-                                                            ['label']}))
             self._add_children(graph,
                                subgraph_to_graph,
                                child_id,
@@ -430,23 +419,19 @@ class PatternSearchPipeline(PipelineProtocol):
         """
         found_patterns = {}
         for (sentence_id, graph) in enumerate(doc_graphs):
-            patterns = []
-            for node_id, attrs in graph.nodes(data=True):
-                tree_node = TreeNode(attrs.get('label'),
-                                     attrs.get('text'),
-                                     [])
+            matcher = GraphMatcher(graph, self.ideal_graph,
+                              node_match=lambda n1, n2: n1.get('label', '') == n2['label'])
+            matcher.match()
+            for isograph in matcher.subgraph_isomorphisms_iter():
+                digraph = graph.subgraph(isograph.keys())
 
-                subgraph = {'nodes': {node_id: {'label': tree_node.upos}},
-                            'edges': []}
-                self._add_children(graph, subgraph, node_id, tree_node)
-
-                di_subgraph = DiGraph()
-                di_subgraph.add_nodes_from(pair for pair in subgraph['nodes'].items())
-                di_subgraph.add_edges_from(trio for trio in subgraph['edges'])
-                if GraphMatcher(self.ideal_graph, di_subgraph).is_isomorphic():
-                    patterns.append(tree_node)
-            if patterns:
-                found_patterns[int(sentence_id)] = patterns
+                subgraph_nodes = {'base_nodes': [], 'other_nodes': []}
+                for node_id, attrs in digraph.nodes(data=True):
+                    self._add_children(digraph, subgraph_nodes, node_id,
+                                       TreeNode(attrs.get('label'),
+                                                attrs.get('text'),
+                                                []))
+                found_patterns[sentence_id] = subgraph_nodes['base_nodes']
         return found_patterns
 
     def run(self) -> None:
@@ -457,9 +442,8 @@ class PatternSearchPipeline(PipelineProtocol):
             conllu_doc = self._analyzer.from_conllu(article)
             graphs = self._make_graphs(conllu_doc)
             pattern_matches = self._find_pattern(graphs)
-            dict_matches = {}
-            for sentence_id, matches in pattern_matches.items():
-                dict_matches[sentence_id] = [treenode_to_dict(match) for match in matches]
+            dict_matches = {sentence_id: [asdict(match) for match in matches]
+                            for sentence_id, matches in pattern_matches.items()}
             article.set_patterns_info(dict_matches)
             to_meta(article)
 
