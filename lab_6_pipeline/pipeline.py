@@ -3,6 +3,7 @@ Pipeline for CONLL-U formatting.
 """
 # pylint: disable=too-few-public-methods, unused-import, undefined-variable, too-many-nested-blocks
 import pathlib
+import spacy_udpipe
 from core_utils.article.io import from_raw, to_cleaned
 from core_utils.constants import ASSETS_PATH
 
@@ -26,7 +27,6 @@ class InconsistentDatasetError(Exception):
     """
     IDs contain slips, number of meta and raw files is not equal, files are empty.
     """
-
 
 
 class CorpusManager:
@@ -128,7 +128,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         """
         Initialize an instance of the UDPipeAnalyzer class.
         """
-
+        self._analyzer = self._bootstrap()
 
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
@@ -137,6 +137,16 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
+        model = spacy_udpipe.load_from_path(
+            lang="ru",
+            path=str(model_path)
+        )
+        model.add_pipe(
+            "conll_formatter",
+            last=True,
+            config={"conversion_maps": {"XPOS": {"": "_"}}, "include_headers": True},
+        )
+        return model
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument | str]:
         """
@@ -148,6 +158,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument | str]: List of documents
         """
+        return [self._analyzer(text)._.conll_str for text in texts]
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -156,6 +167,9 @@ class UDPipeAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
+        # with open(path, 'w', encoding='utf-8') as annotation_file:
+        #     annotation_file.write(annotation)
+        #     annotation_file.write("\n")
 
 
 class StanzaAnalyzer(LibraryWrapper):
