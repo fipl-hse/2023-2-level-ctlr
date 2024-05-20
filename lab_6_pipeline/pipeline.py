@@ -9,8 +9,9 @@ import stanza
 from stanza import Document, Pipeline
 from stanza.utils.conll import CoNLL
 
-from core_utils.article.io import from_raw, to_cleaned
+from core_utils.article.io import from_raw, to_cleaned, from_meta, to_meta
 from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
+from core_utils.visualizer import visualize
 
 try:
     from networkx import DiGraph
@@ -259,6 +260,12 @@ class StanzaAnalyzer(LibraryWrapper):
         return CoNLL.conll2doc(input_file=article.get_file_path(kind=ArtifactType.STANZA_CONLLU))
 
 
+class EmptyFileError(Exception):
+    """
+    An article file is empty.
+    """
+
+
 class POSFrequencyPipeline:
     """
     Count frequencies of each POS in articles, update meta info and produce graphic report.
@@ -272,11 +279,24 @@ class POSFrequencyPipeline:
             corpus_manager (CorpusManager): CorpusManager instance
             analyzer (LibraryWrapper): Analyzer instance
         """
+        self._corpus = corpus_manager
+        self._analyzer = analyzer
 
     def run(self) -> None:
         """
         Visualize the frequencies of each part of speech.
         """
+        for article in self._corpus.get_articles().values():
+            if article.get_file_path(kind=ArtifactType.STANZA_CONLLU).stat().st_size == 0:
+                raise EmptyFileError
+
+            from_meta(path=article.get_meta_file_path(), article=article)
+            pos_freq = self._count_frequencies(article)
+            article.set_pos_info(pos_freq)
+            to_meta(article=article)
+
+            visualize(article=article,
+                      path_to_save=self._corpus.path_to_raw_txt_data / f'{article.article_id}_image.png')
 
     def _count_frequencies(self, article: Article) -> dict[str, int]:
         """
@@ -288,6 +308,14 @@ class POSFrequencyPipeline:
         Returns:
             dict[str, int]: POS frequencies
         """
+        pos_freq = {}
+        for sentence in self._analyzer.from_conllu(article).sentences:
+            words = []
+            for word in sentence.words:
+                words.append(word.to_dict().get('upos'))
+            for word in set(words):
+                pos_freq[word] = pos_freq.get(word, 0) + words.count(word)
+        return pos_freq
 
 
 class PatternSearchPipeline(PipelineProtocol):
