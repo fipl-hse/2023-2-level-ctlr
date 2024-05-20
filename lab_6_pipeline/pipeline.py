@@ -9,7 +9,7 @@ import stanza
 from stanza import Document, Pipeline
 from stanza.utils.conll import CoNLL
 
-from core_utils.article.io import from_raw, to_cleaned, from_meta, to_meta
+from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
 from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
 from core_utils.visualizer import visualize
 
@@ -87,10 +87,11 @@ class CorpusManager:
         """
         for file in self.path_to_raw_txt_data.glob('*_raw.txt'):
             article_id = get_article_id_from_filepath(file)
-            self._storage[article_id] = from_raw(path=file,
-                                                 article=Article(url=None,
-                                                                 article_id=get_article_id_from_filepath(file))
-                                                 )
+            self._storage[article_id] = from_raw(
+                path=file,
+                article=Article(url=None,
+                                article_id=get_article_id_from_filepath(file))
+            )
 
     def get_articles(self) -> dict:
         """
@@ -186,7 +187,8 @@ class UDPipeAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
-        with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU), 'w', encoding='utf-8') as annotation_file:
+        with open(article.get_file_path(
+                kind=ArtifactType.UDPIPE_CONLLU), 'w', encoding='utf-8') as annotation_file:
             annotation_file.writelines(article.get_conllu_info())
             annotation_file.write("\n")
 
@@ -295,8 +297,8 @@ class POSFrequencyPipeline:
             article.set_pos_info(pos_freq)
             to_meta(article=article)
 
-            visualize(article=article,
-                      path_to_save=self._corpus.path_to_raw_txt_data / f'{article.article_id}_image.png')
+            visualize(article,
+                      self._corpus.path_to_raw_txt_data / f'{article.article_id}_image.png')
 
     def _count_frequencies(self, article: Article) -> dict[str, int]:
         """
