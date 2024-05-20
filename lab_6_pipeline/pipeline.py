@@ -211,8 +211,10 @@ class StanzaAnalyzer(LibraryWrapper):
         processors = "tokenize,pos,lemma,depparse"
         stanza.download(lang=language, processors=processors,
                         logging_level='INFO')
-        return Pipeline(lang=language, processors=processors,
-                        logging_level='INFO', download_method=None)
+        model = Pipeline(lang=language, processors=processors,
+                         logging_level='INFO', download_method=None)
+        if type(model) == AbstractCoNLLUAnalyzer:
+            return model
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument]:
         """
