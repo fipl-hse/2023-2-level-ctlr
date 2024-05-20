@@ -9,8 +9,12 @@ import stanza
 from stanza import Document, Pipeline
 from stanza.utils.conll import CoNLL
 
+from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
+                                        split_by_sentence)
 from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
 from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
+from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
+                                 PipelineProtocol, StanzaDocument, TreeNode)
 from core_utils.visualizer import visualize
 
 try:
@@ -18,11 +22,6 @@ try:
 except ImportError:  # pragma: no cover
     DiGraph = None  # type: ignore
     print('No libraries installed. Failed to import.')
-
-from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
-                                        split_by_sentence)
-from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
-                                 PipelineProtocol, StanzaDocument, TreeNode)
 
 
 class EmptyDirectoryError(Exception):
@@ -173,12 +172,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument | str]: List of documents
         """
-        doc_list = []
-        for text in texts:
-            analyzed_text = self._analyzer(text)
-            conllu_annotation = f"{analyzed_text._.conll_str}\n"
-            doc_list.append(conllu_annotation)
-        return doc_list
+        return [f"{self._analyzer(text)._.conll_str}\n" for text in texts]
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -215,13 +209,10 @@ class StanzaAnalyzer(LibraryWrapper):
         """
         language = "ru"
         processors = "tokenize,pos,lemma,depparse"
-        stanza.download(lang=language, processors=processors, logging_level="INFO")
-        return Pipeline(
-            lang=language,
-            processors=processors,
-            logging_level="INFO",
-            download_method=None
-        )
+        stanza.download(lang=language, processors=processors,
+                        logging_level='INFO')
+        return Pipeline(lang=language, processors=processors,
+                        logging_level='INFO', download_method=None)
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument]:
         """
