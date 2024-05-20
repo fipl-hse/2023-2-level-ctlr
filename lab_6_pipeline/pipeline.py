@@ -176,7 +176,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         doc_list = []
         for text in texts:
             analyzed_text = self._analyzer(text)
-            conllu_annotation = analyzed_text._.conll_str
+            conllu_annotation = f"{analyzed_text._.conll_str}\n"
             doc_list.append(conllu_annotation)
         return doc_list
 
@@ -216,13 +216,12 @@ class StanzaAnalyzer(LibraryWrapper):
         language = "ru"
         processors = "tokenize,pos,lemma,depparse"
         stanza.download(lang=language, processors=processors, logging_level="INFO")
-        model = Pipeline(
+        return Pipeline(
             lang=language,
             processors=processors,
             logging_level="INFO",
             download_method=None
         )
-        return model
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument]:
         """
