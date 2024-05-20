@@ -7,6 +7,7 @@ from dataclasses import asdict
 
 import spacy_udpipe
 import stanza
+from networkx import to_dict_of_lists
 from networkx.algorithms.isomorphism.vf2userfunc import GraphMatcher
 from networkx.classes.digraph import DiGraph
 from stanza.models.common.doc import Document
@@ -258,7 +259,7 @@ class StanzaAnalyzer(LibraryWrapper):
 
 class POSFrequencyPipeline:
     """
-    Count frequencies of each POS in articles, update meta info and produce graphic report.
+    Count frequencies of each POS in a rticles, update meta info and produce graphic report.
     """
 
     def __init__(self, corpus_manager: CorpusManager, analyzer: LibraryWrapper) -> None:
@@ -380,23 +381,17 @@ class PatternSearchPipeline(PipelineProtocol):
             tree_node (TreeNode): Root node of the match
         """
         children = tuple(graph.successors(node_id))
-        if not children or tree_node.children:
+        if not children or tree_node.children or node_id not in subgraph_to_graph.keys():
             return
-
-        if tree_node.upos not in self._node_labels or \
-                tree_node.upos == self._node_labels[-1]:
-            return
-
-        if not tuple(graph.predecessors(node_id)):
-            subgraph_to_graph['base_nodes'].append(tree_node)
-        else:
-            subgraph_to_graph['other_nodes'].append(tree_node)
 
         for child_id in children:
+            if child_id not in [v[0] for v in subgraph_to_graph.values() if v]:
+                continue
+
             child_node_info = dict(graph.nodes(data=True))[child_id]
             child_node = TreeNode(
                 child_node_info.get('label'),
-                child_node_info.get('text', ''),
+                child_node_info.get('text'),
                 []
             )
             tree_node.children.append(child_node)
@@ -419,18 +414,23 @@ class PatternSearchPipeline(PipelineProtocol):
         found_patterns = {}
         for (sentence_id, graph) in enumerate(doc_graphs):
             matcher = GraphMatcher(graph, self.ideal_graph,
-                              node_match=lambda n1, n2: n1.get('label', '') == n2['label'])
-            matcher.match()
+                                   node_match=lambda n1, n2:
+                                   n1.get('label', '') == n2['label'])
+            pattern_nodes = []
             for isograph in matcher.subgraph_isomorphisms_iter():
-                digraph = graph.subgraph(isograph.keys())
+                digraph = graph.subgraph(isograph.keys()).copy()
+                base_nodes = [node for node in digraph.nodes
+                              if not tuple(digraph.predecessors(node))]
 
-                subgraph_nodes = {'base_nodes': [], 'other_nodes': []}
-                for node_id, attrs in digraph.nodes(data=True):
-                    self._add_children(digraph, subgraph_nodes, node_id,
-                                       TreeNode(attrs.get('label'),
-                                                attrs.get('text'),
-                                                []))
-                found_patterns[sentence_id] = subgraph_nodes['base_nodes']
+                for node_id in base_nodes:
+                    tree_node = TreeNode(graph.nodes[node_id].get('label'),
+                                         graph.nodes[node_id].get('text'),
+                                         [])
+                    self._add_children(graph, to_dict_of_lists(digraph), node_id, tree_node)
+                    pattern_nodes.append(tree_node)
+
+            if pattern_nodes:
+                found_patterns[int(sentence_id)] = pattern_nodes
         return found_patterns
 
     def run(self) -> None:
