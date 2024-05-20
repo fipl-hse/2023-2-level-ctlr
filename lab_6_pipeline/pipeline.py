@@ -207,14 +207,10 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
-        language = "ru"
-        processors = "tokenize,pos,lemma,depparse"
-        stanza.download(lang=language, processors=processors,
+        stanza.download(lang='ru', processors='tokenize,pos,lemma,depparse',
                         logging_level='INFO')
-        model = Pipeline(lang=language, processors=processors,
-                         logging_level='INFO', download_method=None)
-        if type(model) == AbstractCoNLLUAnalyzer:
-            return model
+        return Pipeline(lang='ru', processors='tokenize,pos,lemma,depparse',
+                        logging_level='INFO', download_method=None)
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument]:
         """
