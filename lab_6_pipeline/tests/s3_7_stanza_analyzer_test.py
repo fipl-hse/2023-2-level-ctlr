@@ -1,9 +1,8 @@
 """
 Tests udpipe analyzer.
 """
+# pylint: disable=protected-access,import-error,assignment-from-no-return
 import json
-import os
-import re
 import shutil
 import unittest
 
@@ -18,7 +17,7 @@ from lab_6_pipeline.tests.utils import pipeline_test_files_setup
 
 class StanzaAnalyzerTest(unittest.TestCase):
     """
-    Tests stanza texts analysis for 8 marks.
+    Tests for stanza texts analysis.
     """
 
     def setUp(self) -> None:
@@ -34,7 +33,8 @@ class StanzaAnalyzerTest(unittest.TestCase):
             self.reference_from_conllu = json.load(ref_from_conllu)
 
         self.texts = [
-            "Красивая - мама красиво, училась в ПДД и ЖКУ по адресу Львовская 10 лет с почтой test ."
+            "Красивая - мама красиво, училась в ПДД и "
+            "ЖКУ по адресу Львовская 10 лет с почтой test ."
         ]
         self.stanza_analyzer = StanzaAnalyzer()
 
@@ -42,8 +42,8 @@ class StanzaAnalyzerTest(unittest.TestCase):
         article.ASSETS_PATH = TEST_PATH
 
         corpus_manager = CorpusManager(path_to_raw_txt_data=TEST_PATH)
-        pipe = TextProcessingPipeline(corpus_manager, StanzaAnalyzer())
-        pipe.run()
+        text_processing_pipeline = TextProcessingPipeline(corpus_manager, StanzaAnalyzer())
+        text_processing_pipeline.run()
 
         self.articles = corpus_manager.get_articles()
 
@@ -53,7 +53,7 @@ class StanzaAnalyzerTest(unittest.TestCase):
     @pytest.mark.lab_6_pipeline
     def test_analyze_method(self) -> None:
         """
-        Checks the correctness of the analyze method.
+        Check the correctness of the analyze method.
         """
         analysis = self.stanza_analyzer.analyze(self.texts)
 
@@ -66,7 +66,7 @@ class StanzaAnalyzerTest(unittest.TestCase):
     @pytest.mark.lab_6_pipeline
     def test_type_of_analyzer(self) -> None:
         """
-        Checks the type of the stanza pipeline.
+        Check the type of the stanza pipeline.
         """
         self.assertIsInstance(self.stanza_analyzer._analyzer, stanza.pipeline.core.Pipeline)
 
@@ -76,11 +76,12 @@ class StanzaAnalyzerTest(unittest.TestCase):
     @pytest.mark.lab_6_pipeline
     def test_from_conllu_method(self) -> None:
         """
-        Checks the correctness of the from_conllu method.
+        Check the correctness of the from_conllu method.
         """
         from_conllu_format = self.stanza_analyzer.from_conllu(article=self.articles[1])
 
-        for reference, stanza_analysis in zip(self.reference_from_conllu[0], from_conllu_format.to_dict()[0]):
+        for reference, stanza_analysis in zip(self.reference_from_conllu[0],
+                                              from_conllu_format.to_dict()[0]):
             self.assertEqual(reference, stanza_analysis)
 
     @classmethod

@@ -3,16 +3,16 @@ Article implementation.
 """
 # pylint: disable=no-name-in-module
 
+import datetime
 import enum
 import pathlib
 import re
 import string
-from datetime import datetime
 
 from core_utils.constants import ASSETS_PATH
 
 
-def date_from_meta(date_txt: str) -> datetime:
+def date_from_meta(date_txt: str) -> datetime.datetime:
     """
     Convert text date to datetime object.
 
@@ -22,7 +22,9 @@ def date_from_meta(date_txt: str) -> datetime:
     Returns:
         datetime.datetime: Datetime object
     """
-    return datetime.strptime(date_txt, "%Y-%m-%d %H:%M:%S")
+    if not date_txt:
+        return datetime.datetime.now()
+    return datetime.datetime.strptime(date_txt, "%Y-%m-%d %H:%M:%S")
 
 
 def get_article_id_from_filepath(path: pathlib.Path) -> int:
@@ -69,7 +71,7 @@ class Article:
     Article class implementation.
     """
     #: A date
-    date: datetime | None
+    date: datetime.datetime | None
 
     #: ConLLU information
     _conllu_info: str
@@ -92,6 +94,8 @@ class Article:
         self.text = ''
         self.pos_frequencies = {}
         self._conllu_sentences = []
+        self.pattern_matches = {}
+        self._conllu_info = ''
 
     def set_pos_info(self, pos_freq: dict) -> None:
         """
@@ -101,6 +105,15 @@ class Article:
             pos_freq (dict): POS frequencies
         """
         self.pos_frequencies = pos_freq
+
+    def set_patterns_info(self, pattern_matches: dict) -> None:
+        """
+        Set patterns frequencies attribute.
+
+        Args:
+            pattern_matches (dict): Syntactic patterns
+        """
+        self.pattern_matches = pattern_matches
 
     def get_meta(self) -> dict:
         """
@@ -116,7 +129,8 @@ class Article:
             'date': self._date_to_text() or None,
             'author': self.author,
             'topics': self.topics,
-            'pos_frequencies': self.pos_frequencies
+            'pos_frequencies': self.pos_frequencies,
+            'pattern_matches': self.pattern_matches
         }
 
     def get_raw_text(self) -> str:
@@ -223,13 +237,3 @@ class Article:
             dict: POS frequency
         """
         return self.pos_frequencies
-
-    def get_pattern_path(self) -> pathlib.Path:
-        """
-        Get path for requested article's pattern info.
-
-        Returns:
-            pathlib.Path: Path to requested article's pattern info
-        """
-        pattern_file_name = f"{self.article_id}_pattern.json"
-        return ASSETS_PATH / pattern_file_name

@@ -15,13 +15,13 @@ from lab_6_pipeline.tests.utils import AnalyzerMock, pipeline_setup, pipeline_te
 
 class TextProcessingPipelineScoreFourReferenceProcess(unittest.TestCase):
     """
-    TextProcessingPipeline for score 4 tests on reference data
+    TextProcessingPipeline for score 4 tests on reference data.
     """
 
     @classmethod
     def setUpClass(cls) -> None:
         """
-        Setup test files for processing
+        Setup test files for processing.
         """
         pipeline_test_files_setup(meta=True)
         article.ASSETS_PATH = TEST_PATH
@@ -78,14 +78,14 @@ class TextProcessingPipelineScoreFourReferenceProcess(unittest.TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
         """
-        Cleanup after all test suit run.
+        Define final instructions for TextProcessingPipelineScoreFourReferenceProcess class.
         """
         shutil.rmtree(TEST_PATH)
 
 
 class TextProcessingPipelineScoreFourMockAnalyzer(unittest.TestCase):
     """
-    TextProcessingPipeline for score 4 tests with mocking analyzer
+    Tests for TextProcessingPipeline with mocking analyzer.
     """
 
     @pytest.mark.mark4
@@ -93,7 +93,7 @@ class TextProcessingPipelineScoreFourMockAnalyzer(unittest.TestCase):
     @pytest.mark.lab_6_pipeline
     def test_score_four_pipeline_with_analyzer_mock_can_execute(self) -> None:
         """
-        Make sure pipeline for score four does not depend on analyzer
+        Ensure pipeline for score 4 does not depend on analyzer.
         """
         pipeline_test_files_setup(meta=True)
         article.ASSETS_PATH = TEST_PATH
@@ -106,7 +106,7 @@ class TextProcessingPipelineScoreFourMockAnalyzer(unittest.TestCase):
 
 class TextProcessingPipelineScoreFourStudentProcess(unittest.TestCase):
     """
-    TextProcessingPipeline for score 4 tests on student data
+    Tests for TextProcessingPipeline on student data.
     """
 
     def setUp(self) -> None:
