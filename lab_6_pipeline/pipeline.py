@@ -385,7 +385,9 @@ class PatternSearchPipeline(PipelineProtocol):
             return
 
         for child_id in children:
-            if child_id not in [v[0] for v in subgraph_to_graph.values() if v]:
+            if child_id not in [to_vertex[0] for to_vertex
+                                in subgraph_to_graph.values()
+                                if to_vertex]:
                 continue
 
             child_node_info = dict(graph.nodes(data=True))[child_id]
@@ -452,6 +454,7 @@ def main() -> None:
     Entrypoint for pipeline module.
     """
     corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
+
     pipeline = TextProcessingPipeline(corpus_manager, UDPipeAnalyzer())
     pipeline.run()
 
