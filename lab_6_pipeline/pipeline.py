@@ -6,7 +6,7 @@ import pathlib
 
 import spacy_udpipe
 import stanza
-from stanza import Document, Pipeline
+from stanza.pipeline.core import Pipeline
 from stanza.utils.conll import CoNLL
 
 from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
@@ -74,8 +74,8 @@ class CorpusManager:
         if len(raw_files) != len(meta_files):
             raise InconsistentDatasetError
 
-        sorted_raw_files = sorted(raw_files, key=lambda x: int(x.stem.split('_')[0]))
-        sorted_meta_files = sorted(meta_files, key=lambda x: int(x.stem.split('_')[0]))
+        sorted_raw_files = sorted(raw_files, key=lambda x: get_article_id_from_filepath(x))
+        sorted_meta_files = sorted(meta_files, key=lambda x: get_article_id_from_filepath(x))
 
         for index, (raw_file, meta_file) in enumerate(zip(sorted_raw_files, sorted_meta_files)):
             if (index + 1 != get_article_id_from_filepath(raw_file)
@@ -117,14 +117,14 @@ class TextProcessingPipeline(PipelineProtocol):
             corpus_manager (CorpusManager): CorpusManager instance
             analyzer (LibraryWrapper | None): Analyzer instance
         """
-        self.corpus_manager = corpus_manager
+        self._corpus_manager = corpus_manager
         self.analyzer = analyzer
 
     def run(self) -> None:
         """
         Perform basic preprocessing and write processed text to files.
         """
-        articles = self.corpus_manager.get_articles().values()
+        articles = self._corpus_manager.get_articles().values()
         for article in articles:
             to_cleaned(article)
             if self.analyzer:
@@ -210,6 +210,16 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
+        language = "ru"
+        processors = "tokenize,pos,lemma,depparse"
+        stanza.download(lang=language, processors=processors, logging_level="INFO")
+        model = Pipeline(
+            lang=language,
+            processors=processors,
+            logging_level="INFO",
+            download_method=None
+        )
+        return model
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument]:
         """
@@ -221,6 +231,7 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument]: List of documents
         """
+
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -335,6 +346,10 @@ def main() -> None:
     """
     Entrypoint for pipeline module.
     """
+    corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
+    udpipe_analyzer = UDPipeAnalyzer
+    pipeline = TextProcessingPipeline(corpus_manager, udpipe_analyzer)
+    pipeline.run()
 
 
 if __name__ == "__main__":
