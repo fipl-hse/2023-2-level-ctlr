@@ -276,6 +276,17 @@ class POSFrequencyPipeline:
         """
         Visualize the frequencies of each part of speech.
         """
+        for article_id, article in self._corpus_manager.get_articles().items():
+            if article.get_file_path(kind=ArtifactType.STANZA_CONLLU).stat().st_size == 0:
+                raise EmptyFileError
+
+            from_meta(article.get_meta_file_path(), article)
+            article.set_pos_info(self._count_frequencies(article))
+            to_meta(article)
+
+            visualize(article=article,
+                      path_to_save=self._corpus_manager.path_to_raw_txt_data /
+                                   f'{article_id}_image.png')
 
     def _count_frequencies(self, article: Article) -> dict[str, int]:
         """
@@ -287,11 +298,13 @@ class POSFrequencyPipeline:
         Returns:
             dict[str, int]: POS frequencies
         """
-        pos_freqs = {}
-        feature = 'upos'
-        for conllu_sentence in self._analyzer.from_conllu(article).sentences:
-            for word in conllu_sentence.words:
-                word_feature = word.to_dict()[feature]
+        pos_freq = {}
+        for connllu_sentence in self._analyzer.from_conllu(article).sentences:
+            words = [word.to_dict().get('upos') for word in connllu_sentence.words]
+            for word in set(words):
+                pos_freq[word] = pos_freq.get(word, 0) + words.count(word)
+
+        return pos_freq
 
 
 class PatternSearchPipeline(PipelineProtocol):
