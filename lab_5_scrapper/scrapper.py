@@ -101,17 +101,21 @@ class Config:
         Ensure configuration parameters are not corrupt.
         """
         if not isinstance(self.config.seed_urls, list):
-            raise IncorrectSeedURLError("Seed URL does not match standard pattern 'https?://(www.)?'")
+            raise IncorrectSeedURLError("Seed URL does not match"
+                                        "standard pattern 'https?://(www.)?'")
 
         for seed_url in self.config.seed_urls:
             if not re.match(r"https?://(www.)mk.ru/news/", seed_url):
-                raise IncorrectSeedURLError("Seed URL does not match standard pattern 'https?://(www.)?'")
+                raise IncorrectSeedURLError("Seed URL does not match standard"
+                                            "pattern 'https?://(www.)?'")
 
         if not isinstance(self.config.total_articles, int) or self.config.total_articles <= 0:
-            raise IncorrectNumberOfArticlesError("Total number of articles to parse is not an integer")
+            raise IncorrectNumberOfArticlesError("Total number of articles"
+                                                 "to parse is not an integer")
 
         if not 0 < self.config.total_articles < 150:
-            raise NumberOfArticlesOutOfRangeError("Total number of articles is out of range from 1 to 150")
+            raise NumberOfArticlesOutOfRangeError("Total number of articles is"
+                                                  "out of range from 1 to 150")
 
         if not isinstance(self.config.headers, dict):
             raise IncorrectHeadersError("Headers are not in the form of a dictionary")
@@ -326,7 +330,9 @@ class HTMLParser:
         if date:
             article_date = date.get('content')
             if article_date and isinstance(article_date, str):
-                formatted_date = datetime.datetime.strptime(article_date, "%Y-%m-%dT%H:%M:%S%z").strftime("%d.%m.%Y %H:%M")
+                formatted_date = (datetime.datetime.
+                                  strptime(article_date,
+                                           "%Y-%m-%dT%H:%M:%S%z").strftime("%d.%m.%Y %H:%M"))
                 self.article.date = self.unify_date_format(formatted_date)
 
         tags = article_soup.find_all('a', class_='article__tag-item')
