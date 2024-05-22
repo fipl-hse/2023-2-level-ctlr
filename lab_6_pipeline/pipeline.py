@@ -114,7 +114,14 @@ class TextProcessingPipeline(PipelineProtocol):
         """
         Perform basic preprocessing and write processed text to files.
         """
-
+        files = [article.text for article in self._corpus.get_articles().values()]
+        if self.analyzer:
+            files = self.analyzer.analyze(files)
+        for i, article in enumerate(self._corpus.get_articles().values()):
+            to_cleaned(article)
+            if self.analyzer and files:
+                article.set_conllu_info(files[i])
+                self.analyzer.to_conllu(article)
 
 
 class UDPipeAnalyzer(LibraryWrapper):
@@ -167,9 +174,9 @@ class UDPipeAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
-        # with open(path, 'w', encoding='utf-8') as annotation_file:
-        #     annotation_file.write(annotation)
-        #     annotation_file.write("\n")
+        with open(article.get_file_path(ArtifactType.UDPIPE_CONLLU), 'w', encoding='utf-8') as annotation_file:
+            annotation_file.write(article.get_conllu_info())
+            annotation_file.write("\n")
 
 
 class StanzaAnalyzer(LibraryWrapper):
@@ -183,6 +190,7 @@ class StanzaAnalyzer(LibraryWrapper):
         """
         Initialize an instance of the StanzaAnalyzer class.
         """
+        self._analyzer = self._bootstrap()
 
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
@@ -191,6 +199,16 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
+        language = "ru"
+        processors = "tokenize,pos,lemma,depparse"
+        stanza.download(lang=language, processors=processors, logging_level="INFO")
+        model = Pipeline(
+            lang=language,
+            processors=processors,
+            logging_level="INFO",
+            download_method=None
+        )
+        return model
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument]:
         """
@@ -202,6 +220,7 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument]: List of documents
         """
+        return self._analyzer.process([Document([], text=text) for text in texts])
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -210,6 +229,10 @@ class StanzaAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
+        CoNLL.write_doc2conll(
+            doc=article.get_conllu_info(),
+            filename=article.get_file_path(ArtifactType.STANZA_CONLLU),
+        )
 
     def from_conllu(self, article: Article) -> CoNLLUDocument:
         """
@@ -221,6 +244,7 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             CoNLLUDocument: Document ready for parsing
         """
+        return CoNLL.conll2doc(input_file=article.get_file_path(ArtifactType.STANZA_CONLLU))
 
 
 class POSFrequencyPipeline:
@@ -236,6 +260,8 @@ class POSFrequencyPipeline:
             corpus_manager (CorpusManager): CorpusManager instance
             analyzer (LibraryWrapper): Analyzer instance
         """
+        self._corpus = corpus_manager
+        self._analyzer = analyzer
 
     def run(self) -> None:
         """
