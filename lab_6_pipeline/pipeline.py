@@ -23,6 +23,7 @@ from core_utils.article.article import (Article, ArtifactType, get_article_id_fr
                                         split_by_sentence)
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
+from core_utils.visualizer import visualize
 
 
 class InconsistentDatasetError(Exception):
@@ -272,6 +273,8 @@ class POSFrequencyPipeline:
             corpus_manager (CorpusManager): CorpusManager instance
             analyzer (LibraryWrapper): Analyzer instance
         """
+        self._corpus_manager = corpus_manager
+        self._analyzer = analyzer
 
     def run(self) -> None:
         """
