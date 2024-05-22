@@ -15,6 +15,24 @@ from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, Library
                                  PipelineProtocol, StanzaDocument, TreeNode)
 
 
+class EmptyDirectoryError(Exception):
+    """
+    Directory is empty
+    """
+
+
+class InconsistentDatasetError(Exception):
+    """
+    Dataset contains IDs slips of raw files or files are empty
+    """
+
+
+class EmptyFileError(Exception):
+    """
+    File is empty
+    """
+
+
 class CorpusManager:
     """
     Work with articles and store them.
@@ -27,12 +45,28 @@ class CorpusManager:
         Args:
             path_to_raw_txt_data (pathlib.Path): Path to raw txt data
         """
+        self.path_to_raw_txt_data = path_to_raw_txt_data
+        self._storage = {}
+
+        self._validate_dataset()
 
     def _validate_dataset(self) -> None:
         """
         Validate folder with assets.
         """
+        if not self.path_to_raw_txt_data.exists():
+            raise FileNotFoundError
+        if not self.path_to_raw_txt_data.is_dir():
+            raise NotADirectoryError
 
+        raw_f = list(self.path_to_raw_txt_data.glob("*_raw.txt"))
+        meta_f = list(self.path_to_raw_txt_data.glob("*_meta.json"))
+        if len(meta_f) != len(raw_f):
+            raise InconsistentDatasetError
+
+        if not any(self.path_to_raw_txt_data.iterdir()):
+            raise EmptyDirectoryError
+        
     def _scan_dataset(self) -> None:
         """
         Register each dataset entry.
