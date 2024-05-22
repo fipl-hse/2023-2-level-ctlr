@@ -118,11 +118,11 @@ class TextProcessingPipeline(PipelineProtocol):
         """
         docs = [article.text for article in self._corpus.get_articles().values()]
         if self.analyzer:
-            analyzed_docs = [self.analyzer.analyze(docs)]
+            analyzed_docs = self.analyzer.analyze(docs)
 
         for i, article in enumerate(self._corpus.get_articles().values()):
             to_cleaned(article)
-            if self.analyzer and docs:
+            if self.analyzer and analyzed_docs:
                 article.set_conllu_info(analyzed_docs[i])
                 self.analyzer.to_conllu(article)
 
