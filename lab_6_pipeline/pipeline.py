@@ -11,12 +11,12 @@ from stanza.models.common.doc import Document
 from stanza.pipeline.core import Pipeline
 from stanza.utils.conll import CoNLL
 
-from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
-                                        split_by_sentence)
-from core_utils.article.io import from_raw, to_cleaned
+from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath)
+from core_utils.article.io import  from_meta, from_raw, to_cleaned, to_meta
 from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
+from core_utils.visualizer import visualize
 
 
 class EmptyDirectoryError(Exception):
@@ -199,7 +199,7 @@ class StanzaAnalyzer(LibraryWrapper):
         """
         Initialize an instance of the StanzaAnalyzer class.
         """
-        self._analyzer = self._bootstrap
+        self._analyzer = self._bootstrap()
 
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
@@ -269,6 +269,8 @@ class POSFrequencyPipeline:
             corpus_manager (CorpusManager): CorpusManager instance
             analyzer (LibraryWrapper): Analyzer instance
         """
+        self._corpus_manager = corpus_manager
+        self._analyzer = analyzer
 
     def run(self) -> None:
         """
@@ -285,6 +287,11 @@ class POSFrequencyPipeline:
         Returns:
             dict[str, int]: POS frequencies
         """
+        pos_freqs = {}
+        feature = 'upos'
+        for conllu_sentence in self._analyzer.from_conllu(article).sentences:
+            for word in conllu_sentence.words:
+                word_feature = word.to_dict()[feature]
 
 
 class PatternSearchPipeline(PipelineProtocol):
@@ -349,19 +356,18 @@ def main() -> None:
     """
     Entrypoint for pipeline module.
     """
-    manager = CorpusManager(ASSETS_PATH)
+    corpus_manager = CorpusManager(ASSETS_PATH)
 
     analyzer = UDPipeAnalyzer()
-    udpipe_pipeline = TextProcessingPipeline(manager, analyzer)
+    udpipe_pipeline = TextProcessingPipeline(corpus_manager, analyzer)
     udpipe_pipeline.run()
 
     stanza_analyzer = StanzaAnalyzer()
-    stanza_pipeline = TextProcessingPipeline(manager, stanza_analyzer)
+    stanza_pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
     stanza_pipeline.run()
 
-    
-    
-
+    visualizer = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
+    visualizer.run()
 
 if __name__ == "__main__":
     main()
