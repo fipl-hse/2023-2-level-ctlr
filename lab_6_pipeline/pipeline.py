@@ -4,22 +4,22 @@ Pipeline for CONLL-U formatting.
 # pylint: disable=too-few-public-methods, unused-import, undefined-variable, too-many-nested-blocks
 import pathlib
 
-try:
-    from networkx import DiGraph
-except ImportError:  # pragma: no cover
-    DiGraph = None  # type: ignore
-    print('No libraries installed. Failed to import.')
-
 from core_utils.article.article import Article
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
+
+class InconsistentDatasetError(Exception):
+    pass
+
+
+class EmptyDirectoryError(Exception):
+    pass
 
 
 class CorpusManager:
     """
     Work with articles and store them.
     """
-
     def __init__(self, path_to_raw_txt_data: pathlib.Path) -> None:
         """
         Initialize an instance of the CorpusManager class.
@@ -27,11 +27,22 @@ class CorpusManager:
         Args:
             path_to_raw_txt_data (pathlib.Path): Path to raw txt data
         """
+        self.path_to_raw_txt_data = path_to_raw_txt_data
+        self._storage = {}
+        self._validate_dataset()
 
     def _validate_dataset(self) -> None:
         """
         Validate folder with assets.
         """
+        if not self.path_to_raw_txt_data.exists():
+            raise FileNotFoundError
+
+        if not self.path_to_raw_txt_data.is_dir():
+            raise NotADirectoryError
+
+        if not any(self.path_to_raw_txt_data.iterdir()):
+            raise EmptyDirectoryError
 
     def _scan_dataset(self) -> None:
         """
@@ -253,7 +264,7 @@ def main() -> None:
     """
     Entrypoint for pipeline module.
     """
-
+    corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
 
 if __name__ == "__main__":
     main()
