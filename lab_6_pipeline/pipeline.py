@@ -5,7 +5,11 @@ Pipeline for CONLL-U formatting.
 import pathlib
 
 import spacy_udpipe
+import stanza
 from networkx import DiGraph
+from stanza.models.common.doc import Document
+from stanza.pipeline.core import Pipeline
+from stanza.utils.conll import CoNLL
 
 from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
                                         split_by_sentence)
@@ -195,6 +199,7 @@ class StanzaAnalyzer(LibraryWrapper):
         """
         Initialize an instance of the StanzaAnalyzer class.
         """
+        self._analyzer = self._bootstrap
 
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
@@ -203,6 +208,16 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
+        language = "ru"
+        processors = "tokenize,pos,lemma,depparse"
+        stanza.download(lang=language, processors=processors, logging_level="INFO")
+        model = Pipeline(
+            lang=language,
+            processors=processors,
+            logging_level="INFO",
+            download_method=None)
+
+        return model
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument]:
         """
@@ -214,7 +229,8 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument]: List of documents
         """
-
+        return self._analyzer.process([Document([], text=text) for text in texts])
+    
     def to_conllu(self, article: Article) -> None:
         """
         Save content to ConLLU format.
@@ -222,6 +238,10 @@ class StanzaAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
+        CoNLL.write_doc2conll(
+        doc=article.get_conllu_info(),
+        filename=article.get_file_path(kind=ArtifactType.STANZA_CONLLU),
+        )
 
     def from_conllu(self, article: Article) -> CoNLLUDocument:
         """
@@ -233,6 +253,7 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             CoNLLUDocument: Document ready for parsing
         """
+        return CoNLL.conll2doc(input_file=article.get_file_path(kind=ArtifactType.STANZA_CONLLU))
 
 
 class POSFrequencyPipeline:
@@ -329,9 +350,17 @@ def main() -> None:
     Entrypoint for pipeline module.
     """
     manager = CorpusManager(ASSETS_PATH)
+
     analyzer = UDPipeAnalyzer()
-    pipeline = TextProcessingPipeline(manager, analyzer)
-    pipeline.run()
+    udpipe_pipeline = TextProcessingPipeline(manager, analyzer)
+    udpipe_pipeline.run()
+
+    stanza_analyzer = StanzaAnalyzer()
+    stanza_pipeline = TextProcessingPipeline(manager, stanza_analyzer)
+    stanza_pipeline.run()
+
+    
+    
 
 
 if __name__ == "__main__":
