@@ -81,9 +81,9 @@ class CorpusManager:
         """
         Register each dataset entry.
         """
-        for path in list(self.path_to_raw_txt_data.glob('*raw.txt')):
-            id = get_article_id_from_filepath(path)
-            self._storage[id] = from_raw(path, Article(url=None, article_id=id))
+        self._storage = {get_article_id_from_filepath(path):
+                        from_raw(path, Article(url=None, article_id=get_article_id_from_filepath(path)))
+                        for path in list(self.path_to_raw_txt_data.glob('*raw.txt'))}
 
     def get_articles(self) -> dict:
         """
@@ -116,10 +116,15 @@ class TextProcessingPipeline(PipelineProtocol):
         """
         Perform basic preprocessing and write processed text to files.
         """
-        for article in self._corpus.get_articles().values():
+        docs = [article.text for article in self._corpus.get_articles().values()]
+        if self.analyzer:
+            analyzed_docs = [self.analyzer.analyze(docs)]
+
+        for i, article in enumerate(self._corpus.get_articles().values()):
             to_cleaned(article)
-            article.set_conllu_info(self.analyzer.analyze(split_by_sentence(article.text)))
-            self.analyzer.to_conllu(article)
+            if self.analyzer and docs:
+                article.set_conllu_info(analyzed_docs[i])
+                self.analyzer.to_conllu(article)
 
 class UDPipeAnalyzer(LibraryWrapper):
     """
@@ -164,12 +169,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument | str]: List of documents
         """
-        docs = []
-
-        for text in texts:
-            analyzed_text = self._analyzer(text)
-            conllu_annotation = analyzed_text._.conll_str
-            docs.append(conllu_annotation)
+        docs = [self._analyzer(text)._.conll_str for text in texts]
 
         return docs
 
