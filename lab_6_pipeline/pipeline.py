@@ -79,9 +79,9 @@ class CorpusManager:
         sorted_raw_files = sorted(raw_files, key=lambda x: get_article_id_from_filepath(x))
         sorted_meta_files = sorted(meta_files, key=lambda x: get_article_id_from_filepath(x))
 
-        for index, (raw_file, meta_file) in enumerate(zip(sorted_raw_files, sorted_meta_files)):
-            if (index + 1 != get_article_id_from_filepath(raw_file)
-                    or index + 1 != get_article_id_from_filepath(meta_file)
+        for index, (raw_file, meta_file) in enumerate(zip(sorted_raw_files, sorted_meta_files), start=1):
+            if (index != get_article_id_from_filepath(raw_file)
+                    or index != get_article_id_from_filepath(meta_file)
                     or raw_file.stat().st_size == 0 or meta_file.stat().st_size == 0):
                 raise InconsistentDatasetError
 
@@ -120,7 +120,7 @@ class TextProcessingPipeline(PipelineProtocol):
             analyzer (LibraryWrapper | None): Analyzer instance
         """
         self._corpus_manager = corpus_manager
-        self.analyzer = analyzer
+        self._analyzer = analyzer
 
     def run(self) -> None:
         """
@@ -129,11 +129,11 @@ class TextProcessingPipeline(PipelineProtocol):
         articles = self._corpus_manager.get_articles().values()
         for article in articles:
             to_cleaned(article)
-            if self.analyzer:
-                texts = split_by_sentence(article.text)
-                text_analyze = self.analyzer.analyze(texts)
+            if self._analyzer:
+                texts = [article.text for article in self._corpus_manager.get_articles().values()]
+                text_analyze = self._analyzer.analyze(texts)
                 article.set_conllu_info(text_analyze)
-                self.analyzer.to_conllu(article)
+                self._analyzer.to_conllu(article)
 
 class UDPipeAnalyzer(LibraryWrapper):
     """
