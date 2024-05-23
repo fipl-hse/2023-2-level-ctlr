@@ -9,10 +9,33 @@ try:
 except ImportError:  # pragma: no cover
     DiGraph = None  # type: ignore
     print('No libraries installed. Failed to import.')
-
-from core_utils.article.article import Article
+import spacy
+import spacy_udpipe
+import stanza
+from stanza.models.common.doc import Document
+from core_utils.article.io import from_raw, to_cleaned
+from core_utils.constants import UDPIPE_MODEL_PATH, ASSETS_PATH
+from core_utils.article.article import Article, ArtifactType, get_article_id_from_filepath
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
+
+
+class EmptyDirectoryError(Exception):
+    """
+    Raising an error when the directory is empty
+    """
+
+
+class InconsistentDatasetError(Exception):
+    """
+    IDs contain slips, number of meta and raw files is not equal, files are empty;
+    """
+
+
+class EmptyFileError(Exception):
+    """
+    I don't khow for what
+    """
 
 
 class CorpusManager:
@@ -27,16 +50,45 @@ class CorpusManager:
         Args:
             path_to_raw_txt_data (pathlib.Path): Path to raw txt data
         """
+        self.path_to_raw_txt_data = path_to_raw_txt_data
+        self._storage = {}
+        self._validate_dataset()
+        self._scan_dataset()
 
     def _validate_dataset(self) -> None:
         """
         Validate folder with assets.
         """
+        if not self.path_to_raw_txt_data.exists():
+            raise FileNotFoundError
+
+        if not self.path_to_raw_txt_data.is_dir():
+            raise NotADirectoryError
+
+        if not any(self.path_to_raw_txt_data.iterdir()):
+            raise EmptyDirectoryError
+
+        meta_files = sorted(self.path_to_raw_txt_data.glob('*_meta.json'),
+                            key=lambda x: get_article_id_from_filepath(x))
+        txt_files = sorted(self.path_to_raw_txt_data.glob('*_raw.txt'),
+                           key=lambda x: get_article_id_from_filepath(x))
+        if len(txt_files) != len(meta_files):
+            raise InconsistentDatasetError
+
+        for index, (meta, raw) in enumerate(zip(meta_files, txt_files), start=1):
+            if index != get_article_id_from_filepath(meta) or \
+                    index != get_article_id_from_filepath(raw) or \
+                    not meta.stat().st_size or not raw.stat().st_size:
+                raise InconsistentDatasetError
 
     def _scan_dataset(self) -> None:
         """
         Register each dataset entry.
         """
+        txt_files = sorted(self.path_to_raw_txt_data.glob('*_raw.txt'))
+        for raw in txt_files:
+            article_id = get_article_id_from_filepath(raw)
+            self._storage[article_id] = from_raw(path=raw, article=Article(None, article_id))
 
     def get_articles(self) -> dict:
         """
@@ -45,6 +97,7 @@ class CorpusManager:
         Returns:
             dict: Storage params
         """
+        return self._storage
 
 
 class TextProcessingPipeline(PipelineProtocol):
@@ -62,11 +115,23 @@ class TextProcessingPipeline(PipelineProtocol):
             corpus_manager (CorpusManager): CorpusManager instance
             analyzer (LibraryWrapper | None): Analyzer instance
         """
+        self._corpus = corpus_manager
+        self.analyzer = analyzer
 
     def run(self) -> None:
         """
         Perform basic preprocessing and write processed text to files.
         """
+        articles = self._corpus.get_articles().values()
+        doc_conllu = []
+        if self.analyzer:
+            doc_conllu = self.analyzer.analyze([article.text for article in articles])
+
+        for index, article in enumerate(articles):
+            to_cleaned(article)
+            if self.analyzer and doc_conllu:
+                article.set_conllu_info(doc_conllu[index])
+                self.analyzer.to_conllu(article)
 
 
 class UDPipeAnalyzer(LibraryWrapper):
@@ -80,6 +145,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         """
         Initialize an instance of the UDPipeAnalyzer class.
         """
+        self._analyzer = self._bootstrap()
 
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
@@ -88,6 +154,16 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
+        model = spacy_udpipe.load_from_path(
+            lang="ru",
+            path=str(UDPIPE_MODEL_PATH)
+        )
+        model.add_pipe(
+            "conll_formatter",
+            last=True,
+            config={"conversion_maps": {"XPOS": {"": "_"}}, "include_headers": True},
+        )
+        return model
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument | str]:
         """
@@ -99,6 +175,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument | str]: List of documents
         """
+        return [self._analyzer(text)._.conll_str for text in texts]
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -107,6 +184,10 @@ class UDPipeAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
+
+        with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU), 'w', encoding='utf-8') as annotation_file:
+            annotation_file.write(article.get_conllu_info())
+            annotation_file.write("\n")
 
 
 class StanzaAnalyzer(LibraryWrapper):
@@ -253,7 +334,10 @@ def main() -> None:
     """
     Entrypoint for pipeline module.
     """
-
+    corpus_manager = CorpusManager(ASSETS_PATH)
+    analyzer = UDPipeAnalyzer()
+    pipeline = TextProcessingPipeline(corpus_manager, analyzer)
+    pipeline.run()
 
 if __name__ == "__main__":
     main()
