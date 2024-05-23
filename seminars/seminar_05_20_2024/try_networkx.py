@@ -118,14 +118,14 @@ def family_graph_task() -> nx.DiGraph:
     Returns:
         nx.DiGraph: graph as in [/images/task_2_family_graph.png]
     """
-    # relatives = {
-    #     "Настя": {"age": 66, "hair": "blonde"},
-    #     "Дима": {"age": 70, "hair": "ginger"},
-    #     "Степа": {"age": 41, "hair": "black"},
-    #     "Вика": {"age": 40, "hair": "ginger"},
-    #     "Лида": {"age": 15, "hair": "black"},
-    # }
-    # YOUR CODE GOES HERE
+     #relatives = {
+     #    "Настя": {"age": 66, "hair": "blonde"},
+     #    "Дима": {"age": 70, "hair": "ginger"},
+     #    "Степа": {"age": 41, "hair": "black"},
+     #    "Вика": {"age": 40, "hair": "ginger"},
+     #    "Лида": {"age": 15, "hair": "black"},
+     #}
+
 
 
 def match_subgraph_example() -> list[dict[str, str]]:
