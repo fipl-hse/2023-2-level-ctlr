@@ -2,19 +2,19 @@
 Crawler implementation.
 """
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
-import pathlib
-from typing import Pattern, Union
-
-import pathlib
-import json
-#import requests
 import datetime
-import shutil
+import json
+import pathlib
 from typing import Pattern, Union
-#from bs4 import BeautifulSoup
+import shutil
+
+import requests
+from bs4 import BeautifulSoup
 
 from core_utils.config_dto import ConfigDTO
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
+
+
 class Config:
     """
     Class for unpacking and validating configurations.
@@ -48,19 +48,20 @@ class Config:
         """
         Ensure configuration parameters are not corrupt.
         """
-        if not all(seed.startswith('https://antropogenez.ru/news/') for seed in self.config_DTO.seed_urls):
+        config_DTO = self._extract_config_content()
+        if not all(seed.startswith('https://antropogenez.ru/news/') for seed in config_DTO.seed_urls):
             raise Exception('IncorrectSeedURLError')
-        if self.config_DTO.total_articles < 1 or self.config_DTO.total_articles > 150:
+        if config_DTO.total_articles < 1 or config_DTO.total_articles > 150:
             raise Exception('NumberOfArticlesOutOfRangeError')
-        if not isinstance(self.config_DTO.total_articles, int):
+        if not isinstance(config_DTO.total_articles, int):
             raise Exception('IncorrectNumberOfArticlesError')
-        if not isinstance(self.config_DTO.headers, dict):
+        if not isinstance(config_DTO.headers, dict):
             raise Exception('IncorrectHeadersError')
-        if not isinstance(self.config_DTO.encoding, str):
+        if not isinstance(config_DTO.encoding, str):
             raise Exception('IncorrectEncodingError')
-        if self.config_DTO.timeout < 1 or self.config_DTO.timeout > 60:
+        if config_DTO.timeout < 1 or config_DTO.timeout > 60:
             raise Exception('IncorrectTimeoutError')
-        if not isinstance(self.config_DTO.headless_mode, bool):
+        if not isinstance(config_DTO.headless_mode, bool):
             raise Exception('IncorrectVerifyError')
 
     def get_seed_urls(self) -> list[str]:
@@ -70,7 +71,7 @@ class Config:
         Returns:
             list[str]: Seed urls
         """
-        return self.config_DTO.seed_urls
+        return self._seed_urls
 
     def get_num_articles(self) -> int:
         """
