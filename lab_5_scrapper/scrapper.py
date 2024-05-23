@@ -7,6 +7,7 @@ import json
 import pathlib
 import re
 import shutil
+import time
 from typing import Pattern, Union
 
 import requests
@@ -89,7 +90,7 @@ class Config:
         Returns:
             ConfigDTO: Config values
         """
-        with open(self.path_to_config) as file:
+        with open(self.path_to_config, encoding='utf-8') as file:
             data = json.load(file)
         return ConfigDTO(**data)
 
@@ -201,6 +202,8 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
+    # sleep_period = 4
+    # time.sleep(sleep_period)
     return requests.get(
         url=url,
         timeout=config.get_timeout(),
@@ -252,8 +255,8 @@ class Crawler:
         seed_urls = self.get_search_urls()
         necessary_len = self.config.get_num_articles()
 
-        while len(self.urls) != necessary_len:
-            for url in seed_urls:
+        for url in seed_urls:
+            if len(self.urls) != necessary_len:
                 response = make_request(url, self.config)
                 if not response.ok:
                     continue
@@ -270,8 +273,8 @@ class Crawler:
                 if not extracted:
                     continue
 
-                if len(self.urls) == necessary_len:
-                    break
+            if len(self.urls) == necessary_len:
+                break
 
     def get_search_urls(self) -> list:
         """
@@ -326,7 +329,6 @@ class HTMLParser:
         for p_bs in all_ps:
             texts.append(p_bs.text)
         self.article.text = '\n'.join(texts)
-        print(self.article.text)
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -344,18 +346,11 @@ class HTMLParser:
         div = article_soup.find_all('div', class_='news-heading')[0]
         list_element = div.find_all('ul', class_='list-unstyled list-inline')[0]
         element = list_element.find_all('li', class_='list-inline-item')[0]
-        print(element.get_text().strip())
         date = element.get_text().strip()
         if date:
             self.article.date = self.unify_date_format(date)
 
-        meta_tag = article_soup.find('meta', attrs={'meta': 'keywords'})
-        topics = []
-        if meta_tag:
-            content = meta_tag.get('content')
-            if content:
-                topics = content.split(', ')
-        self.article.topics = topics
+        self.article.topics = []
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -419,7 +414,6 @@ def main() -> None:
         if isinstance(article, Article):
             to_raw(article)
             to_meta(article)
-            print(article)
 
 
 if __name__ == "__main__":
