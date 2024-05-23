@@ -1,6 +1,10 @@
 {
     "seed_urls": [
-        "https://myslo.ru/club/blog/zvere-moe"
+        "https://www.myslo.ru/club/blog/zvere-moe",
+        "https://www.myslo.ru/club/blog/zvere-moe/main/2",
+        "https://www.myslo.ru/club/blog/zvere-moe/main/3",
+        "https://www.myslo.ru/club/blog/zvere-moe/main/4",
+        "https://www.myslo.ru/club/blog/zvere-moe/main/5"
     ],
     "headers": {"cookie": "stg_traffic_source_priority=4; stg_externalReferrer=https://www.google.com/; stg_last_interaction=Mon%2C%2008%20Apr%202024%2009:20:56%20GMT; stg_returning_visitor=Mon%2C%2008%20Apr%202024%2009:20:56%20GMT",
     "accept-language":"ru-RU,ru;q=0.9",
@@ -8,7 +12,7 @@
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"},
     "total_articles_to_find_and_parse": 10,
     "encoding": "utf-8",
-    "timeout": 5,
+    "timeout": 20,
     "should_verify_certificate": true,
     "headless_mode": true
 }

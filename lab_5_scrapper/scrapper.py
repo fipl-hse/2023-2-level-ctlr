@@ -6,6 +6,7 @@ import datetime
 import json
 import pathlib
 import re
+import shutil
 from random import randrange
 from time import sleep
 from typing import Pattern, Union
@@ -101,18 +102,17 @@ class Config:
         Ensure configuration parameters are not corrupt.
         """
         config = self._extract_config_content()
-
-        if not (isinstance(config.seed_urls, list)
-                and all(re.match(r"https?://(www)?\.myslo.ru+", seed_url)
-                        for seed_url in config.seed_urls
-                        )
-                ):
+        pattern = "https?://www.myslo.ru?"
+        if not isinstance(config.seed_urls, list) or \
+                not all(re.match(pattern, x) for x in config.seed_urls):
             raise IncorrectSeedURLError
 
-        if not isinstance(config.total_articles, int) or config.total_articles <= 0:
+        num = config.total_articles
+
+        if not isinstance(num, int) or num <= 0:
             raise IncorrectNumberOfArticlesError
 
-        if config.total_articles > 150:
+        if num > 150:
             raise NumberOfArticlesOutOfRangeError
 
         if not isinstance(config.headers, dict):
@@ -121,13 +121,14 @@ class Config:
         if not isinstance(config.encoding, str):
             raise IncorrectEncodingError
 
-        if not isinstance(config.should_verify_certificate, bool) \
-                or not isinstance(config.headless_mode, bool):
+        if not isinstance(config.timeout, int) or 0 >= config.timeout or config.timeout >= 60:
+            raise IncorrectTimeoutError
+
+        if not isinstance(config.should_verify_certificate, bool):
             raise IncorrectVerifyError
 
-        if not isinstance(config.timeout, int) \
-                or config.timeout > 60 or config.timeout < 0:
-            raise IncorrectTimeoutError
+        if not isinstance(config.headless_mode, bool):
+            raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
         """
@@ -242,8 +243,13 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        link = article_bs.find('a', attrs={'class': 'figcaption promo-link'})
-        url = str(self.url_pattern + link.get('href'))
+        url = " "
+        links = article_bs.find_all("a", class_="announce-inline-tile")
+        for link in links:
+            url = link["href"]
+            if url not in self.urls:
+                break
+        url = self.url_pattern + url
         return url
 
     def find_articles(self) -> None:
@@ -268,9 +274,6 @@ class Crawler:
             list: seed_urls param
         """
         return self.config.get_seed_urls()
-
-# 10
-# 4, 6, 8, 10
 
 
 class HTMLParser:
@@ -299,9 +302,11 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        description = article_soup.find('meta', attrs={'name': 'description'}).text
-        all_txt = article_soup.find('div', attrs={'class': 'detail-text-div'}).text
-        self.article.text = str(description + all_txt)
+        texts = []
+        text_paragraphs = article_soup.find_all(class_='ds-block-text')
+        for paragraph in text_paragraphs:
+            texts.append(paragraph.text)
+        self.article.text = ''.join(texts)
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -310,21 +315,23 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        self.article.title = article_soup.find('meta', property='og:title').attrs['content']
+        title = article_soup.find(class_='article__title')
+        if title:
+            self.article.title = title.text
 
-        author = article_soup.find('meta', attrs={'itemprop': 'author'}).attrs['content']
-        if not author or len(author) == 0:
+        author = article_soup.find(class_='article__author')
+        if not author:
             self.article.author.append('NOT FOUND')
         else:
-            self.article.author.append(author)
+            self.article.author.append(author.text)
 
-        date = article_soup.find('meta', attrs={'itemprop': 'dateModified'}).attrs['content']
-        if date:
-            self.article.date = self.unify_date_format(date)
+        date_str = article_soup.find(class_='article__date')
+        if date_str:
+            self.article.date = self.unify_date_format(date_str.text)
 
-        topics = article_soup.find('div', class_='article-tag-tags').find_all('a')
-        for topic in topics:
-            self.article.topics.append(topic.text)
+        tags = article_soup.find_all(class_='article__tag')
+        for tag in tags:
+            self.article.topics.append(tag.text)
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
