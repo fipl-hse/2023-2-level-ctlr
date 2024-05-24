@@ -10,15 +10,14 @@ from stanza.models.common.doc import Document
 from stanza.pipeline.core import Pipeline
 from stanza.utils.conll import CoNLL
 
-from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
-from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
-
 try:
     from networkx import DiGraph
 except ImportError:  # pragma: no cover
     DiGraph = None  # type: ignore
     print('No libraries installed. Failed to import.')
 
+from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
+from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
 from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
                                         split_by_sentence)
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
@@ -79,7 +78,8 @@ class CorpusManager:
         sorted_raw_files = sorted(raw_files, key=lambda x: get_article_id_from_filepath(x))
         sorted_meta_files = sorted(meta_files, key=lambda x: get_article_id_from_filepath(x))
 
-        for index, (raw_file, meta_file) in enumerate(zip(sorted_raw_files, sorted_meta_files), start=1):
+        for index, (raw_file, meta_file) in enumerate(zip(sorted_raw_files,
+                                                          sorted_meta_files), start=1):
             if (index != get_article_id_from_filepath(raw_file)
                     or index != get_article_id_from_filepath(meta_file)
                     or raw_file.stat().st_size == 0 or meta_file.stat().st_size == 0):
@@ -172,13 +172,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument | str]: List of documents
         """
-        texts_list = []
-        for text in texts:
-            analyzed_text = self._analyzer(text)
-            conllu_annotation = analyzed_text._.conll_str
-            texts_list.append(conllu_annotation)
-        return texts_list
-
+        return [self._analyzer(text)._.conll_str for text in texts]
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -187,7 +181,8 @@ class UDPipeAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
-        with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU), 'w', encoding='utf-8') as annotation_file:
+        with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU), 'w',
+                  encoding='utf-8') as annotation_file:
             annotation_file.writelines(article.get_conllu_info())
             annotation_file.write("\n")
 
