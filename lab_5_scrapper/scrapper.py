@@ -198,6 +198,7 @@ class Crawler:
             list: seed_urls param
         """
 
+
 # 10
 # 4, 6, 8, 10
 
