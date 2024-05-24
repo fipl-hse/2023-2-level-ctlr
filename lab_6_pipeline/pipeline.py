@@ -133,16 +133,7 @@ class TextProcessingPipeline(PipelineProtocol):
         """
         Perform basic preprocessing and write processed text to files.
         """
-        documents = []
-        if self.analyzer:
-            documents = self.analyzer.analyze([article.text for article
-                                               in self._corpus.get_articles().values()])
 
-        for num, article in enumerate(self._corpus.get_articles().values()):
-            to_cleaned(article)
-            if self.analyzer and documents:
-                article.set_conllu_info(documents[num])
-                self.analyzer.to_conllu(article)
 
 
 class UDPipeAnalyzer(LibraryWrapper):
@@ -176,6 +167,8 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument | str]: List of documents
         """
+
+
 
     def to_conllu(self, article: Article) -> None:
         """
