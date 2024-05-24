@@ -17,7 +17,7 @@
         "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
         "Cookie": "stg_traffic_source_priority=4; stg_externalReferrer=https://www.google.com/; stg_last_interaction=Mon%2C%2008%20Apr%202024%2009:20:48%20GMT; stg_returning_visitor=Mon%2C%2008%20Apr%202024%2009:20:48%20GMT"
     },
-    "total_articles_to_find_and_parse": 3,
+    "total_articles_to_find_and_parse": 4,
     "encoding": "utf-8",
     "timeout": 3,
     "should_verify_certificate": true,
