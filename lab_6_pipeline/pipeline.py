@@ -4,6 +4,8 @@ Pipeline for CONLL-U formatting.
 # pylint: disable=too-few-public-methods, unused-import, undefined-variable, too-many-nested-blocks
 import pathlib
 
+import spacy_udpipe
+
 try:
     from networkx import DiGraph
 except ImportError:  # pragma: no cover
@@ -85,11 +87,15 @@ class CorpusManager:
         """
         Register each dataset entry.
         """
-        self._storage = {}
-        for file in self.path_to_raw_txt_data.glob('*_raw.txt'):
-            article_id = get_article_id_from_filepath(file)
-            article = from_raw(path=file, article=Article(url=None, article_id=article_id))
-            self._storage[article_id] = article
+        self._storage = {
+            get_article_id_from_filepath(file):
+                from_raw(
+                    path=file,
+                    article=Article(url=None,
+                                    article_id=get_article_id_from_filepath(file))
+                )
+            for file in self.path_to_raw_txt_data.glob('*_raw.txt')
+        }
 
     def get_articles(self) -> dict:
         """
@@ -116,19 +122,23 @@ class TextProcessingPipeline(PipelineProtocol):
             corpus_manager (CorpusManager): CorpusManager instance
             analyzer (LibraryWrapper | None): Analyzer instance
         """
-        self._corpus_manager = corpus_manager
+        self._corpus = corpus_manager
         self.analyzer = analyzer
 
     def run(self) -> None:
         """
         Perform basic preprocessing and write processed text to files.
         """
-        articles = self._corpus_manager.get_articles().values()
+        documents = []
+        if self.analyzer:
+            documents = self.analyzer.analyze([article.text for article
+                                               in self._corpus.get_articles().values()])
 
-        for article in articles:
-            raw_texts = article.get_raw_text_path()
-            from_raw(raw_texts, article)
+        for num, article in enumerate(self._corpus.get_articles().values()):
             to_cleaned(article)
+            if self.analyzer and documents:
+                article.set_conllu_info(documents[num])
+                self.analyzer.to_conllu(article)
 
 
 class UDPipeAnalyzer(LibraryWrapper):
@@ -142,6 +152,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         """
         Initialize an instance of the UDPipeAnalyzer class.
         """
+        self._analyzer = self._bootstrap()
 
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
@@ -150,6 +161,13 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
+        model = spacy_udpipe.load_from_path(lang="ru", path=str(UDPIPE_MODEL_PATH))
+        model.add_pipe(
+            "conll_formatter",
+            last=True,
+            config={"conversion_maps": {"XPOS": {"": "_"}}, "include_headers": True}
+        )
+        return model
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument | str]:
         """
@@ -161,6 +179,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument | str]: List of documents
         """
+        return [f"{self._analyzer(text)._.conll_str}\n" for text in texts]
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -169,6 +188,9 @@ class UDPipeAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
+        with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU),
+                  'w', encoding='utf-8') as f:
+            f.write(article.get_conllu_info())
 
 
 class StanzaAnalyzer(LibraryWrapper):
@@ -315,8 +337,14 @@ def main() -> None:
     """
     Entrypoint for pipeline module.
     """
-    corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
-    pipeline = TextProcessingPipeline(corpus_manager)
+    corpus_manager = CorpusManager(ASSETS_PATH)
+    stanza_analyzer = StanzaAnalyzer()
+
+    pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
+    pipeline.run()
+
+    stanza_analyzer = StanzaAnalyzer()
+    pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
     pipeline.run()
 
 
