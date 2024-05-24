@@ -16,10 +16,10 @@ except ImportError:  # pragma: no cover
     DiGraph = None  # type: ignore
     print('No libraries installed. Failed to import.')
 
-from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
-from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
 from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
                                         split_by_sentence)
+from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
+from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
 from core_utils.visualizer import visualize
@@ -75,8 +75,8 @@ class CorpusManager:
         if len(raw_files) != len(meta_files):
             raise InconsistentDatasetError
 
-        sorted_raw_files = sorted(raw_files, key=lambda x: get_article_id_from_filepath(x))
-        sorted_meta_files = sorted(meta_files, key=lambda x: get_article_id_from_filepath(x))
+        sorted_raw_files = sorted(raw_files, key=get_article_id_from_filepath)
+        sorted_meta_files = sorted(meta_files, key=get_article_id_from_filepath)
 
         for index, (raw_file, meta_file) in enumerate(zip(sorted_raw_files,
                                                           sorted_meta_files), start=1):
