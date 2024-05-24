@@ -6,6 +6,7 @@ import datetime
 import json
 import pathlib
 import re
+import shutil
 from random import randrange
 from time import sleep
 from typing import Pattern, Union
@@ -16,7 +17,7 @@ from bs4 import BeautifulSoup
 from core_utils.article.article import Article
 from core_utils.article.io import to_meta, to_raw
 from core_utils.config_dto import ConfigDTO
-from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
+from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH, NUM_ARTICLES_UPPER_LIMIT, TIMEOUT_LOWER_LIMIT, TIMEOUT_UPPER_LIMIT
 
 
 class IncorrectSeedURLError(Exception):
@@ -75,15 +76,15 @@ class Config:
         """
         self.path_to_config = path_to_config
         self._validate_config_content()
-        self.config = self._extract_config_content()
+        self._config = self._extract_config_content()
 
-        self._seed_urls = self.config.seed_urls
-        self._num_articles = self.config.total_articles
-        self._headers = self.config.headers
-        self._encoding = self.config.encoding
-        self._timeout = self.config.timeout
-        self._should_verify_certificate = self.config.should_verify_certificate
-        self._headless_mode = self.config.headless_mode
+        self._seed_urls = self._config.seed_urls
+        self._num_articles = self._config.total_articles
+        self._headers = self._config.headers
+        self._encoding = self._config.encoding
+        self._timeout = self._config.timeout
+        self._should_verify_certificate = self._config.should_verify_certificate
+        self._headless_mode = self._config.headless_mode
 
     def _extract_config_content(self) -> ConfigDTO:
         """
@@ -111,7 +112,7 @@ class Config:
         if not isinstance(num, int) or num <= 0:
             raise IncorrectNumberOfArticlesError
 
-        if num > 150:
+        if num > NUM_ARTICLES_UPPER_LIMIT:
             raise NumberOfArticlesOutOfRangeError
 
         if not isinstance(config.headers, dict):
@@ -120,7 +121,9 @@ class Config:
         if not isinstance(config.encoding, str):
             raise IncorrectEncodingError
 
-        if not isinstance(config.timeout, int) or 0 >= config.timeout or config.timeout >= 60:
+        if not isinstance(config.timeout, int) \
+                or TIMEOUT_LOWER_LIMIT >= config.timeout \
+                or config.timeout >= TIMEOUT_UPPER_LIMIT:
             raise IncorrectTimeoutError
 
         if not isinstance(config.should_verify_certificate, bool):
@@ -228,7 +231,7 @@ class Crawler:
         Args:
             config (Config): Configuration
         """
-        self.config = config
+        self._config = config
         self.urls = []
         self.url_pattern = 'https://myslo.ru/club/blog/zvere-moe'
 
@@ -256,9 +259,9 @@ class Crawler:
         Find articles.
         """
         urls = []
-        while len(urls) < self.config.get_num_articles():
+        while len(urls) < self._config.get_num_articles():
             for url in self.get_search_urls():
-                response = make_request(url, self.config)
+                response = make_request(url, self._config)
                 if not response.ok:
                     continue
                 article_bs = BeautifulSoup(response.text, 'lxml')
@@ -272,7 +275,7 @@ class Crawler:
         Returns:
             list: seed_urls param
         """
-        return self.config.get_seed_urls()
+        return self._config.get_seed_urls()
 
 
 class HTMLParser:
@@ -291,7 +294,7 @@ class HTMLParser:
         """
         self.full_url = full_url
         self.article_id = article_id
-        self.config = config
+        self._config = config
         self.article = Article(full_url, article_id)
 
     def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
@@ -342,11 +345,9 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
-        if 'MSK' in date_str:
-            date_str = date_str.replace('MSK', ' ')
-        if '+00:00' in date_str:
-            date_str = date_str.replace('+00:00', '')
-        return datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+        date_str = date_str[:-6].replace('T', ' ')
+        formatted_date = datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+        return formatted_date
 
     def parse(self) -> Union[Article, bool, list]:
         """
@@ -355,7 +356,7 @@ class HTMLParser:
         Returns:
             Union[Article, bool, list]: Article instance
         """
-        response = make_request(self.full_url, self.config)
+        response = make_request(self.full_url, self._config)
         if response.ok:
             article_bs = BeautifulSoup(response.text, 'lxml')
             self._fill_article_with_text(article_bs)
@@ -371,9 +372,9 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    base_path.mkdir(parents=True, exist_ok=True)
-    for file in base_path.iterdir():
-        file.unlink(missing_ok=True)
+    if base_path.exists():
+        shutil.rmtree(base_path)
+    base_path.mkdir(parents=True)
 
 
 def main() -> None:
