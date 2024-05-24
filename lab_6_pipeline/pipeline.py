@@ -12,21 +12,13 @@ except ImportError:  # pragma: no cover
     DiGraph = None  # type: ignore
     print('No libraries installed. Failed to import.')
 
-from core_utils.article.article import Article
-from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
-                                 PipelineProtocol, StanzaDocument, TreeNode)
 
-import stanza
 from networkx import DiGraph
-from stanza.utils.conll import CoNLL
-
-from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
-                                        split_by_sentence)
-from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
+from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,)
+from core_utils.article.io import from_raw, to_cleaned
 from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
-from core_utils.visualizer import visualize
 
 
 class InconsistentDatasetError(Exception):
@@ -64,23 +56,26 @@ class CorpusManager:
         Validate folder with assets.
         """
         if not self.path_to_raw_txt_data.exists():
-            raise FileNotFoundError  # file doesn't exist
+            raise FileNotFoundError  # built-in
 
         if not self.path_to_raw_txt_data.is_dir():
-            raise NotADirectoryError  # path does not lead to directory
+            raise NotADirectoryError  # built-in
 
-        files_in_dir = list(self.path_to_raw_txt_data.glob("*"))
-        if not files_in_dir:
-            raise EmptyDirectoryError   # directory is empty
+        if not any(self.path_to_raw_txt_data.iterdir()):
+            raise EmptyDirectoryError
 
-        raw_files = [file for file in files_in_dir if file.name.endswith('_raw.txt')]
-        meta_files = [file for file in files_in_dir if file.name.endswith("_meta.json")]
-
-        if len(meta_files) != len(raw_files):
+        metas = list(self.path_to_raw_txt_data.glob('*_meta.json'))
+        raws = list(self.path_to_raw_txt_data.glob('*_raw.txt'))
+        if len(metas) != len(raws):
             raise InconsistentDatasetError
 
-        for meta_file, raw_file in zip(meta_files, raw_files):
-            if meta_file.stat().st_size == 0 or raw_file.stat().st_size == 0:
+        metas.sort(key=lambda x: int(get_article_id_from_filepath(x)))
+        raws.sort(key=lambda x: int(get_article_id_from_filepath(x)))
+
+        for index, (meta, raw) in enumerate(zip(metas, raws)):
+            if index + 1 != get_article_id_from_filepath(meta) \
+                    or index + 1 != get_article_id_from_filepath(raw) \
+                    or meta.stat().st_size == 0 or raw.stat().st_size == 0:
                 raise InconsistentDatasetError
 
     def _scan_dataset(self) -> None:
