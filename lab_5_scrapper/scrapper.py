@@ -217,10 +217,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-    headers = config.get_headers()
-    timeout = config.get_timeout()
-    verify = config.get_verify_certificate()
-    response = requests.get(url, headers=headers, timeout=timeout, verify=verify)
+    response = requests.get(url, headers=config.get_headers(), timeout=config.get_timeout(), verify=config.get_verify_certificate())
     response.encoding = config.get_encoding()
     return response
 
