@@ -17,6 +17,12 @@ from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, Library
                                  PipelineProtocol, StanzaDocument, TreeNode)
 
 
+class InconsistentDatasetError(Exception):
+    """
+    Dataset contains IDs slips of raw files or files are empty or number of files is uneven
+    """
+
+
 class EmptyDirectoryError(Exception):
     """
     Directory is empty
@@ -26,12 +32,6 @@ class EmptyDirectoryError(Exception):
 class EmptyFileError(Exception):
     """
     File is empty
-    """
-
-
-class InconsistentDatasetError(Exception):
-    """
-    Dataset contains IDs slips of raw files or files are empty or number of files is uneven
     """
 
 
@@ -68,12 +68,12 @@ class CorpusManager:
             raise InconsistentDatasetError
 
         sorted_raw = sorted(raw_files, key=lambda x: get_article_id_from_filepath(x))
-        sorted_meta = sorted(raw_files, key=lambda x: get_article_id_from_filepath(x))
+        sorted_meta = sorted(meta_files, key=lambda x: get_article_id_from_filepath(x))
 
-        for index, (meta, raw) in enumerate(zip(sorted_raw, sorted_meta), start=1):
+        for index, (raw, meta) in enumerate(zip(sorted_raw, sorted_meta), start=1):
             if index != get_article_id_from_filepath(meta) or \
-               index != get_article_id_from_filepath(raw) or \
-               not meta.stat().st_size or not raw.stat().st_size:
+                    index != get_article_id_from_filepath(raw) or \
+                    not raw.stat().st_size or not meta.stat().st_size:
                 raise InconsistentDatasetError
 
         if not any(self.path_to_raw_txt_data.iterdir()):
