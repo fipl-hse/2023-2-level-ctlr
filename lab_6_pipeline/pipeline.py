@@ -127,13 +127,12 @@ class TextProcessingPipeline(PipelineProtocol):
         Perform basic preprocessing and write processed text to files.
         """
         articles = self._corpus_manager.get_articles().values()
-        for article in articles:
+        texts = [article.text for article in articles]
+        texts_analyzed = self._analyzer.analyze(texts)
+        for article, analyzed_text in zip(articles, texts_analyzed):
             to_cleaned(article)
-            if self._analyzer:
-                texts = [article.text for article in self._corpus_manager.get_articles().values()]
-                text_analyze = self._analyzer.analyze(texts)
-                article.set_conllu_info(text_analyze)
-                self._analyzer.to_conllu(article)
+            article.set_conllu_info(analyzed_text)
+            self._analyzer.to_conllu(article)
 
 class UDPipeAnalyzer(LibraryWrapper):
     """
@@ -280,6 +279,16 @@ class POSFrequencyPipeline:
         """
         Visualize the frequencies of each part of speech.
         """
+        for article_id, article in self._corpus_manager.get_articles().items():
+            if not article.get_file_path(kind=ArtifactType.STANZA_CONLLU).stat().st_size == 0:
+                raise EmptyFileError
+            from_meta(article.get_meta_file_path(), article)
+            article.set_pos_info(self._count_frequencies(article))
+            to_meta(article)
+            visualize(article=article,
+                      path_to_save=self._corpus_manager.path_to_raw_txt_data /
+                                   f'{article_id}_image.png')
+
 
     def _count_frequencies(self, article: Article) -> dict[str, int]:
         """
@@ -291,6 +300,14 @@ class POSFrequencyPipeline:
         Returns:
             dict[str, int]: POS frequencies
         """
+        frequencies = {}
+        for conllu_sentence in self._analyzer.from_conllu(article).sentences:
+            for word in conllu_sentence.words:
+                word_feature = word.to_dict()['upos']
+                if word_feature not in frequencies:
+                    frequencies[word_feature] = frequencies.get(word_feature, 0)
+                frequencies[word_feature] += 1
+        return frequencies
 
 
 class PatternSearchPipeline(PipelineProtocol):
@@ -359,6 +376,13 @@ def main() -> None:
     udpipe_analyzer = UDPipeAnalyzer()
     pipeline = TextProcessingPipeline(corpus_manager, udpipe_analyzer)
     pipeline.run()
+
+    stanza_analyzer = StanzaAnalyzer()
+    pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
+    pipeline.run()
+
+    visualizer = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
+    visualizer.run()
 
 
 if __name__ == "__main__":
