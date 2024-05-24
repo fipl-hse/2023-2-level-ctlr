@@ -87,15 +87,11 @@ class CorpusManager:
         """
         Register each dataset entry.
         """
-        self._storage = {
-            get_article_id_from_filepath(file):
-                from_raw(
-                    path=file,
-                    article=Article(url=None,
-                                    article_id=get_article_id_from_filepath(file))
-                )
-            for file in self.path_to_raw_txt_data.glob('*_raw.txt')
-        }
+        self._storage = {}
+        for file in self.path_to_raw_txt_data.glob('*_raw.txt'):
+            article_id = get_article_id_from_filepath(file)
+            article = from_raw(path=file, article=Article(url=None, article_id=article_id))
+            self._storage[article_id] = article
 
     def get_articles(self) -> dict:
         """
@@ -162,11 +158,8 @@ class UDPipeAnalyzer(LibraryWrapper):
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
         model = spacy_udpipe.load_from_path(lang="ru", path=str(UDPIPE_MODEL_PATH))
-        model.add_pipe(
-            "conll_formatter",
-            last=True,
-            config={"conversion_maps": {"XPOS": {"": "_"}}, "include_headers": True}
-        )
+        model.add_pipe("conll_formatter", last=True,
+                       config={"conversion_maps": {"XPOS": {"": "_"}}, "include_headers": True})
         return model
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument | str]:
@@ -179,7 +172,11 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument | str]: List of documents
         """
-        return [f"{self._analyzer(text)._.conll_str}\n" for text in texts]
+        result = []
+        for text in texts:
+            result.append(f"{self._analyzer(text)._.conll_str}\n")
+
+        return result
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -337,14 +334,9 @@ def main() -> None:
     """
     Entrypoint for pipeline module.
     """
-    corpus_manager = CorpusManager(ASSETS_PATH)
-    stanza_analyzer = StanzaAnalyzer()
+    corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
 
-    pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
-    pipeline.run()
-
-    stanza_analyzer = StanzaAnalyzer()
-    pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
+    pipeline = TextProcessingPipeline(corpus_manager, UDPipeAnalyzer())
     pipeline.run()
 
 
