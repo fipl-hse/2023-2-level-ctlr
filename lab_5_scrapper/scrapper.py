@@ -130,7 +130,7 @@ class Config:
         if not isinstance(config.encoding, str):
             raise IncorrectEncodingError
 
-        if not isinstance(config.timeout, int) or not (0 <= config.timeout < 60):
+        if not isinstance(config.timeout, int) or not 0 <= config.timeout < 60:
             raise IncorrectTimeoutError
 
         if not isinstance(config.should_verify_certificate, bool):
