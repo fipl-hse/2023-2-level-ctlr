@@ -15,7 +15,8 @@ import stanza
 from stanza.models.common.doc import Document
 from stanza.pipeline.core import Pipeline
 from stanza.utils.conll import CoNLL
-from core_utils.article.io import from_raw, to_cleaned
+from core_utils.visualizer import visualize
+from core_utils.article.io import from_raw, to_cleaned, to_meta, from_meta
 from core_utils.constants import UDPIPE_MODEL_PATH, ASSETS_PATH
 from core_utils.article.article import Article, ArtifactType, get_article_id_from_filepath
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
@@ -272,11 +273,27 @@ class POSFrequencyPipeline:
             corpus_manager (CorpusManager): CorpusManager instance
             analyzer (LibraryWrapper): Analyzer instance
         """
+        self.corpus_manager = corpus_manager
+        self.analyzer = analyzer
 
     def run(self) -> None:
         """
         Visualize the frequencies of each part of speech.
         """
+        articles = self.corpus_manager.get_articles()
+
+        for index, article in articles.items():
+            if (article.get_file_path(kind=ArtifactType.STANZA_CONLLU)
+                    .stat().st_size == 0):
+                raise EmptyFileError
+
+            article = from_meta(article.get_meta_file_path(), article)
+            pos_dict = self._count_frequencies(article)
+            article.set_pos_info(pos_dict)
+            to_meta(article)
+
+            visualize(article, self.corpus_manager.path_to_raw_txt_data / f'{index}_image.png')
+
 
     def _count_frequencies(self, article: Article) -> dict[str, int]:
         """
@@ -288,7 +305,10 @@ class POSFrequencyPipeline:
         Returns:
             dict[str, int]: POS frequencies
         """
-
+        pos_dict = {}
+        for pos_tag in self.analyzer.from_conllu(article).get('upos'):
+            pos_dict[pos_tag] = pos_dict.get(pos_tag, 0) + 1
+        return pos_dict
 
 class PatternSearchPipeline(PipelineProtocol):
     """
@@ -357,10 +377,12 @@ def main() -> None:
     pipeline = TextProcessingPipeline(corpus_manager, analyzer)
     pipeline.run()
 
-    corpus_manager = CorpusManager(ASSETS_PATH)
     stanza_analyzer = StanzaAnalyzer()
     pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
     pipeline.run()
+
+    visualizer = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
+    visualizer.run()
 
 
 if __name__ == "__main__":
