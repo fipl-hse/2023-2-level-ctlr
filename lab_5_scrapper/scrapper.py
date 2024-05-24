@@ -5,6 +5,9 @@ Crawler implementation.
 import datetime
 import json
 import pathlib
+import random
+
+from time import sleep
 from typing import Pattern, Union
 import shutil
 
@@ -147,7 +150,14 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
+    sleep(random.randrange(3))
 
+    return requests.get(
+        url=url,
+        timeout=config.get_timeout(),
+        headers=config.get_headers(),
+        verify=config.get_verify_certificate()
+    )
 
 class Crawler:
     """
@@ -239,7 +249,7 @@ class HTMLParser:
         Parse each article.
 
         Returns:
-            Union[Article, bool, list]: Article instance22
+            Union[Article, bool, list]: Article instance
         """
 
 
