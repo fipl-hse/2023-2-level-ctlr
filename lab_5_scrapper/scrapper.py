@@ -253,28 +253,34 @@ class Crawler:
         url = " "
         links = article_bs.find_all("a", class_="announce-inline-tile")
         for link in links:
-            url = link["href"]
-            if url not in self.urls:
+            url = self.url_pattern + link['href']
+            if url in self.get_search_urls():
+                continue
+            if url and url not in self.urls:
                 break
-        url = self.url_pattern + url
         return url
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
-        urls = []
-        while len(urls) < self.config.get_num_articles():
-            for url in self.get_search_urls():
-                response = make_request(url, self.config)
+        seed_urls = self.get_search_urls()
 
-                if not response.ok:
-                    continue
+        for seed_url in seed_urls:
+            response = make_request(seed_url, self.config)
+            if not response.ok:
+                continue
 
-                soup = BeautifulSoup(response.text, 'lxml')
-                urls.append(self._extract_url(soup))
+            article_soup = BeautifulSoup(response.text, features='lxml')
+            new_url = self._extract_url(article_soup)
+            while new_url:
+                if len(self.urls) == self.config.get_num_articles():
+                    break
+                self.urls.append(new_url)
+                new_url = self._extract_url(article_soup)
 
-        self.urls.extend(urls)
+            if len(self.urls) == self.config.get_num_articles():
+                break
 
     def get_search_urls(self) -> list:
         """
