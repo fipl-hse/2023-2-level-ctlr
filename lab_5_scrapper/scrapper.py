@@ -173,6 +173,9 @@ class Crawler:
         Args:
             config (Config): Configuration
         """
+        self.config = config
+        self.urls = []
+        self.url_pattern = 'https://antropogenez.ru/news/'
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -184,6 +187,13 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
+        url = ''
+        list_of_links = article_bs.find_all('a', attrs={'class': 'figcaption promo-link'})
+        for link in list_of_links:
+            url = str(self.url_pattern + link.get('href'))
+            if url not in self.urls:
+                break
+        return url
 
     def find_articles(self) -> None:
         """
