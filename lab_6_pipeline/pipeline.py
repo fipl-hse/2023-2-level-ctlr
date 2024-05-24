@@ -79,8 +79,8 @@ class CorpusManager:
         Register each dataset entry.
         """
         for file in list(self.path_to_raw_txt_data.glob("*_raw.txt")):
-            i = get_article_id_from_filepath(file)
-            self._storage[i] = from_raw(file, Article(None, i))
+            article_id = get_article_id_from_filepath(file)
+            self._storage[article_id] = from_raw(file, Article(None, i))
 
     def get_articles(self) -> dict:
         """
@@ -108,20 +108,20 @@ class TextProcessingPipeline(PipelineProtocol):
             analyzer (LibraryWrapper | None): Analyzer instance
         """
         self._corpus = corpus_manager
-        self.analyzer = analyzer
+        self._analyzer = analyzer
 
     def run(self) -> None:
         """
         Perform basic preprocessing and write processed text to files.
         """
         files = [article.text for article in self._corpus.get_articles().values()]
-        if self.analyzer:
-            files = self.analyzer.analyze(files)
+        if self._analyzer:
+            files = self._analyzer.analyze(files)
         for i, article in enumerate(self._corpus.get_articles().values()):
             to_cleaned(article)
-            if self.analyzer and files:
+            if self._analyzer and files:
                 article.set_conllu_info(files[i])
-                self.analyzer.to_conllu(article)
+                self._analyzer.to_conllu(article)
 
 
 class UDPipeAnalyzer(LibraryWrapper):
@@ -146,7 +146,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         """
         model = spacy_udpipe.load_from_path(
             lang="ru",
-            path=str(model_path)
+            path=str(UDPIPE_MODEL_PATH)
         )
         model.add_pipe(
             "conll_formatter",
@@ -174,7 +174,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
-        with open(article.get_file_path(ArtifactType.UDPIPE_CONLLU), 'w', encoding='utf-8') as annotation_file:
+        with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU), 'w', encoding='utf-8') as annotation_file:
             annotation_file.write(article.get_conllu_info())
             annotation_file.write("\n")
 
@@ -267,6 +267,13 @@ class POSFrequencyPipeline:
         """
         Visualize the frequencies of each part of speech.
         """
+        for article_id, article in self._corpus.get_articles().items():
+            if article.get_file_path(kind=ArtifactType.STANZA_CONLLU).stat().st_size == 0:
+                raise EmptyFileError
+            from_meta(article.get_meta_file_path(), article)
+            article.set_pos_info(self._count_frequencies(articles))
+            to_meta(article)
+            visualize(article, self._corpus.path_to_raw_txt_data / f'{article_id}_image.png')
 
     def _count_frequencies(self, article: Article) -> dict[str, int]:
         """
@@ -278,6 +285,14 @@ class POSFrequencyPipeline:
         Returns:
             dict[str, int]: POS frequencies
         """
+        frequencies = {}
+        for conllu_sent in self._analyzer.from_conllu(article).sentences:
+            for word in conllu_sent.words:
+                word_feature = word.to_dict()['upos']
+                if word_feature not in frequencies:
+                    frequencies[word_feature] = 0
+                frequencies[word_feature] += 1
+        return frequencies
 
 
 class PatternSearchPipeline(PipelineProtocol):
