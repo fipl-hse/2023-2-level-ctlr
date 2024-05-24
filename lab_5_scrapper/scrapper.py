@@ -27,9 +27,18 @@ class Config:
         Args:
             path_to_config (pathlib.Path): Path to configuration.
         """
-        self.CRAWLER_CONFIG_PATH = path_to_config
-        self.ConfigDTO = self._extract_config_content()
+
+        self.path_to_config = path_to_config
         self._validate_config_content()
+        self.config_DTO = self._extract_config_content()
+        self._seed_urls = self.config_DTO.seed_urls
+        self._total_articles = self.config_DTO.total_articles
+        self._headers = self.config_DTO.headers
+        self._encoding = self.config_DTO.encoding
+        self._timeout = self.config_DTO.timeout
+        self._should_verify_certificate = self.config_DTO.should_verify_certificate
+        self._headless_mode = self.config_DTO.headless_mode
+
         prepare_environment(ASSETS_PATH)
 
 
@@ -40,9 +49,8 @@ class Config:
         Returns:
             ConfigDTO: Config values
         """
-        config = json.load(self.CRAWLER_CONFIG_PATH.open())
-        config_DTO = ConfigDTO(**config)
-        return config_DTO
+        config = json.load(self.path_to_config.open())
+        return ConfigDTO(**config)
 
     def _validate_config_content(self) -> None:
         """
@@ -80,7 +88,7 @@ class Config:
         Returns:
             int: Total number of articles to scrape
         """
-        return self.config_DTO.total_articles
+        return self._total_articles
 
     def get_headers(self) -> dict[str, str]:
         """
@@ -89,7 +97,7 @@ class Config:
         Returns:
             dict[str, str]: Headers
         """
-        return self.config_DTO.headers
+        return self._headers
 
     def get_encoding(self) -> str:
         """
@@ -98,7 +106,7 @@ class Config:
         Returns:
             str: Encoding
         """
-        return self.config_DTO.encoding
+        return self._encoding
 
     def get_timeout(self) -> int:
         """
@@ -107,7 +115,7 @@ class Config:
         Returns:
             int: Number of seconds to wait for response
         """
-        return self.config_DTO.timeout
+        return self._timeout
 
     def get_verify_certificate(self) -> bool:
         """
@@ -116,7 +124,7 @@ class Config:
         Returns:
             bool: Whether to verify certificate or not
         """
-        return self.config_DTO.should_verify_certificate
+        return self._should_verify_certificate
 
     def get_headless_mode(self) -> bool:
         """
@@ -125,10 +133,10 @@ class Config:
         Returns:
             bool: Whether to use headless mode or not
         """
-        return self.config_DTO.headless_mode
+        return self._headless_mode
 
 
-#def make_request(url: str, config: Config) -> requests.models.Response:
+def make_request(url: str, config: Config) -> requests.models.Response:
     """
     Deliver a response from a request with given configuration.
 
@@ -156,7 +164,7 @@ class Crawler:
             config (Config): Configuration
         """
 
-    #def _extract_url(self, article_bs: BeautifulSoup) -> str:
+    def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
         Find and retrieve url from HTML.
 
@@ -184,7 +192,7 @@ class Crawler:
 # 4, 6, 8, 10
 
 
-#class HTMLParser:
+class HTMLParser:
     """
     HTMLParser implementation.
     """
@@ -199,7 +207,7 @@ class Crawler:
             config (Config): Configuration
         """
 
-    #def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
+    def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
         """
         Find text of article.
 
@@ -207,7 +215,7 @@ class Crawler:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
 
-    #def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
+    def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
         Find meta information of article.
 
@@ -226,7 +234,7 @@ class Crawler:
             datetime.datetime: Datetime object
         """
 
-    #def parse(self) -> Union[Article, bool, list]:
+    def parse(self) -> Union[Article, bool, list]:
         """
         Parse each article.
 
