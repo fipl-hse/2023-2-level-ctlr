@@ -3,7 +3,10 @@ Pipeline for CONLL-U formatting.
 """
 # pylint: disable=too-few-public-methods, unused-import, undefined-variable, too-many-nested-blocks
 import pathlib
-from core_utils.article.article import Article, get_article_id_from_filepath
+
+import spacy_udpipe
+
+from core_utils.article.article import Article, get_article_id_from_filepath, ArtifactType
 from core_utils.article import io
 from core_utils.article.io import to_cleaned
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
@@ -156,6 +159,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         """
         Initialize an instance of the UDPipeAnalyzer class.
         """
+        self._analyzer = self._bootstrap()
 
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
@@ -164,6 +168,18 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
+
+        model = spacy_udpipe.load_from_path(
+            lang="ru",
+            path=str(constants.UDPIPE_MODEL_PATH)
+        )
+
+        model.add_pipe(
+            factory_name="conll_formatter",
+            last=True,
+            config={"conversion_maps": {"XPOS": {"": "_"}}, "include_headers": True},
+        )
+        return model
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument | str]:
         """
@@ -175,6 +191,12 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument | str]: List of documents
         """
+        annotated_texts = []
+        for text in texts:
+            analyzed_text = self._analyzer(text)
+            conllu_annotation = analyzed_text._.conll_str
+            annotated_texts.append(str(conllu_annotation))
+        return annotated_texts
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -183,6 +205,10 @@ class UDPipeAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
+        with open(file=article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU), mode='w',
+                  encoding='utf-8') as annotation_file:
+            annotation_file.write(article.get_conllu_info())
+            annotation_file.write("\n")
 
 
 class StanzaAnalyzer(LibraryWrapper):
