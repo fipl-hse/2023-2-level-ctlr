@@ -259,7 +259,7 @@ class StanzaAnalyzer(LibraryWrapper):
 
 class POSFrequencyPipeline:
     """
-    Count frequencies of each POS in a rticles, update meta info and produce graphic report.
+    Count frequencies of each POS in articles, update meta info and produce graphic report.
     """
 
     def __init__(self, corpus_manager: CorpusManager, analyzer: LibraryWrapper) -> None:
