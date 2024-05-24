@@ -164,6 +164,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
+        self._analyzer = self._bootstrap()
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument | str]:
         """
