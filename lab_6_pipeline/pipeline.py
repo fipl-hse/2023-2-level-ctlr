@@ -82,7 +82,7 @@ class CorpusManager:
                                                           sorted_meta_files), start=1):
             if (index != get_article_id_from_filepath(raw_file)
                     or index != get_article_id_from_filepath(meta_file)
-                    or raw_file.stat().st_size == 0 or meta_file.stat().st_size == 0):
+                    or not raw_file.stat().st_size or not meta_file.stat().st_size):
                 raise InconsistentDatasetError
 
     def _scan_dataset(self) -> None:
@@ -183,7 +183,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         """
         with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU), 'w',
                   encoding='utf-8') as annotation_file:
-            annotation_file.writelines(article.get_conllu_info())
+            annotation_file.write(article.get_conllu_info())
             annotation_file.write("\n")
 
 
@@ -275,7 +275,7 @@ class POSFrequencyPipeline:
         Visualize the frequencies of each part of speech.
         """
         for article_id, article in self._corpus_manager.get_articles().items():
-            if not article.get_file_path(kind=ArtifactType.STANZA_CONLLU).stat().st_size == 0:
+            if not article.get_file_path(kind=ArtifactType.STANZA_CONLLU).stat().st_size:
                 raise EmptyFileError
             from_meta(article.get_meta_file_path(), article)
             article.set_pos_info(self._count_frequencies(article))
@@ -300,10 +300,9 @@ class POSFrequencyPipeline:
             for word in conllu_sentence.words:
                 word_feature = word.to_dict()['upos']
                 if word_feature not in frequencies:
-                    frequencies[word_feature] = frequencies.get(word_feature, 0)
+                    frequencies[word_feature] = 0
                 frequencies[word_feature] += 1
         return frequencies
-
 
 class PatternSearchPipeline(PipelineProtocol):
     """
