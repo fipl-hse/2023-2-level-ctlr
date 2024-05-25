@@ -4,11 +4,14 @@ Crawler implementation.
 import datetime
 import json
 from core_utils.config_dto import ConfigDTO
+from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 from core_utils.article.article import Article
+from core_utils.article.io import to_meta, to_raw
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
 import pathlib
 from bs4 import BeautifulSoup
 from random import randrange
+import shutil
 import time
 from typing import Pattern, Union
 import requests
@@ -71,6 +74,7 @@ class Config:
         self.path_to_config = path_to_config
         self._validate_config_content()
         self.config = self._extract_config_content()
+
 
     def _extract_config_content(self) -> ConfigDTO:
         """
@@ -222,8 +226,9 @@ class Crawler:
         """
         Find articles.
         """
+
         for url in self.get_search_urls():
-            response = requests.get(url, self.config)
+            response = make_request(url, self.config)
             bs = BeautifulSoup(response.text, 'lxml')
             for tag in bs.find_all('h3'):
                 if self._extract_url(tag) not in self.urls:
@@ -286,7 +291,7 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         self.article.title = article_soup.find(class_="tdb-title-text").text
-        self.article.topics = article_soup.find(class_="tdb-entry-category").text
+        self.article.topics = article_soup.find_all(class_="tdb-entry-crumb")[1].text
         self.article.author = article_soup.find(class_="tdb-author-name").text
         self.article.date = self.unify_date_format(article_soup.find("time").text)
 
@@ -310,7 +315,7 @@ class HTMLParser:
         Returns:
             Union[Article, bool, list]: Article instance
         """
-        response = requests.get(self.full_url, self.config)
+        response = make_request(self.full_url, self.config)
         article_bs = BeautifulSoup(response.text, 'lxml')
         self._fill_article_with_text(article_bs)
         self._fill_article_with_meta_information(article_bs)
@@ -324,12 +329,25 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
+    if base_path.exists():
+        shutil.rmtree(base_path)
+    base_path.mkdir(parents=True)
 
 
 def main() -> None:
     """
     Entrypoint for scrapper module.
     """
+    config = Config(path_to_config=CRAWLER_CONFIG_PATH)
+    prepare_environment(ASSETS_PATH)
+    crawler = Crawler(config)
+    crawler.find_articles()
+    for i, url in enumerate(crawler.urls):
+        parser = HTMLParser(url, i+1, config)
+        article = parser.parse()
+        if isinstance(article, Article):
+            to_raw(article)
+            to_meta(article)
 
 
 if __name__ == "__main__":
