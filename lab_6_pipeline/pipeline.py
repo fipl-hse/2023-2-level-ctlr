@@ -13,7 +13,7 @@ from stanza.utils.conll import CoNLL
 from core_utils import constants
 from core_utils.article import io
 from core_utils.article.article import Article, ArtifactType, get_article_id_from_filepath
-from core_utils.article.io import from_meta, to_meta, from_raw, to_cleaned
+from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
 from core_utils.constants import ASSETS_PATH
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
@@ -125,19 +125,23 @@ class TextProcessingPipeline(PipelineProtocol):
             analyzer (LibraryWrapper | None): Analyzer instance
         """
         self._corpus = corpus_manager
-        self._analyzer = analyzer
+        self.analyzer = analyzer
 
     def run(self) -> None:
         """
         Perform basic preprocessing and write processed text to files.
         """
+        documents = []
         articles = self._corpus.get_articles()
-        texts = [article.text for article in articles.values()]
-        texts_analyzed = self._analyzer.analyze(texts)
-        for article, analyzed_text in zip(articles.values(), texts_analyzed):
+        if self.analyzer:
+            documents = self.analyzer.analyze([article.text for article
+                                               in articles.values()])
+
+        for num, article in enumerate(articles.values()):
             to_cleaned(article)
-            article.set_conllu_info(analyzed_text)
-            self._analyzer.to_conllu(article)
+            if self.analyzer and documents:
+                article.set_conllu_info(documents[num])
+                self.analyzer.to_conllu(article)
 
 
 class UDPipeAnalyzer(LibraryWrapper):
