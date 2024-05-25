@@ -16,6 +16,7 @@ from core_utils.article.article import Article, ArtifactType, get_article_id_fro
 from core_utils.article.io import to_cleaned
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
+from core_utils.visualizer import visualize
 
 try:
     from networkx import DiGraph
@@ -141,11 +142,12 @@ class TextProcessingPipeline(PipelineProtocol):
         Perform basic preprocessing and write processed text to files.
         """
         documents = []
+        articles = self._corpus.get_articles()
         if self.analyzer:
             documents = self.analyzer.analyze([article.text for article
-                                               in self._corpus.get_articles().values()])
+                                               in articles.values()])
 
-        for num, article in enumerate(self._corpus.get_articles().values()):
+        for num, article in enumerate(articles.values()):
             to_cleaned(article)
             if self.analyzer and documents:
                 article.set_conllu_info(documents[num])
@@ -300,11 +302,25 @@ class POSFrequencyPipeline:
             corpus_manager (CorpusManager): CorpusManager instance
             analyzer (LibraryWrapper): Analyzer instance
         """
+        self._corpus_manager = corpus_manager
+        self._analyzer = analyzer
 
     def run(self) -> None:
         """
         Visualize the frequencies of each part of speech.
         """
+        articles = self._corpus_manager.get_articles()
+
+        for i, article in articles.items():
+            if article.get_file_path(kind=ArtifactType.STANZA_CONLLU).stat().st_size == 0:
+                raise EmptyFileError
+
+            io.from_meta(article.get_meta_file_path(), article)
+            article.set_pos_info(self._count_frequencies(article))
+            io.to_meta(article)
+
+            visualize(article=article,
+                      path_to_save=self._corpus_manager.path_to_raw_txt_data / f'{i}_image.png')
 
     def _count_frequencies(self, article: Article) -> dict[str, int]:
         """
@@ -316,6 +332,15 @@ class POSFrequencyPipeline:
         Returns:
             dict[str, int]: POS frequencies
         """
+        pos_freq = {}
+
+        for conllu_sent in self._analyzer.from_conllu(article=article).sentences:
+            word_features = [word.to_dict().get('upos') for word in conllu_sent.words]
+
+            for word in set(word_features):
+                pos_freq[word] = pos_freq.get(word, 0) + word_features.count(word)
+
+        return pos_freq
 
 
 class PatternSearchPipeline(PipelineProtocol):
