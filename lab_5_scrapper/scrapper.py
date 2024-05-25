@@ -74,6 +74,13 @@ class Config:
         self.path_to_config = path_to_config
         self._validate_config_content()
         self.config = self._extract_config_content()
+        self._seed_urls = self.config.seed_urls
+        self._num_articles = self.config.total_articles
+        self._headers = self.config.headers
+        self._encoding = self.config.encoding
+        self._timeout = self.config.timeout
+        self._should_verify_certificate = self.config.should_verify_certificate
+        self._headless_mode = self.config.headless_mode
 
 
     def _extract_config_content(self) -> ConfigDTO:
@@ -103,7 +110,7 @@ class Config:
             raise IncorrectSeedURLError
         if config.total_articles > 150:
             raise NumberOfArticlesOutOfRangeError
-        if not isinstance(config.total_articles, int) or config.total_articles < 1:
+        if not isinstance(config.total_articles, int) or config.total_articles <= 0:
             raise IncorrectNumberOfArticlesError
         if not isinstance(config.headers, dict):
             raise IncorrectHeadersError
