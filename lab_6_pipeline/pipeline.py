@@ -362,6 +362,13 @@ def main() -> None:
     pipeline = TextProcessingPipeline(corpus_manager, UDPipeAnalyzer())
     pipeline.run()
 
+    stanza_analyzer = StanzaAnalyzer()
+    pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
+    pipeline.run()
+
+    visualizer_pos = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
+    visualizer_pos.run()
+
 
 if __name__ == "__main__":
     main()
