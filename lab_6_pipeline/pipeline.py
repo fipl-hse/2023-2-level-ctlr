@@ -6,13 +6,13 @@ import pathlib
 
 import spacy_udpipe
 import stanza
-from networkx import DiGraph
+from networkx.classes.digraph import DiGraph
 from stanza.models.common.doc import Document
 from stanza.pipeline.core import Pipeline
 from stanza.utils.conll import CoNLL
 
-from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath)
-from core_utils.article.io import  from_meta, from_raw, to_cleaned, to_meta
+from core_utils.article.article import Article, ArtifactType, get_article_id_from_filepath
+from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
 from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
@@ -75,19 +75,19 @@ class CorpusManager:
             if int(path.stem.split('_')[0]) > len(meta_files):
                 raise InconsistentDatasetError
 
-        for file in self.path_to_raw_txt_data.iterdir():
+        for file in (meta_files + raw_files):
             if file.is_file() and file.stat().st_size == 0:
                 raise InconsistentDatasetError
-
-        return None
 
     def _scan_dataset(self) -> None:
         """
         Register each dataset entry.
         """
-        self._storage = {get_article_id_from_filepath(path):
-                        from_raw(path, Article(url=None, article_id=get_article_id_from_filepath(path)))
-                        for path in list(self.path_to_raw_txt_data.glob('*raw.txt'))}
+        self._storage = {
+            get_article_id_from_filepath(path):
+            from_raw(path, Article(url=None, article_id=get_article_id_from_filepath(path)))
+            for path in list(self.path_to_raw_txt_data.glob('*raw.txt'))
+            }
 
     def get_articles(self) -> dict:
         """
@@ -173,9 +173,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument | str]: List of documents
         """
-        docs = [self._analyzer(text)._.conll_str for text in texts]
-
-        return docs
+        return [self._analyzer(text)._.conll_str for text in texts]
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -184,7 +182,8 @@ class UDPipeAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
-        with open(article.get_file_path(ArtifactType.UDPIPE_CONLLU), 'w', encoding='utf-8') as annotation_file:
+        with open(article.get_file_path(ArtifactType.UDPIPE_CONLLU),
+                  'w', encoding='utf-8') as annotation_file:
             annotation_file.writelines(article.get_conllu_info())
             annotation_file.write("\n")
 
