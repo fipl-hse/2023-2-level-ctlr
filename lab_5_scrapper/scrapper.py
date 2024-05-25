@@ -97,6 +97,8 @@ class Config:
         Ensure configuration parameters are not corrupt.
         """
         config = self._extract_config_content()
+        if not isinstance(config.seed_urls, list):
+            raise IncorrectSeedURLError("seed URL should be a list")
         if not all(seed.startswith('https://2051.vision/') for seed in config.seed_urls):
             raise IncorrectSeedURLError
         if config.total_articles < 1 or config.total_articles > 150:
