@@ -120,9 +120,28 @@ class TextProcessingPipeline(PipelineProtocol):
         """
         Perform basic preprocessing and write processed text to files.
         """
+        # articles = self._corpus.get_articles().values()
+        # conllu = []
+        # for article in articles:
+        #     if self.analyzer:
+        #         conllu = self.analyzer.analyze(article.text)
+        #
+        # for index, article in enumerate(articles):
+        #     to_cleaned(article)
+        #     if self.analyzer and conllu:
+        #         article.set_conllu_info(conllu[index])
+        #         self.analyzer.to_conllu(article)
         articles = self._corpus.get_articles().values()
+        conllu = []
         for article in articles:
+            if self.analyzer:
+                conllu = self.analyzer.analyze(article.text)
+
+        for index, article in enumerate(articles):
             to_cleaned(article)
+            if self.analyzer and conllu:
+                article.set_conllu_info(conllu[index])
+                self.analyzer.to_conllu(article)
 
 
 class UDPipeAnalyzer(LibraryWrapper):
@@ -329,6 +348,9 @@ def main() -> None:
     """
     Entrypoint for pipeline module.
     """
+    corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
+    pipeline = TextProcessingPipeline(corpus_manager, UDPipeAnalyzer())
+    pipeline.run()
 
 
 if __name__ == "__main__":
