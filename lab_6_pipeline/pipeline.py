@@ -67,27 +67,26 @@ class CorpusManager:
         Validate folder with assets.
         """
         if not self.path_to_raw_txt_data.exists():
-            raise FileNotFoundError
+            raise FileNotFoundError  # built-in
 
         if not self.path_to_raw_txt_data.is_dir():
-            raise NotADirectoryError
+            raise NotADirectoryError  # built-in
 
-        if not list(self.path_to_raw_txt_data.iterdir()):
+        if not any(self.path_to_raw_txt_data.iterdir()):
             raise EmptyDirectoryError
 
-        raw_files = list(self.path_to_raw_txt_data.glob('*_raw.txt'))
-        meta_files = list(self.path_to_raw_txt_data.glob('*_meta.json'))
-        if len(raw_files) != len(meta_files):
+        all_meta = list(self.path_to_raw_txt_data.glob('*_meta.json'))
+        all_raw = list(self.path_to_raw_txt_data.glob('*_raw.txt'))
+        if len(all_meta) != len(all_raw):
             raise InconsistentDatasetError
 
-        sorted_raw_files = sorted(raw_files, key=get_article_id_from_filepath)
-        sorted_meta_files = sorted(meta_files, key=get_article_id_from_filepath)
+        all_meta.sort(key=lambda x: int(get_article_id_from_filepath(x)))
+        all_raw.sort(key=lambda x: int(get_article_id_from_filepath(x)))
 
-        for index, (raw_file, meta_file) in enumerate(zip(sorted_raw_files,
-                                                          sorted_meta_files), start=1):
-            if (index != get_article_id_from_filepath(raw_file)
-                    or index != get_article_id_from_filepath(meta_file)
-                    or not raw_file.stat().st_size or not meta_file.stat().st_size):
+        for index, (meta, raw) in enumerate(zip(all_meta, all_raw)):
+            if index + 1 != get_article_id_from_filepath(meta) \
+                    or index + 1 != get_article_id_from_filepath(raw) \
+                    or meta.stat().st_size == 0 or raw.stat().st_size == 0:
                 raise InconsistentDatasetError
 
     def _scan_dataset(self) -> None:
@@ -199,7 +198,6 @@ class StanzaAnalyzer(LibraryWrapper):
         """
         Initialize an instance of the StanzaAnalyzer class.
         """
-        self._analyzer = self._bootstrap()
 
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
@@ -342,7 +340,19 @@ def main() -> None:
     """
     Entrypoint for pipeline module.
     """
+    corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
+    udpipe_analyzer = UDPipeAnalyzer()
+    pipeline = TextProcessingPipeline(corpus_manager, udpipe_analyzer)
+    pipeline.run()
 
+    stanza_analyzer = StanzaAnalyzer()
+    pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
+    pipeline.run()
+
+    visualizer = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
+    visualizer.run()
+
+    print("Finished!")
 
 
 if __name__ == "__main__":
