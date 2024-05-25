@@ -96,23 +96,24 @@ class Config:
         """
         Ensure configuration parameters are not corrupt.
         """
-        if not isinstance(self.config.seed_urls, list):
+        config = self._extract_config_content()
+        if not isinstance(config.seed_urls, list):
             raise IncorrectSeedURLError("seed URL should be a list")
-        if not all(seed.startswith('https://2051.vision/') for seed in self.config.seed_urls):
+        if not all(seed.startswith('https://2051.vision/') for seed in config.seed_urls):
             raise IncorrectSeedURLError
-        if not 0 < self.config.total_articles <= 150:
+        if not 0 < config.total_articles <= 150:
             raise NumberOfArticlesOutOfRangeError
-        if not isinstance(self.config.total_articles, int) or self.config.total_articles <= 0:
+        if not isinstance(config.total_articles, int) or config.total_articles <= 0:
             raise IncorrectNumberOfArticlesError
-        if not isinstance(self.config.headers, dict):
+        if not isinstance(config.headers, dict):
             raise IncorrectHeadersError
-        if not isinstance(self.config.encoding, str):
+        if not isinstance(config.encoding, str):
             raise IncorrectEncodingError
-        if not isinstance(self.config.timeout, int) or self.config.timeout <= 0 or self.config.timeout >= 60:
+        if not isinstance(config.timeout, int) or config.timeout <= 0 or config.timeout >= 60:
             raise IncorrectTimeoutError
-        if not isinstance(self.config.should_verify_certificate, bool):
+        if not isinstance(config.should_verify_certificate, bool):
             raise IncorrectVerifyError
-        if not isinstance(self.config.headless_mode, bool):
+        if not isinstance(config.headless_mode, bool):
             raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
