@@ -13,7 +13,7 @@ from stanza.utils.conll import CoNLL
 from core_utils import constants
 from core_utils.article import io
 from core_utils.article.article import Article, ArtifactType, get_article_id_from_filepath
-from core_utils.article.io import from_meta, to_cleaned, to_meta
+from core_utils.article.io import from_meta, to_meta, from_raw, to_cleaned
 from core_utils.constants import ASSETS_PATH
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
@@ -72,40 +72,32 @@ class CorpusManager:
         if not self.path_to_raw_txt_data.is_dir():
             raise NotADirectoryError
 
-        if not any(self.path_to_raw_txt_data.iterdir()):
+        if not list(self.path_to_raw_txt_data.iterdir()):
             raise EmptyDirectoryError
 
-        all_meta = list(self.path_to_raw_txt_data.glob(pattern='*_meta.json'))
-        all_raw = list(self.path_to_raw_txt_data.glob(pattern='*_raw.txt'))
-
-        meta_num = len(all_meta)
-        raw_num = len(all_raw)
-        if meta_num != raw_num:
+        raw_files = list(self.path_to_raw_txt_data.glob('*_raw.txt'))
+        meta_files = list(self.path_to_raw_txt_data.glob('*_meta.json'))
+        if len(raw_files) != len(meta_files):
             raise InconsistentDatasetError
 
-        all_meta.sort(key=get_article_id_from_filepath)
-        all_raw.sort(key=get_article_id_from_filepath)
+        sorted_raw_files = sorted(raw_files, key=get_article_id_from_filepath)
+        sorted_meta_files = sorted(meta_files, key=get_article_id_from_filepath)
 
-        for i, (meta, raw) in enumerate(zip(all_meta, all_raw), start=1):
-            if meta.stat().st_size == 0 or raw.stat().st_size == 0:
-                raise InconsistentDatasetError
-
-            meta_id = get_article_id_from_filepath(meta)
-            raw_id = get_article_id_from_filepath(raw)
-
-            if meta_id != i or raw_id != i:
+        for index, (raw_file, meta_file) in enumerate(zip(sorted_raw_files,
+                                                          sorted_meta_files), start=1):
+            if (index != get_article_id_from_filepath(raw_file)
+                    or index != get_article_id_from_filepath(meta_file)
+                    or not raw_file.stat().st_size or not meta_file.stat().st_size):
                 raise InconsistentDatasetError
 
     def _scan_dataset(self) -> None:
         """
         Register each dataset entry.
         """
-        all_raw = self.path_to_raw_txt_data.glob(pattern='*_raw.txt')
-
-        for file in all_raw:
-            file_id = get_article_id_from_filepath(file)
-            self._storage[file_id] = io.from_raw(path=file,
-                                                 article=Article(url=None, article_id=file_id))
+        for file in self.path_to_raw_txt_data.glob('*_raw.txt'):
+            article_id = get_article_id_from_filepath(file)
+            article_text = from_raw(path=file, article=Article(url=None, article_id=article_id))
+            self._storage[article_id] = article_text
 
     def get_articles(self) -> dict:
         """
@@ -133,23 +125,19 @@ class TextProcessingPipeline(PipelineProtocol):
             analyzer (LibraryWrapper | None): Analyzer instance
         """
         self._corpus = corpus_manager
-        self.analyzer = analyzer
+        self._analyzer = analyzer
 
     def run(self) -> None:
         """
         Perform basic preprocessing and write processed text to files.
         """
-        documents = []
-        articles = self._corpus.get_articles()
-        if self.analyzer:
-            documents = self.analyzer.analyze([article.text for article
-                                               in articles.values()])
-
-        for num, article in enumerate(articles.values()):
+        articles = self._corpus.get_articles().values()
+        texts = [article.text for article in articles]
+        texts_analyzed = self._analyzer.analyze(texts)
+        for article, analyzed_text in zip(articles, texts_analyzed):
             to_cleaned(article)
-            if self.analyzer and documents:
-                article.set_conllu_info(documents[num])
-                self.analyzer.to_conllu(article)
+            article.set_conllu_info(analyzed_text)
+            self._analyzer.to_conllu(article)
 
 
 class UDPipeAnalyzer(LibraryWrapper):
