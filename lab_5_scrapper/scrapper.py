@@ -85,7 +85,12 @@ class Config:
         """
         with open(self.path_to_config, 'r', encoding='utf-8') as file:
             config_dto = json.load(file)
-        return ConfigDTO(**config_dto)
+        return ConfigDTO(seed_urls=config_dto["seed_urls"],
+            total_articles_to_find_and_parse=config_dto["total_articles_to_find_and_parse"],
+            headers=config_dto["headers"], encoding=config_dto["encoding"],
+            timeout=config_dto["timeout"],
+            should_verify_certificate=config_dto["should_verify_certificate"],
+            headless_mode=config_dto["headless_mode"])
 
     def _validate_config_content(self) -> None:
         """
