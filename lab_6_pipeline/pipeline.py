@@ -281,7 +281,7 @@ class POSFrequencyPipeline:
             article.set_pos_info(self._count_frequencies(article))
             to_meta(article)
             visualize(article=article,
-                      path_to_save=self._corpus_manager.path_to_raw_txt_data /
+                      path_to_save=ASSETS_PATH /
                                    f'{article_id}_image.png')
 
 
