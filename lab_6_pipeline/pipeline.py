@@ -24,10 +24,6 @@ except ImportError:  # pragma: no cover
     DiGraph = None  # type: ignore
     print('No libraries installed. Failed to import.')
 
-from core_utils.article.article import Article, get_article_id_from_filepath
-from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
-                                 PipelineProtocol, StanzaDocument, TreeNode)
-
 
 class InconsistentDatasetError(Exception):
     """
@@ -86,8 +82,8 @@ class CorpusManager:
         if meta_num != raw_num:
             raise InconsistentDatasetError
 
-        all_meta.sort(key=lambda x: get_article_id_from_filepath(x))
-        all_raw.sort(key=lambda x: get_article_id_from_filepath(x))
+        all_meta.sort(key=get_article_id_from_filepath)
+        all_raw.sort(key=get_article_id_from_filepath)
 
         for i, (meta, raw) in enumerate(zip(all_meta, all_raw), start=1):
             if meta.stat().st_size == 0 or raw.stat().st_size == 0:
@@ -107,7 +103,8 @@ class CorpusManager:
 
         for file in all_raw:
             file_id = get_article_id_from_filepath(file)
-            self._storage[file_id] = io.from_raw(path=file, article=Article(url=None, article_id=file_id))
+            self._storage[file_id] = io.from_raw(path=file,
+                                                 article=Article(url=None, article_id=file_id))
 
     def get_articles(self) -> dict:
         """
@@ -200,8 +197,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         annotated_texts = []
         for text in texts:
             analyzed_text = self._analyzer(text)
-            conllu_annotation = analyzed_text._.conll_str
-            annotated_texts.append(str(conllu_annotation))
+            annotated_texts.append(str(analyzed_text._.conll_str))
         return annotated_texts
 
     def to_conllu(self, article: Article) -> None:
