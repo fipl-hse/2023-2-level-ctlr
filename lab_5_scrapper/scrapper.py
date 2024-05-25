@@ -108,10 +108,10 @@ class Config:
             raise IncorrectSeedURLError("seed URL should be a list")
         if not all(seed.startswith('https://2051.vision/') for seed in config.seed_urls):
             raise IncorrectSeedURLError
-        if config.total_articles > 150:
-            raise NumberOfArticlesOutOfRangeError
         if not isinstance(config.total_articles, int) or config.total_articles <= 0:
             raise IncorrectNumberOfArticlesError
+        if config.total_articles > 150:
+            raise NumberOfArticlesOutOfRangeError
         if not isinstance(config.headers, dict):
             raise IncorrectHeadersError
         if not isinstance(config.encoding, str):
