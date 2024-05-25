@@ -13,7 +13,7 @@ from stanza.utils.conll import CoNLL
 from core_utils import constants
 from core_utils.article import io
 from core_utils.article.article import Article, ArtifactType, get_article_id_from_filepath
-from core_utils.article.io import to_cleaned, from_meta, to_meta
+from core_utils.article.io import from_meta, to_cleaned, to_meta
 from core_utils.constants import ASSETS_PATH
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
@@ -408,7 +408,7 @@ def main() -> None:
     visualizer = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
     visualizer.run()
 
-    print("Finish!")
+    print("Finished!")
 
 
 if __name__ == "__main__":
