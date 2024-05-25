@@ -10,10 +10,11 @@ except ImportError:  # pragma: no cover
     DiGraph = None  # type: ignore
     print('No libraries installed. Failed to import.')
 
-from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath)
+import spacy_udpipe
+
+from core_utils.article.article import Article, ArtifactType, get_article_id_from_filepath
 from core_utils.article.io import from_raw, to_cleaned
 from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
-import spacy_udpipe
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
 
@@ -69,6 +70,9 @@ class CorpusManager:
         meta_files = list(self.path_to_raw_txt_data.glob("*_meta.json"))
         if len(meta_files) != len(raw_files):
             raise InconsistentDatasetError
+
+        meta_files.sort(key=lambda x: get_article_id_from_filepath(x))
+        raw_files.sort(key=lambda x: get_article_id_from_filepath(x))
 
         sorted_raw = sorted(raw_files, key=lambda x: get_article_id_from_filepath(x))
         sorted_meta = sorted(meta_files, key=lambda x: get_article_id_from_filepath(x))
