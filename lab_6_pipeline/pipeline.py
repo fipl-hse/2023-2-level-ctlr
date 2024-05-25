@@ -14,6 +14,7 @@ from core_utils import constants
 from core_utils.article import io
 from core_utils.article.article import Article, ArtifactType, get_article_id_from_filepath
 from core_utils.article.io import to_cleaned
+from core_utils.constants import ASSETS_PATH
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
 from core_utils.visualizer import visualize
@@ -194,10 +195,9 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument | str]: List of documents
         """
-        annotated_texts = []
-        for text in texts:
-            analyzed_text = self._analyzer(text)
-            annotated_texts.append(str(analyzed_text._.conll_str))
+
+        annotated_texts = self._analyzer.process([Document(sentences=[], text=text) for text in texts])
+
         return annotated_texts
 
     def to_conllu(self, article: Article) -> None:
@@ -401,6 +401,19 @@ def main() -> None:
     """
     Entrypoint for pipeline module.
     """
+    corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
+
+    pipeline = TextProcessingPipeline(corpus_manager, UDPipeAnalyzer())
+    pipeline.run()
+
+    stanza_analyzer = StanzaAnalyzer()
+    pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
+    pipeline.run()
+
+    visualizer_pos = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
+    visualizer_pos.run()
+
+    print("Finish!")
 
 
 if __name__ == "__main__":
