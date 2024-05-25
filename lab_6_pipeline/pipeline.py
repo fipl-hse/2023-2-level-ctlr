@@ -71,9 +71,6 @@ class CorpusManager:
         if len(meta_files) != len(raw_files):
             raise InconsistentDatasetError
 
-        meta_files.sort(key=lambda x: get_article_id_from_filepath(x))
-        raw_files.sort(key=lambda x: get_article_id_from_filepath(x))
-
         sorted_raw = sorted(raw_files, key=lambda x: get_article_id_from_filepath(x))
         sorted_meta = sorted(meta_files, key=lambda x: get_article_id_from_filepath(x))
 
