@@ -229,7 +229,7 @@ class StanzaAnalyzer(LibraryWrapper):
             list[StanzaDocument]: List of documents
         """
         return self._analyzer.process([Document([], text=text) for text in texts])
-    
+
     def to_conllu(self, article: Article) -> None:
         """
         Save content to ConLLU format.
