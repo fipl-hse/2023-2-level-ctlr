@@ -85,35 +85,29 @@ class Config:
         """
         with open(self.path_to_config, 'r', encoding='utf-8') as file:
             config_dto = json.load(file)
-        return ConfigDTO(seed_urls=config_dto["seed_urls"],
-            total_articles_to_find_and_parse=config_dto["total_articles_to_find_and_parse"],
-            headers=config_dto["headers"], encoding=config_dto["encoding"],
-            timeout=config_dto["timeout"],
-            should_verify_certificate=config_dto["should_verify_certificate"],
-            headless_mode=config_dto["headless_mode"])
+        return ConfigDTO(**config_dto)
 
     def _validate_config_content(self) -> None:
         """
         Ensure configuration parameters are not corrupt.
         """
-        config = self._extract_config_content()
-        if not isinstance(config.seed_urls, list):
+        if not isinstance(self.config.seed_urls, list):
             raise IncorrectSeedURLError("seed URL should be a list")
-        if not all(seed.startswith('https://2051.vision/') for seed in config.seed_urls):
+        if not all(seed.startswith('https://2051.vision/') for seed in self.config.seed_urls):
             raise IncorrectSeedURLError
-        if not 0 < config.total_articles <= 150:
+        if not 0 < self.config.total_articles <= 150:
             raise NumberOfArticlesOutOfRangeError
-        if not isinstance(config.total_articles, int) or config.total_articles <= 0:
+        if not isinstance(self.config.total_articles, int) or self.config.total_articles <= 0:
             raise IncorrectNumberOfArticlesError
-        if not isinstance(config.headers, dict):
+        if not isinstance(self.config.headers, dict):
             raise IncorrectHeadersError
-        if not isinstance(config.encoding, str):
+        if not isinstance(self.config.encoding, str):
             raise IncorrectEncodingError
-        if not isinstance(config.timeout, int) or config.timeout <= 0 or config.timeout >= 60:
+        if not isinstance(self.config.timeout, int) or self.config.timeout <= 0 or self.config.timeout >= 60:
             raise IncorrectTimeoutError
-        if not isinstance(config.should_verify_certificate, bool):
+        if not isinstance(self.config.should_verify_certificate, bool):
             raise IncorrectVerifyError
-        if not isinstance(config.headless_mode, bool):
+        if not isinstance(self.config.headless_mode, bool):
             raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
