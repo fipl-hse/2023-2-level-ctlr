@@ -363,7 +363,7 @@ def main() -> None:
     pipeline.run()
 
     stanza_analyzer = StanzaAnalyzer()
-    pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
+    pipeline  = TextProcessingPipeline(corpus_manager, stanza_analyzer)
     pipeline.run()
 
     visualizer_pos = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
