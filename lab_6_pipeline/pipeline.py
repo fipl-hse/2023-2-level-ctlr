@@ -81,7 +81,7 @@ class CorpusManager:
         """
         for file in list(self.path_to_raw_txt_data.glob("*_raw.txt")):
             article_id = get_article_id_from_filepath(file)
-            self._storage[article_id] = from_raw(file, Article(None, i))
+            self._storage[article_id] = from_raw(file, Article(None, article_id))
 
     def get_articles(self) -> dict:
         """
