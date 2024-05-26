@@ -319,10 +319,9 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        title = article_soup.find("h1", class_="h1").text
-        s1 = "".join(i for i in title if i.isalpha())
-        if s1:
-            self.article.title = s1
+        title = article_soup.find("title").text
+        if title:
+            self.article.title = title
 
         author_element = article_soup.find(class_="authorDetails")
         author = author_element.find("a")
