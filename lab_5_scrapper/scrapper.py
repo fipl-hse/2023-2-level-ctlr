@@ -262,13 +262,13 @@ class Crawler:
             if not response.ok:
                 continue
 
-            new_url = seed_url
+            article_soup = BeautifulSoup(response.text, features='lxml')
+            new_url = self._extract_url(article_soup)
             while new_url:
-                article_soup = BeautifulSoup(response.text, features='lxml')
+                if len(self.urls) == self.config.get_num_articles():
+                    break
+                self.urls.append(new_url)
                 new_url = self._extract_url(article_soup)
-
-                if new_url:
-                    self.urls.append(new_url)
 
             if len(self.urls) == self.config.get_num_articles():
                 break
