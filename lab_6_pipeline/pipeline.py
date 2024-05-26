@@ -12,7 +12,7 @@ except ImportError:  # pragma: no cover
 
 import spacy_udpipe
 
-from core_utils.article.article import Article, ArtifactType, get_article_id_from_filepath
+from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath)
 from core_utils.article.io import from_raw, to_cleaned
 from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
@@ -51,7 +51,6 @@ class CorpusManager:
         """
         self.path_to_raw_txt_data = path_to_raw_txt_data
         self._storage = {}
-
         self._validate_dataset()
         self._scan_dataset()
 
@@ -63,8 +62,6 @@ class CorpusManager:
             raise FileNotFoundError
         if not self.path_to_raw_txt_data.is_dir():
             raise NotADirectoryError
-        if not any(self.path_to_raw_txt_data.iterdir()):
-            raise EmptyDirectoryError
 
         raw_files = list(self.path_to_raw_txt_data.glob("*_raw.txt"))
         meta_files = list(self.path_to_raw_txt_data.glob("*_meta.json"))
@@ -79,6 +76,9 @@ class CorpusManager:
                     index != get_article_id_from_filepath(raw) or \
                     not raw.stat().st_size or not meta.stat().st_size:
                 raise InconsistentDatasetError
+
+        if not any(self.path_to_raw_txt_data.iterdir()):
+            raise EmptyDirectoryError
 
     def _scan_dataset(self) -> None:
         """
