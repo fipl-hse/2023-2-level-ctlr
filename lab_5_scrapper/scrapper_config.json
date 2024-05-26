@@ -1,17 +1,17 @@
 {
-    "seed_urls": ["https://www.vokrugsveta.ru/news/",
-    "https://www.vokrugsveta.ru/news/page-2/",
+    "seed_urls": ["https://www.vokrugsveta.ru/news/page-2/",
     "https://www.vokrugsveta.ru/news/page-3/",
-    "https://www.vokrugsveta.ru/news/page-4/"],
+    "https://www.vokrugsveta.ru/news/page-4/",
+    "https://www.vokrugsveta.ru/news/page-5/"],
     "headers": {
         "user-agent" : "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "cookie" : "stg_returning_visitor=Mon%2C%2015%20Apr%202024%2008:33:22%20GMT; stg_traffic_source_priority=2; stg_externalReferrer=https://yandex.ru/; _ga_KLCW8G3CY6=GS1.1.1714150562.1.0.1714150562.0.0.0; _ga=GA1.1.1387403505.1714150563; stg_last_interaction=Fri%2C%2026%20Apr%202024%2016:56:04%20GMT",
         "accept-Language" : "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
         "accept" : "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
     },
-    "total_articles_to_find_and_parse": 3,
+    "total_articles_to_find_and_parse": 27,
     "encoding": "utf-8",
-    "timeout": 3,
+    "timeout": 1,
     "should_verify_certificate": true,
     "headless_mode": true
 }
