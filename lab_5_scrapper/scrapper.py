@@ -5,6 +5,7 @@ Crawler implementation.
 import datetime
 import json
 import pathlib
+import shutil
 from typing import Pattern, Union
 
 import requests
@@ -15,6 +16,47 @@ from core_utils.article.io import to_meta, to_raw
 from core_utils.config_dto import ConfigDTO
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 
+class IncorrectSeedURLError(Exception):
+    """
+    The seed-url is not appropriate.
+    """
+
+
+class NumberOfArticlesOutOfRangeError(Exception):
+    """
+    Total number of articles is out of range from 1 to 150.
+    """
+
+
+class IncorrectNumberOfArticlesError(Exception):
+    """
+    Total number of articles to parse is not integer.
+    """
+
+
+class IncorrectHeadersError(Exception):
+    """
+    Headers are not in a form of dictionary.
+    """
+
+
+class IncorrectEncodingError(Exception):
+
+    """
+    Encoding must be specified as a string.
+    """
+
+
+class IncorrectTimeoutError(Exception):
+    """
+    Timeout value must be a positive integer less than 60.
+    """
+
+
+class IncorrectVerifyError(Exception):
+    """
+    Verify certificate value must either be True or False.
+    """
 
 class Config:
     """
@@ -31,6 +73,7 @@ class Config:
         self.CRAWLER_CONFIG_PATH = path_to_config
         self.config_DTO = self._extract_config_content()
         self._validate_config_content()
+        self._seed_urls = self.get_seed_urls()
         prepare_environment(ASSETS_PATH)
 
     def _extract_config_content(self) -> ConfigDTO:
@@ -49,20 +92,20 @@ class Config:
         """
         Ensure configuration parameters are not corrupt.
         """
-        if not all(seed.startswith('https://xn--80ady2a0c.xn--p1ai/calendar/2024/') for seed in self.config_DTO.seed_urls):
-            raise Exception('IncorrectSeedURLError')
+        if not isinstance(self.config_DTO.seed_urls, list) or not all(seed.startswith('https://xn--80ady2a0c.xn--p1ai/calendar/2024/') for seed in self.config_DTO.seed_urls):
+            raise IncorrectSeedURLError
+        if not isinstance(self.config_DTO.total_articles, int) or self.config_DTO.total_articles < 1:
+            raise IncorrectNumberOfArticlesError
         if self.config_DTO.total_articles < 1 or self.config_DTO.total_articles > 150:
-            raise Exception('NumberOfArticlesOutOfRangeError')
-        if not isinstance(self.config_DTO.total_articles, int):
-            raise Exception('IncorrectNumberOfArticlesError')
+            raise NumberOfArticlesOutOfRangeError
         if not isinstance(self.config_DTO.headers, dict):
-            raise Exception('IncorrectHeadersError')
+            raise IncorrectHeadersError
         if not isinstance(self.config_DTO.encoding, str):
-            raise Exception('IncorrectEncodingError')
-        if self.config_DTO.timeout < 1 or self.config_DTO.timeout > 60:
-            raise Exception('IncorrectTimeoutError')
+            raise IncorrectEncodingError
+        if not isinstance(self.config_DTO.timeout, int) or  self.config_DTO.timeout < 1 or self.config_DTO.timeout > 60:
+            raise IncorrectTimeoutError
         if not isinstance(self.config_DTO.headless_mode, bool):
-            raise Exception('IncorrectVerifyError')
+            raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
         """
