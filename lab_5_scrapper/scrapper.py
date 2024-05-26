@@ -330,7 +330,7 @@ class HTMLParser:
         else:
             self.article.author.append(author.get_text(strip=True))
 
-        date_str = article_soup.find(class_='authorDetails')
+        date_str = article_soup.find(class_="authorDetails")
         contents = []
         for i in date_str.find_all('meta'):
             if i.has_attr('content'):
