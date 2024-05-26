@@ -1,10 +1,20 @@
 {
     "seed_urls": [
-        "https://www.myslo.ru/club/blog/zvere-moe",
-        "https://www.myslo.ru/club/blog/zvere-moe/main/2",
-        "https://www.myslo.ru/club/blog/zvere-moe/main/3",
-        "https://www.myslo.ru/club/blog/zvere-moe/main/4",
-        "https://www.myslo.ru/club/blog/zvere-moe/main/5"
+        "https://www.myslo.ru/news",
+        "https://www.myslo.ru/news/main/fresh/2",
+        "https://www.myslo.ru/news/main/fresh/3",
+        "https://www.myslo.ru/news/main/fresh/4",
+        "https://www.myslo.ru/news/main/fresh/5",
+        "https://www.myslo.ru/news/main/fresh/6",
+        "https://www.myslo.ru/news/main/fresh/7",
+        "https://www.myslo.ru/news/main/fresh/8",
+        "https://www.myslo.ru/news/main/fresh/9",
+        "https://www.myslo.ru/news/main/fresh/10",
+        "https://www.myslo.ru/news/main/fresh/11",
+        "https://www.myslo.ru/news/main/fresh/12",
+        "https://www.myslo.ru/news/main/fresh/13",
+        "https://www.myslo.ru/news/main/fresh/14",
+        "https://www.myslo.ru/news/main/fresh/15"
     ],
     "headers": {"cookie": "stg_traffic_source_priority=4; stg_externalReferrer=https://www.google.com/; stg_last_interaction=Mon%2C%2008%20Apr%202024%2009:20:56%20GMT; stg_returning_visitor=Mon%2C%2008%20Apr%202024%2009:20:56%20GMT",
     "accept-language":"ru-RU,ru;q=0.9",

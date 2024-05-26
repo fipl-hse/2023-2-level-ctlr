@@ -234,7 +234,7 @@ class Crawler:
         """
         self._config = config
         self.urls = []
-        self.url_pattern = 'https://myslo.ru/club/blog/zvere-moe'
+        self.url_pattern = 'https://www.myslo.ru'
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -246,13 +246,14 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        url = " "
-        links = article_bs.find_all("a", class_="announce-inline-tile")
+        links = article_bs.find_all(class_="h3")
+
         for link in links:
-            url = link["href"]
+            url = self.url_pattern + str(link.find('a').get('href'))
             if url not in self.urls:
                 break
-        url = self.url_pattern + url
+        else:
+            url = ''
         return url
 
     def find_articles(self) -> None:
@@ -306,7 +307,7 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         texts = []
-        text_paragraphs = article_soup.find_all(class_='ds-block-text')
+        text_paragraphs = article_soup.find_all("p")
         for paragraph in text_paragraphs:
             texts.append(paragraph.text)
         self.article.text = ''.join(texts)
@@ -318,23 +319,30 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        title = article_soup.find(class_='article__title')
+        title = article_soup.find("h1", class_="h1")
         if title:
             self.article.title = title.text
 
-        author = article_soup.find(class_='article__author')
-        if not author:
-            self.article.author.append('NOT FOUND')
+        author_element = article_soup.find(class_="authorDetails")
+        author = author_element.find("a")
+        if author is None or author.get_text(strip=True) == '':
+            self.article.author.append("NOT FOUND")
         else:
-            self.article.author.append(author.text)
+            self.article.author.append(author.get_text(strip=True))
 
-        date_str = article_soup.find(class_='article__date')
-        if date_str:
-            self.article.date = self.unify_date_format(date_str.text)
+        date_str = article_soup.find(class_="authorDetails")
+        contents = []
+        for i in date_str.find_all('meta'):
+            if i.has_attr('content'):
+                contents.append(i['content'])
+        self.article.date = self.unify_date_format(contents[-2])
 
-        tags = article_soup.find_all(class_='article__tag')
-        for tag in tags:
-            self.article.topics.append(tag.text)
+        tags = article_soup.find(class_='block-tegs-text')
+        if not tags:
+            self.article.topics.append('NOT FOUND')
+        else:
+            for tag in tags:
+                self.article.topics.append(tag.text)
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -346,9 +354,8 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
-        date_str = date_str[:-6].replace('T', ' ')
-        formatted_date = datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
-        return formatted_date
+        date_str = date_str.replace('T', ' ')
+        return datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
 
     def parse(self) -> Union[Article, bool, list]:
         """
