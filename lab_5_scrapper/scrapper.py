@@ -217,6 +217,7 @@ class Crawler:
         Returns:
             list: seed_urls param
         """
+        return self.config.get_seed_urls()
 
 
 # 10
