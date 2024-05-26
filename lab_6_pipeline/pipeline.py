@@ -6,6 +6,7 @@ import pathlib
 
 import spacy_udpipe
 import stanza
+from networkx import DiGraph
 from stanza.models.common.doc import Document
 from stanza.pipeline.core import Pipeline
 from stanza.utils.conll import CoNLL
@@ -117,10 +118,10 @@ class TextProcessingPipeline(PipelineProtocol):
         files = [article.text for article in self._corpus.get_articles().values()]
         if self._analyzer:
             files = self._analyzer.analyze(files)
-        for i, article in enumerate(self._corpus.get_articles().values()):
+        for ind, article in enumerate(self._corpus.get_articles().values()):
             to_cleaned(article)
             if self._analyzer and files:
-                article.set_conllu_info(files[i])
+                article.set_conllu_info(files[ind])
                 self._analyzer.to_conllu(article)
 
 
