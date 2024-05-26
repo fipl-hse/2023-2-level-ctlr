@@ -313,6 +313,12 @@ class HTMLParser:
                 text = text.replace('­', '&shy;')
                 text = text.replace('&shy;', '')
                 text = text.replace(' ', '')
+                text = text.replace('—', '-')
+                text = text.replace('«', '"')
+                text = text.replace('»', '"')
+                text = text.replace('„', '"')
+                text = text.replace('“', '"')
+                text = text.replace('…', '.')
                 article += text + '\n'
         self.article.text = article_preview + article
 
