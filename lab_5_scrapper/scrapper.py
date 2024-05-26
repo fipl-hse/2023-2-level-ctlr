@@ -321,7 +321,7 @@ class HTMLParser:
         """
         title = article_soup.find("h1", class_="h1").text
         title.replace(u"\u202F", " ")
-        s1 = "".join(i for i in title if (i.isalpha() or i==" "))
+        s1 = "".join(i for i in title if (i.isalpha() or i == " "))
         if s1:
             self.article.title = s1
 
