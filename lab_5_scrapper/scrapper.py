@@ -254,6 +254,8 @@ class Crawler:
                 break
         else:
             url = ''
+
+        print(url)
         return url
 
     def find_articles(self) -> None:
@@ -269,6 +271,7 @@ class Crawler:
                 article_bs = BeautifulSoup(response.text, 'lxml')
                 urls.append(self._extract_url(article_bs))
             self.urls.extend(urls)
+        print(urls)
 
     def get_search_urls(self) -> list:
         """
@@ -306,11 +309,21 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        title = article_soup.find("h1", class_="h1").text
+        title_strip = title.replace('\xa0', ' ')
+        title_strip = title_strip.replace('«', '')
+        title_strip = title_strip.replace('»', '')
+
         texts = []
         text_paragraphs = article_soup.find_all("p")
         for paragraph in text_paragraphs:
             texts.append(paragraph.text)
-        self.article.text = ''.join(texts)
+        texts1 = ''.join(texts)
+        text_strip = texts1.replace('\xa0', ' ')
+        if title_strip:
+            self.article.text = title_strip + "\n" + text_strip
+        else:
+            self.article.text = text_strip
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -319,10 +332,12 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        title = article_soup.find("title").text
-        clean_title = ''.join(i for i in title if i.isalpha())
-        if clean_title:
-            self.article.title = clean_title
+        title = article_soup.find("h1", class_="h1").text
+        title_strip = title.replace('\xa0', ' ')
+        title_strip = title_strip.replace('«', '')
+        title_strip = title_strip.replace('»', '')
+        if title_strip:
+            self.article.title = title_strip
 
         author_element = article_soup.find(class_="authorDetails")
         author = author_element.find("a")
@@ -402,7 +417,6 @@ def main() -> None:
         if isinstance(article, Article):
             to_raw(article)
             to_meta(article)
-        print('Done')
 
 
 if __name__ == "__main__":

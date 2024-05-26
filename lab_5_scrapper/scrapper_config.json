@@ -10,7 +10,7 @@
         "https://www.myslo.ru/news/main/fresh/8",
         "https://www.myslo.ru/news/main/fresh/9",
         "https://www.myslo.ru/news/main/fresh/10",
-        "https://www.myslo.ru/news/main/fresh/16",
+        "https://www.myslo.ru/news/main/fresh/11",
         "https://www.myslo.ru/news/main/fresh/12",
         "https://www.myslo.ru/news/main/fresh/13",
         "https://www.myslo.ru/news/main/fresh/14",
@@ -20,9 +20,9 @@
     "accept-language":"ru-RU,ru;q=0.9",
     "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"},
-    "total_articles_to_find_and_parse": 5,
+    "total_articles_to_find_and_parse": 10,
     "encoding": "utf-8",
-    "timeout": 20,
+    "timeout": 10,
     "should_verify_certificate": true,
     "headless_mode": true
 }
