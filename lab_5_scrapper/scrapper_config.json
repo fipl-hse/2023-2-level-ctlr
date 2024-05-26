@@ -1,9 +1,9 @@
 {
-    "seed_urls": [],
-    "headers": {},
-    "total_articles_to_find_and_parse": 0,
-    "encoding": "",
-    "timeout": 0,
+    "seed_urls": ["https://antropogenez.ru/news/", "https://antropogenez.ru/news/browse/1/", "https://antropogenez.ru/news/browse/2/", "https://antropogenez.ru/news/browse/3/", "https://antropogenez.ru/news/browse/4/"],
+    "headers": {"cookie":  "Cookie : stg_traffic_source_priority=1; _ga_KLCW8G3CY6=GS1.1.1716763406.1.0.1716763406.0.0.0; _ga=GA1.1.2013587325.1716763406; stg_last_interaction=Sun%2C%2026%20May%202024%2022:43:36%20GMT; stg_returning_visitor=Sun%2C%2026%20May%202024%2022:43:36%20GMT", "accept-language":  "ru,en;q=0.9", "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7", "user-agent" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 YaBrowser/24.4.0.0 Safari/537.36"},
+    "total_articles_to_find_and_parse": 10,
+    "encoding": "utf-8",
+    "timeout": 4,
     "should_verify_certificate": true,
     "headless_mode": true
 }
