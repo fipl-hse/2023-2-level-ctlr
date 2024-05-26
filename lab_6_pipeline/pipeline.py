@@ -123,9 +123,8 @@ class TextProcessingPipeline(PipelineProtocol):
         """
         articles = self._corpus.get_articles().values()
         conllu = []
-        for article in articles:
-            if self.analyzer:
-                conllu = self.analyzer.analyze(article.text)
+        if self.analyzer:
+            conllu = self.analyzer.analyze([article.text for article in articles])
 
         for index, article in enumerate(articles):
             to_cleaned(article)
@@ -339,7 +338,8 @@ def main() -> None:
     Entrypoint for pipeline module.
     """
     corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
-    pipeline = TextProcessingPipeline(corpus_manager, UDPipeAnalyzer())
+    udpipe_analyzer = UDPipeAnalyzer()
+    pipeline = TextProcessingPipeline(corpus_manager, udpipe_analyzer)
     pipeline.run()
 
 
