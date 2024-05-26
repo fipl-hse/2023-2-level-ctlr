@@ -58,12 +58,11 @@ class CorpusManager:
         meta_f = list(self.path_to_raw_txt_data.glob("*_meta.json"))
         sorted_raw_files = sorted(raw_f, key=lambda file: get_article_id_from_filepath(file))
         sorted_meta_files = sorted(meta_f, key=lambda file: get_article_id_from_filepath(file))
-        for i, (raw, meta) in enumerate(zip(sorted_raw_files, sorted_meta_files)):
-            if i+1 != get_article_id_from_filepath(raw) or i+1 != get_article_id_from_filepath(meta):
+        for i, (raw, meta) in enumerate(zip(sorted_raw_files, sorted_meta_files), start=1):
+            if i != get_article_id_from_filepath(raw) or i != get_article_id_from_filepath(meta) \
+                    or not raw.stat().st_size or not meta.stat().st_size:
                 raise InconsistentDatasetError
         if len(raw_f) != len(meta_f):
-            raise InconsistentDatasetError
-        if any(file.stat().st_size == 0 for file in (raw_f + meta_f)):
             raise InconsistentDatasetError
 
     def _scan_dataset(self) -> None:
@@ -100,16 +99,17 @@ class TextProcessingPipeline(PipelineProtocol):
             analyzer (LibraryWrapper | None): Analyzer instance
         """
         self._corpus = corpus_manager
-        self.analyzer = analyzer
+        self._analyzer = analyzer
 
     def run(self) -> None:
         """
         Perform basic preprocessing and write processed text to files.
         """
-        for article in self._corpus.get_articles().values():
+        art = self._analyzer.analyze([article.text for article in self._corpus.get_articles().values()])
+        for i, article in enumerate(self._corpus.get_articles().values()):
             to_cleaned(article)
-            article.set_conllu_info(self.analyzer.analyze(split_by_sentence(article.text)))
-            self.analyzer.to_conllu(article)
+            article.set_conllu_info(art[i])
+            self._analyzer.to_conllu(article)
 
 
 class UDPipeAnalyzer(LibraryWrapper):
