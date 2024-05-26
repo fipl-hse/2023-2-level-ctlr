@@ -59,6 +59,12 @@ def simple_graph_task() -> nx.DiGraph:
         nx.DiGraph: graph as in [/images/task_1_simple_graph.png]
     """
     # YOUR CODE GOES HERE
+    simple_graph = nx.DiGraph()
+    for node in [2, 3, 4, 5]:
+        simple_graph.add_node(node)
+    for from_vertex, to_vertex in [(2, 3), (2, 4), (4, 5)]:
+        simple_graph.add_edge(from_vertex, to_vertex)
+    return simple_graph
 
 
 def family_graph_example() -> nx.DiGraph:
@@ -118,14 +124,24 @@ def family_graph_task() -> nx.DiGraph:
     Returns:
         nx.DiGraph: graph as in [/images/task_2_family_graph.png]
     """
-    # relatives = {
-    #     "Настя": {"age": 66, "hair": "blonde"},
-    #     "Дима": {"age": 70, "hair": "ginger"},
-    #     "Степа": {"age": 41, "hair": "black"},
-    #     "Вика": {"age": 40, "hair": "ginger"},
-    #     "Лида": {"age": 15, "hair": "black"},
-    # }
+    relatives = {
+        "Настя": {"age": 66, "hair": "blonde"},
+        "Дима": {"age": 70, "hair": "ginger"},
+        "Степа": {"age": 41, "hair": "black"},
+        "Вика": {"age": 40, "hair": "ginger"},
+        "Лида": {"age": 15, "hair": "black"},
+    }
     # YOUR CODE GOES HERE
+    family_graph = nx.DiGraph()
+    for name, features in relatives.items():
+        family_graph.add_node(name,  age=features["age"], hair=features["hair"])
+
+    family_graph.add_edge("Настя", "Степа", label="mother")
+    family_graph.add_edge("Степа", "Лида", label="father")
+    family_graph.add_edge("Дима", "Вика", label="father")
+    family_graph.add_edge("Вика", "Лида", label="mother")
+
+    return family_graph
 
 
 def match_subgraph_example() -> list[dict[str, str]]:
@@ -180,6 +196,26 @@ def match_subgraph_task() -> list[dict[str, str]]:
                               [/images/task_3_subgraph_matching.png]
     """
     # YOUR CODE GOES HERE
+    family_graph = family_graph_task()
+
+    target_features = {
+        "grandparent": {"hair": "blonde"},
+        "parent": {"hair": "black"},
+        "child": {"hair": "black"},
+    }
+
+    target_graph = nx.DiGraph()
+    for name, features in target_features.items():
+        target_graph.add_node(name, hair=features["hair"])
+    target_graph.add_edge("grandparent", "parent")
+    target_graph.add_edge("parent", "child")
+
+    matcher = GraphMatcher(
+        family_graph,
+        target_graph,
+        node_match=lambda node_1, node_2: node_1["hair"] == node_2["hair"],
+    )
+    return list(matcher.subgraph_isomorphisms_iter())
 
 
 def main() -> None:
@@ -196,14 +232,14 @@ def main() -> None:
         3: {},
     }
 
-    # simple_graph = simple_graph_task()
-    # assert nx.to_dict_of_dicts(simple_graph) == {
-    #     2: {3: {}, 4: {}},
-    #     3: {},
-    #     4: {5: {}},
-    #     5: {},
-    #     1: {2: {}},
-    # }
+    simple_graph = simple_graph_task()
+    '''assert nx.to_dict_of_dicts(simple_graph) == {
+        2: {3: {}, 4: {}},
+        3: {},
+        4: {5: {}},
+        5: {},
+        1: {2: {}},
+    }'''
 
     # 2. Hard graphs
     family_graph_sample = family_graph_example()
@@ -215,21 +251,21 @@ def main() -> None:
         "Костя": {},
     }
 
-    # family_graph = family_graph_task()
-    # assert nx.to_dict_of_dicts(family_graph) == {
-    #     "Настя": {"Степа": {"label": "mother"}},
-    #     "Дима": {"Вика": {"label": "father"}},
-    #     "Степа": {"Лида": {"label": "father"}},
-    #     "Вика": {"Лида": {"label": "mother"}},
-    #     "Лида": {},
-    # }
+    family_graph = family_graph_task()
+    assert nx.to_dict_of_dicts(family_graph) == {
+        "Настя": {"Степа": {"label": "mother"}},
+        "Дима": {"Вика": {"label": "father"}},
+        "Степа": {"Лида": {"label": "father"}},
+        "Вика": {"Лида": {"label": "mother"}},
+        "Лида": {},
+    }
 
     # 3. Subgraph matching
     matches_sample = match_subgraph_example()
     assert matches_sample == [{"Оля": "grandparent", "Юля": "parent", "Костя": "child"}]
 
-    # matches = match_subgraph_task()
-    # assert matches == [{'Настя': 'grandparent', 'Степа': 'parent', 'Лида': 'child'}]
+    matches = match_subgraph_task()
+    assert matches == [{'Настя': 'grandparent', 'Степа': 'parent', 'Лида': 'child'}]
 
 
 if __name__ == "__main__":
