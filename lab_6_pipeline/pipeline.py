@@ -67,16 +67,15 @@ class CorpusManager:
             raise EmptyDirectoryError
 
         meta_files = list(self.path_to_raw_txt_data.glob('*meta.json'))
+        sorted_meta = sorted(meta_files, key=get_article_id_from_filepath)
         raw_files = list(self.path_to_raw_txt_data.glob('*raw.txt'))
-        if len(meta_files) != len(raw_files):
+        sorted_raw = sorted(raw_files, key=get_article_id_from_filepath)
+        if len(sorted_meta) != len(sorted_raw):
             raise InconsistentDatasetError
 
-        for path in (meta_files + raw_files):
-            if int(path.stem.split('_')[0]) > len(meta_files):
-                raise InconsistentDatasetError
-
-        for file in (meta_files + raw_files):
-            if file.is_file() and file.stat().st_size == 0:
+        for file in (sorted_meta + sorted_raw):
+            if int(file.stem.split('_')[0]) > len(sorted_meta) \
+                or (file.is_file() and file.stat().st_size == 0):
                 raise InconsistentDatasetError
 
     def _scan_dataset(self) -> None:
