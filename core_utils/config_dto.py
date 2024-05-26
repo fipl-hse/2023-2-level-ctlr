@@ -3,7 +3,6 @@
 ConfigDTO class implementation: stores the configuration information.
 """
 
-
 class ConfigDTO:
     """
     Type annotations for configurations.
