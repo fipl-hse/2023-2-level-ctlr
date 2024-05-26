@@ -12,10 +12,11 @@ from stanza.pipeline.core import Pipeline
 from stanza.utils.conll import CoNLL
 
 from core_utils.article.article import Article, ArtifactType, get_article_id_from_filepath
-from core_utils.article.io import from_raw, to_cleaned
+from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
 from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
+from core_utils.visualizer import visualize
 
 
 class EmptyDirectoryError(Exception):
@@ -27,6 +28,12 @@ class EmptyDirectoryError(Exception):
 class InconsistentDatasetError(Exception):
     """
     IDs contain slips, number of meta and raw files is not equal, files are empty.
+    """
+
+
+class EmptyFileError(Exception):
+    """
+    File is empty.
     """
 
 
@@ -273,7 +280,7 @@ class POSFrequencyPipeline:
             if article.get_file_path(kind=ArtifactType.STANZA_CONLLU).stat().st_size == 0:
                 raise EmptyFileError
             from_meta(article.get_meta_file_path(), article)
-            article.set_pos_info(self._count_frequencies(articles))
+            article.set_pos_info(self._count_frequencies(article))
             to_meta(article)
             visualize(article, self._corpus.path_to_raw_txt_data / f'{article_id}_image.png')
 
