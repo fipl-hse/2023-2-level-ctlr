@@ -45,7 +45,6 @@ class Config:
 
         prepare_environment(ASSETS_PATH)
 
-
     def _extract_config_content(self) -> ConfigDTO:
         """
         Get config values.
@@ -160,6 +159,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
         verify=config.get_verify_certificate()
     )
 
+
 class Crawler:
     """
     Crawler implementation.
@@ -207,9 +207,7 @@ class Crawler:
                 response = make_request(seed_url, self.config)
                 if not response.ok:
                     continue
-
-                article_bs = BeautifulSoup(response.text, "lxml")
-                self.urls.append(self._extract_url(article_bs))
+                self.urls.append(self._extract_url(BeautifulSoup(response.text, "lxml")))
 
     def get_search_urls(self) -> list:
         """
