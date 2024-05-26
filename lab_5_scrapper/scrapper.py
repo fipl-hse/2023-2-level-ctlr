@@ -199,6 +199,16 @@ class Crawler:
         """
         Find articles.
         """
+        seed_urls = self.get_search_urls()
+
+        while len(self.urls) < self.config.get_num_articles():
+            for seed_url in seed_urls:
+                response = make_request(seed_url, self.config)
+                if not response.ok:
+                    continue
+
+                article_bs = BeautifulSoup(response.text, "lxml")
+                self.urls.append(self._extract_url(article_bs))
 
     def get_search_urls(self) -> list:
         """
