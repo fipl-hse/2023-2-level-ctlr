@@ -166,14 +166,13 @@ class UDPipeAnalyzer(LibraryWrapper):
 
         model = spacy_udpipe.load_from_path(
             lang="ru",
-            path=str(constants.UDPIPE_MODEL_PATH)
-        )
-
+            path=str(constants.UDPIPE_MODEL_PATH))
         model.add_pipe(
             factory_name="conll_formatter",
             last=True,
-            config={"conversion_maps": {"XPOS": {"": "_"}}, "include_headers": True},
-        )
+            config={"conversion_maps": {"XPOS": {"": "_"}},
+                    "include_headers": True}, )
+
         return model
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument | str]:
@@ -196,10 +195,9 @@ class UDPipeAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
-        with open(file=article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU), mode='w',
-                  encoding='utf-8') as annotation_file:
-            annotation_file.write(article.get_conllu_info())
-            annotation_file.write("\n")
+        with open(file=article.get_file_path(
+                kind=ArtifactType.UDPIPE_CONLLU), mode='w', encoding='utf-8') as file:
+            file.write(article.get_conllu_info())
 
 
 class StanzaAnalyzer(LibraryWrapper):
@@ -245,8 +243,10 @@ class StanzaAnalyzer(LibraryWrapper):
             list[StanzaDocument]: List of documents
         """
 
-        analyzed = self._analyzer.process([Document([], text=text) for text in texts])
-        return analyzed
+        model = self._analyzer
+        analyzed_texts = model.process([Document(sentences=[], text=text) for text in texts])
+
+        return analyzed_texts
 
     def to_conllu(self, article: Article) -> None:
         """
