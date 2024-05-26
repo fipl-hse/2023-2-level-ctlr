@@ -45,7 +45,7 @@ Project Timeline
    1. Short summary: Your code can automatically parse a media website
       you are going to choose, save texts and its metadata in a proper
       format.
-   2. Deadline: **TBD**.
+   2. Deadline: **April, 29**.
    3. Format: each student works in their own PR.
    4. Dataset volume: 5-7 articles.
    5. Design document: :ref:`scrapper-label`.
@@ -55,7 +55,7 @@ Project Timeline
    1. Short summary: Your code can automatically process raw texts from
       previous step, make point-of-speech tagging and basic
       morphological analysis.
-   2. Deadline: **TBD**.
+   2. Deadline: **May, 27**.
    3. Format: each student works in their own PR.
    4. Dataset volume: 5-7 articles.
    5. Design document: :ref:`pipeline-label`.
@@ -63,11 +63,46 @@ Project Timeline
 Lectures history
 ----------------
 
-+--------+---------------------------------------+---------------------+
-| Date   | Lecture topic                         | Important links     |
-+========+=======================================+=====================+
-| TBD    | TBD                                   | TBD                 |
-+--------+---------------------------------------+---------------------+
++------------+---------------------+--------------------------------------------------------------+
+| Date       | Lecture topic       | Important links                                              |
++============+================================================+===================================+
+| 01.04.2024 | Lecture:            | Lab no. 5 description                                        |
+|            | Introduction to     |                                                              |
+|            | technical track.    |                                                              |
++------------+---------------------+--------------------------------------------------------------+
+| 01.04.2024 | Seminar: Local      | N/A                                                          |
+|            | setup. Choose       |                                                              |
+|            | website.            |                                                              |
++------------+---------------------+--------------------------------------------------------------+
+| 08.04.2024 | Lecture: 3rd party  | N/A                                                          |
+|            | libraries. Browser  |                                                              |
+|            | headers.            |                                                              |
++------------+---------------------+--------------------------------------------------------------+
+| 08.04.2024 | Seminar:            | `Листинг <./seminars/seminar_04_08_2024/try_requests.py>`__. |
+|            | ``requests``:   .   |                                                              |
+|            | install, API.       |                                                              |
++------------+---------------------+--------------------------------------------------------------+
+| 15.04.2024 | Lecture: HTML       | N/A                                                          |
+|            | structure. ``bs4``  |                                                              |
+|            | library.            |                                                              |
++------------+---------------------+--------------------------------------------------------------+
+| 15.04.2024 | Seminar:            | `Листинг <./seminars/seminar_04_15_2024/try_bs.py>`__.       |
+|            | ``bs4``:   .        |                                                              |
+|            | install, API.       |                                                              |
++------------+---------------------+--------------------------------------------------------------+
+| 22.04.2024 | Lecture: Filesystem | N/A                                                          |
+|            | with ``pathlib``.   |                                                              |
+|            | Dates.              |                                                              |
++------------+---------------------+--------------------------------------------------------------+
+| 22.04.2024 | Seminar:            | `Листинг <./seminars/seminar_04_22_2024/try_fs.py>`__.       |
+|            | filesystem with     | `Листинг <./seminars/seminar_04_22_2024/try_json.py>`__.     |
+|            | ``pathlib``, dates. | `Листинг <./seminars/seminar_04_22_2024/try_dates.py>`__.    |
++------------+---------------------+--------------------------------------------------------------+
+| 29.04.2024 | Introduction to lab | N/A                                                          |
+|            | 6. CoNLLU format.   |                                                              |
++------------+---------------------+--------------------------------------------------------------+
+| 29.04.2024 | Lab 5 handover.     | N/A                                                          |
++------------+---------------------+--------------------------------------------------------------+
 
 You can find a more complete summary from lectures in :ref:`ctlr-lectures-label`.
 
@@ -99,13 +134,17 @@ Technical solution
 | ``json``              | working with json text    | scrapper,    | 4       |
 |                       | format                    | pipeline     |         |
 +-----------------------+---------------------------+--------------+---------+
-| `pymystem3 <https://  | module for morphological  | pipeline     | 6       |
-| pypi.org/project      | analysis                  |              |         |
-| /pymystem3/>`__       |                           |              |         |
+| `spacy_udpipe <https: | module for morphological  | pipeline     | 6       |
+| //pypi.org/project    | analysis                  |              |         |
+| /spacy-udpipe/>`__    |                           |              |         |
 +-----------------------+---------------------------+--------------+---------+
-| `pymorphy2 <https://p | module for morphological  | pipeline     | 10      |
+| `stanza <https://p    | module for morphological  | pipeline     | 8       |
 | ypi.org/project       | analysis                  |              |         |
-| /pymorphy2/>`__       |                           |              |         |
+| /stanza/>`__          |                           |              |         |
++-----------------------+---------------------------+--------------+---------+
+| `networkx <https:/    | working with graphs       | pipeline     | 10      |
+| /pypi.org/project     |                           |              |         |
+| /networkx/>`__        |                           |              |         |
 +-----------------------+---------------------------+--------------+---------+
 
 Software solution is built on top of three components:
@@ -151,7 +190,7 @@ are satisfied:**
 
    1. Example: ``Scrapper, Irina Novikova - 20FPL2``.
 
-2. Has a filled file ``target_score.txt`` with an expected mark.
+2. Has a filled file ``settings.json`` with an expected mark.
    Acceptable values: 4, 6, 8, 10.
 3. Has green status.
 4. Has a label ``done``, set by mentor.
@@ -160,14 +199,16 @@ Resources
 ---------
 
 1. `Academic performance
-   <https://docs.google.com/spreadsheets/d/1ZEMhQy039vf4mCrM6UZF_GnfDWsCTjmbazibuCM_t7s/edit#gid=0>`__
+   <https://docs.google.com/spreadsheets/d/1DGxzwFYhJUIYHq13LMqA756tQD0sBP0_V0jt4KMaAZ0/edit#gid=0>`__
 2. `Media websites list
-   <https://docs.google.com/spreadsheets/d/1ENdfTb7ZOoVMeBcldSJuH4IWMYtHKO8Y94Qqq_e3Q34/edit#gid=0>`__
+   <https://docs.google.com/spreadsheets/d/1r-VN2oZVwhZ6CbA8gRbNRTCkUOHvef5yzm3ElxqL6bo/edit#gid=0>`__
 3. `Documentation website <https://fipl-hse.github.io/>`__
 4. `Python programming course from previous semester
    <https://github.com/fipl-hse/2023-2-level-labs>`__
-5. `Scrapping tutorials (russian) <https://youtu.be/7hn1_t2ZtJQ>`__
-6. :ref:`starting-guide-en-label`
-7. :ref:`ctlr-tests-label`
-8. :ref:`run-in-terminal-label`
-9. :ref:`ctlr-faq-label`
+5. `Scrapping tutorials (Russian) <https://youtu.be/7hn1_t2ZtJQ>`__
+6. `Scrapping tutorials (English)
+   <https://www.youtube.com/playlist?list=PL1jK3K11NINiOn4DdIDVdyQpcU3kaNxl0>`__
+7. :ref:`starting-guide-en-label`
+8. :ref:`ctlr-tests-label`
+9. :ref:`run-in-terminal-label`
+10. :ref:`ctlr-faq-label`
