@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup
 
 from core_utils.article.article import Article
 from core_utils.config_dto import ConfigDTO
-from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
+from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH, NUM_ARTICLES_UPPER_LIMIT, TIMEOUT_LOWER_LIMIT, TIMEOUT_UPPER_LIMIT
 
 
 class IncorrectSeedURLError(Exception):
@@ -60,6 +60,7 @@ class IncorrectVerifyError(Exception):
     Verify certificate value must either be True or False.
     """
 
+
 class Config:
     """
     Class for unpacking and validating configurations.
@@ -84,8 +85,6 @@ class Config:
         self._should_verify_certificate = self.config_DTO.should_verify_certificate
         self._headless_mode = self.config_DTO.headless_mode
 
-        prepare_environment(ASSETS_PATH)
-
     def _extract_config_content(self) -> ConfigDTO:
         """
         Get config values.
@@ -103,7 +102,7 @@ class Config:
         config_DTO = self._extract_config_content()
         if not all(seed.startswith('https://antropogenez.ru/news/') for seed in config_DTO.seed_urls):
             raise Exception('IncorrectSeedURLError')
-        if config_DTO.total_articles < 1 or config_DTO.total_articles > 150:
+        if config_DTO.total_articles < 1 or config_DTO.total_articles > NUM_ARTICLES_UPPER_LIMIT:
             raise Exception('NumberOfArticlesOutOfRangeError')
         if not isinstance(config_DTO.total_articles, int):
             raise Exception('IncorrectNumberOfArticlesError')
@@ -111,7 +110,7 @@ class Config:
             raise Exception('IncorrectHeadersError')
         if not isinstance(config_DTO.encoding, str):
             raise Exception('IncorrectEncodingError')
-        if config_DTO.timeout < 1 or config_DTO.timeout > 60:
+        if config_DTO.timeout < TIMEOUT_LOWER_LIMIT or config_DTO.timeout > TIMEOUT_UPPER_LIMIT:
             raise Exception('IncorrectTimeoutError')
         if not isinstance(config_DTO.headless_mode, bool):
             raise Exception('IncorrectVerifyError')
@@ -230,9 +229,9 @@ class Crawler:
             str: Url from HTML
         """
         url = ''
-        list_of_links = article_bs.find_all('a', attrs={'class': 'figcaption promo-link'})
+        list_of_links = article_bs.find_all('a')
         for link in list_of_links:
-            url = str(self.url_pattern + link.get('href'))
+            url = str(link.get('href'))
             if url not in self.urls:
                 break
         return url
@@ -322,9 +321,9 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    base_path.mkdir(parents=True, exist_ok=True)
-    for file in base_path.iterdir():
-        file.unlink(missing_ok=True)
+    if base_path.exists():
+        shutil.rmtree(base_path)
+    base_path.mkdir(parents=True)
 
 
 def main() -> None:
