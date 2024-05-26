@@ -12,8 +12,10 @@ import requests
 from bs4 import BeautifulSoup
 
 from core_utils.article.article import Article
+from core_utils.article.io import to_meta, to_raw
 from core_utils.config_dto import ConfigDTO
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
+
 
 class IncorrectSeedURLError(Exception):
     """
@@ -346,13 +348,14 @@ def main() -> None:
 
     crawler.find_articles()
     i = 1
-    for url in crawler.urls:
-        parser = HTMLParser(full_url=url, article_id=i, config=config)
+    for url in enumerate(crawler.urls, 1):
+        parser = HTMLParser(url, index, config)
         article = parser.parse()
         if isinstance(article, Article):
-            io.to_raw(article)
-            io.to_meta(article)
-            i += 1
+            to_raw(article)
+            to_meta(article)
+        print('Done')
+
 
 
 if __name__ == "__main__":
