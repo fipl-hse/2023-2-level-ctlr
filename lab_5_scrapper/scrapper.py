@@ -301,7 +301,11 @@ class HTMLParser:
         """
         self.article.title = article_soup.find(class_="tdb-title-text").text
         self.article.topics = article_soup.find_all(class_="tdb-entry-crumb")[1].text
-        self.article.author = [article_soup.find(class_="tdb-author-name").text]
+        author = article_soup.find(class_="tdb-author-name")
+        if author:
+            self.article.author = [author.text]
+        else:
+            self.article.author = ['NOT FOUND']
         self.article.date = self.unify_date_format(article_soup.find("time").text)
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
