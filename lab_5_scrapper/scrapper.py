@@ -9,10 +9,12 @@ import datetime
 import shutil
 from typing import Pattern, Union
 from bs4 import BeautifulSoup
+import lxml
 
+from core_utils.article import io
 from core_utils.config_dto import ConfigDTO
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
-
+from core_utils.article.article import Article
 
 class Config:
     """
@@ -47,7 +49,7 @@ class Config:
         """
         Ensure configuration parameters are not corrupt.
         """
-        if not all(seed.startswith('https://xn--80ady2a0c.xn--p1ai/calendar/2024/04/?utm_calendar_last_news') for seed in self.config_DTO.seed_urls):
+        if not all(seed.startswith('https://xn--80ady2a0c.xn--p1ai/calendar/2024/') for seed in self.config_DTO.seed_urls):
             raise Exception('IncorrectSeedURLError')
         if self.config_DTO.total_articles < 1 or self.config_DTO.total_articles > 150:
             raise Exception('NumberOfArticlesOutOfRangeError')
@@ -138,10 +140,11 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-    return requests.get(url,
+    return requests.get(url=url,
                         headers=config.get_headers(),
                         timeout=config.get_timeout()
-                        )
+                        #verify = config.get_verify_certificate()
+    )
 
 
 class Crawler:
@@ -159,6 +162,9 @@ class Crawler:
             config (Config): Configuration
         """
 
+        self.config = config
+        self.urls = []
+
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
         Find and retrieve url from HTML.
@@ -169,11 +175,29 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
+        soup = article_bs
+        divs_news_from_site = soup.find_all('div', class_="news")
+        for div in divs_news_from_site:
+            div.find_next('a').select_one("div").decompose()
+            url_page_from_site = str(div.find_next('a'))[9:-6]
+
+        return url_page_from_site
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
+        seed_urls = self.get_search_urls()
+
+        while len(self.urls) < self.config.get_num_articles():
+            for seed_url in seed_urls:
+                response = make_request(seed_url, self.config)
+                if not response.ok:
+                    continue
+
+                article_bs = BeautifulSoup(response.text, "lxml")
+                extracted = self._extract_url(article_bs)
+                self.urls.append(extracted)
 
     def get_search_urls(self) -> list:
         """
@@ -182,6 +206,7 @@ class Crawler:
         Returns:
             list: seed_urls param
         """
+        return self.config.get_seed_urls()
 
 
 # 10
@@ -202,6 +227,10 @@ class HTMLParser:
             article_id (int): Article id
             config (Config): Configuration
         """
+        self.full_url = full_url
+        self.article_id = article_id
+        self.config = config
+        self.article = Article(url=full_url, article_id=article_id)
 
     def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
         """
@@ -210,6 +239,9 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        self.article.text = article_soup.get_text()[article_soup.get_text().find("печати") + 6:article_soup.get_text().find(
+        "Если Вы заметили ошибку в тексте, выделите её и нажмите Ctrl+Enter, чтобы отослать информацию редактору. Спасибо!")].replace(
+        "\n", " ").replace(".", "\n.").replace(" ", ' ')
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -218,6 +250,9 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        self.article.author.append('NOT FOUND')
+
+        self.article.topics.append(article_soup.find_all('h1')[0].text)
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -237,7 +272,15 @@ class HTMLParser:
         Returns:
             Union[Article, bool, list]: Article instance
         """
+        response = make_request(url=self.full_url, config=self.config)
+        if not response.ok:
+            return False
+        егоarticle_bs = BeautifulSoup(response.text, features="lxml")
 
+        self._fill_article_with_text(егоarticle_bs)
+        self._fill_article_with_meta_information(егоarticle_bs)
+
+        return self.article
 
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     """
@@ -255,6 +298,19 @@ def main() -> None:
     """
     Entrypoint for scrapper module.
     """
+    config = Config(path_to_config=CRAWLER_CONFIG_PATH)
+    crawler = Crawler(config)
+    prepare_environment(ASSETS_PATH)
+
+    crawler.find_articles()
+    i = 1
+    for url in crawler.urls:
+        parser = HTMLParser(full_url=url, article_id=i, config=config)
+        article = parser.parse()
+        if isinstance(article, Article):
+            io.to_raw(article)
+            io.to_meta(article)
+            i += 1
 
 
 if __name__ == "__main__":

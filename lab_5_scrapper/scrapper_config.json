@@ -1,9 +1,14 @@
 {
-    "seed_urls": [],
+    "seed_urls": ["https://xn--80ady2a0c.xn--p1ai/calendar/2024/04/",
+        "https://xn--80ady2a0c.xn--p1ai/calendar/2024/03/",
+        "https://xn--80ady2a0c.xn--p1ai/calendar/2024/05/",
+        "https://xn--80ady2a0c.xn--p1ai/calendar/2024/02/",
+        "https://xn--80ady2a0c.xn--p1ai/calendar/2024/01/"
+    ],
     "headers": {},
-    "total_articles_to_find_and_parse": 0,
+    "total_articles_to_find_and_parse": 5,
     "encoding": "",
-    "timeout": 0,
+    "timeout": 1,
     "should_verify_certificate": true,
     "headless_mode": true
 }
