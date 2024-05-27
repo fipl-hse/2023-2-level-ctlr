@@ -306,6 +306,11 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        headline = article_soup.find("h1", class_="article_title")
+        self.article.title = headline.text
+
+        author = article_soup.find("div", class_='news-single-rightbox')
+        self.article.author = [author.text]
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
