@@ -2,14 +2,14 @@
 Crawler implementation.
 """
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
-import pathlib
-from typing import Pattern, Union
-from datetime import datetime
+import datetime
 import json
+import pathlib
 import re
 import shutil
 from random import randrange
 from time import sleep
+from typing import Pattern, Union
 
 import requests
 from bs4 import BeautifulSoup
@@ -18,8 +18,6 @@ from core_utils import constants
 from core_utils.article.article import Article
 from core_utils.article.io import to_meta, to_raw
 from core_utils.config_dto import ConfigDTO
-
-
 
 class IncorrectSeedURLError(Exception):
     """
@@ -128,7 +126,8 @@ class Config:
         if not isinstance(config.timeout, int) or not 0 <= config.timeout < 60:
             raise IncorrectTimeoutError
 
-        if not isinstance(config.should_verify_certificate, bool) or not isinstance(config.headless_mode, bool):
+        if (not isinstance(config.should_verify_certificate, bool)
+                or not isinstance(config.headless_mode, bool)):
             raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
@@ -245,7 +244,7 @@ class Crawler:
 
         l = article_bs.find(class_='mainbar')
         links = l.find_all('a')
-        links = [l for l in links]
+        links = list(links)
         url = ''
 
         for link in links:
@@ -343,10 +342,10 @@ class HTMLParser:
         else:
             self.article.author.append(author.text.strip())
 
-        time_tag = article_soup.find('time', class_='material-date')
-        if time_tag and 'datetime' in time_tag.attrs:
-            datetime_str = time_tag['datetime']
-            self.article.date = self.unify_date_format(datetime_str)
+        date_element = article_soup.find(class_='material-date')
+        if date_element and date_element.get('datetime'):
+            date_str = date_element.get('datetime')
+            self.article.date = self.unify_date_format(date_str)
 
         tags = article_soup.find_all(class_='material-tags')
         for tag in tags:
@@ -362,8 +361,7 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
-        return datetime.fromisoformat(date_str)
-
+        return datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S%z')
     def parse(self) -> Union[Article, bool, list]:
         """
         Parse each article.
