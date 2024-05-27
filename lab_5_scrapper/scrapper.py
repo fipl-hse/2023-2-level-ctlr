@@ -283,7 +283,6 @@ class HTMLParser:
         self.config = config
         self.article = Article(self.full_url, self.article_id)
 
-
     def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
         """
         Find text of article.
