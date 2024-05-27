@@ -77,8 +77,8 @@ class CorpusManager:
         sorted_meta_files = sorted(meta_files, key=lambda x: int(get_article_id_from_filepath(x)))
         for ind, (raw, meta) in enumerate(zip(sorted_raw_files, sorted_meta_files)):
             if ind + 1 != get_article_id_from_filepath(raw) or \
-                    ind + 1 != get_article_id_from_filepath(meta) or \
-                    raw.stat().st_size == 0 or meta.stat().st_size == 0:
+                    ind + 1 != get_article_id_from_filepath(meta) or not \
+                    raw.stat().st_size or not meta.stat().st_size:
                 raise InconsistentDatasetError
 
     def _scan_dataset(self) -> None:
