@@ -79,7 +79,7 @@ class Config:
         self._validate_config_content()
         self.config_DTO = self._extract_config_content()
         self._seed_urls = self.config_DTO.seed_urls
-        self._total_articles = self.config_DTO.total_articles
+        self._num_articles = self.config_DTO.total_articles
         self._headers = self.config_DTO.headers
         self._encoding = self.config_DTO.encoding
         self._timeout = self.config_DTO.timeout
@@ -107,20 +107,21 @@ class Config:
                         )
                 ):
             raise IncorrectSeedURLError
-        if not all(seed.startswith('https://antropogenez.ru/news/') for seed in config_DTO.seed_urls):
-            raise Exception('IncorrectSeedURLError')
-        if config_DTO.total_articles < 1 or config_DTO.total_articles > constants.NUM_ARTICLES_UPPER_LIMIT:
-            raise Exception('NumberOfArticlesOutOfRangeError')
-        if not isinstance(config_DTO.total_articles, int):
-            raise Exception('IncorrectNumberOfArticlesError')
+        if not isinstance(config_DTO.total_articles, int) or config_DTO.total_articles <= 0:
+            raise IncorrectNumberOfArticlesError
+        if not (0 < config_DTO.total_articles <= int(constants.NUM_ARTICLES_UPPER_LIMIT)):
+            raise NumberOfArticlesOutOfRangeError
         if not isinstance(config_DTO.headers, dict):
-            raise Exception('IncorrectHeadersError')
+            raise IncorrectHeadersError
         if not isinstance(config_DTO.encoding, str):
-            raise Exception('IncorrectEncodingError')
-        if config_DTO.timeout <= constants.TIMEOUT_LOWER_LIMIT or config_DTO.timeout > constants.TIMEOUT_UPPER_LIMIT:
-            raise Exception('IncorrectTimeoutError')
+            raise IncorrectEncodingError
+        if (not isinstance(config_DTO.timeout, int)
+                or not constants.TIMEOUT_LOWER_LIMIT <= config_DTO.timeout <= constants.TIMEOUT_UPPER_LIMIT):
+            raise IncorrectTimeoutError
+        if not isinstance(config_DTO.should_verify_certificate, bool):
+            raise IncorrectVerifyError
         if not isinstance(config_DTO.headless_mode, bool):
-            raise Exception('IncorrectVerifyError')
+            raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
         """
@@ -138,7 +139,7 @@ class Config:
         Returns:
             int: Total number of articles to scrape
         """
-        return self._total_articles
+        return self._num_articles
 
     def get_headers(self) -> dict[str, str]:
         """
@@ -236,9 +237,9 @@ class Crawler:
             str: Url from HTML
         """
         url = ''
-        list_of_links = article_bs.find_all('a')
+        list_of_links = article_bs.find_all('h2')
         for link in list_of_links:
-            url = str(link.get('href'))
+            url = link.find('a')['href']
             if url not in self.urls:
                 break
         return url
