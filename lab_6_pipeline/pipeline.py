@@ -419,10 +419,6 @@ def main() -> None:
     visualizer = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
     visualizer.run()
 
-    pattern_searcher = PatternSearchPipeline(corpus_manager, stanza_analyzer,
-                                             ("VERB", "NOUN", "ADP"))
-    pattern_searcher.run()
-
 
 if __name__ == "__main__":
     main()
