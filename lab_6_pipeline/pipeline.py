@@ -73,6 +73,7 @@ class CorpusManager:
                             key=get_article_id_from_filepath)
         txt_files = sorted(self.path_to_raw_txt_data.glob('*_raw.txt'),
                            key=get_article_id_from_filepath)
+
         if len(txt_files) != len(meta_files):
             raise InconsistentDatasetError
 
