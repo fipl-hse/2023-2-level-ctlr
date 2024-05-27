@@ -109,18 +109,18 @@ class Config:
             raise IncorrectSeedURLError
         if not all(seed.startswith('https://antropogenez.ru/news/') for seed in config_DTO.seed_urls):
             raise Exception('IncorrectSeedURLError')
-        if config_DTO.total_articles < 1 or config_DTO.total_articles > constants.NUM_ARTICLES_UPPER_LIMIT:
-            raise Exception('NumberOfArticlesOutOfRangeError')
-        if not isinstance(config_DTO.total_articles, int):
-            raise Exception('IncorrectNumberOfArticlesError')
+        if not isinstance(config_DTO.total_articles, int) or config_DTO.total_articles <= 0:
+            raise IncorrectNumberOfArticlesError
+        if not (0 < config_DTO.total_articles <= constants.NUM_ARTICLES_UPPER_LIMIT):
+            raise NumberOfArticlesOutOfRangeError
         if not isinstance(config_DTO.headers, dict):
-            raise Exception('IncorrectHeadersError')
+            raise IncorrectHeadersError
         if not isinstance(config_DTO.encoding, str):
-            raise Exception('IncorrectEncodingError')
+            raise IncorrectEncodingError
         if config_DTO.timeout <= constants.TIMEOUT_LOWER_LIMIT or config_DTO.timeout > constants.TIMEOUT_UPPER_LIMIT:
-            raise Exception('IncorrectTimeoutError')
+            raise IncorrectTimeoutError
         if not isinstance(config_DTO.headless_mode, bool):
-            raise Exception('IncorrectVerifyError')
+            raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
         """
