@@ -231,7 +231,7 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        return article_bs.find('a')['href']
+        return str(article_bs['href'])
 
     def find_articles(self) -> None:
         """
@@ -241,7 +241,7 @@ class Crawler:
         for url in self.get_search_urls():
             response = make_request(url, self.config)
             bs = BeautifulSoup(response.text, 'lxml')
-            for tag in bs.find_all('h3'):
+            for tag in bs.find_all(rel="bookmark"):
                 if self._extract_url(tag) not in self.urls:
                     self.urls.append(self._extract_url(tag))
                 if len(self.urls) == (self.config.get_num_articles()):
