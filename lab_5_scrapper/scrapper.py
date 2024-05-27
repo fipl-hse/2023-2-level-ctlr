@@ -227,7 +227,7 @@ class Crawler:
         url = ""
         links = article_bs.find_all('a', class_='category-post-card__info__post-title')
         for link in links:
-            url = self.url_pattern + link.get('href')
+            url = link.get('href')
             if url not in self.urls:
                 return url
         return url
@@ -291,6 +291,14 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        art = []
+        all_pars = article_soup.find_all('div', class_='first-content')
+        for pargraphs in all_pars:
+            all_paragraphs = pargraphs.find_all('p')
+            for parag in all_paragraphs:
+                if parag.text:
+                    art.append(parag.text)
+        self.article.text = '/n'.join(art).strip()
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -318,6 +326,11 @@ class HTMLParser:
         Returns:
             Union[Article, bool, list]: Article instance
         """
+        response = make_request(self.full_url, self.config)
+        if response.ok:
+            article_bs = BeautifulSoup(response.text, 'lxml')
+            self._fill_article_with_text(article_bs)
+        return self.article
 
 
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
