@@ -2,11 +2,11 @@
 Crawler implementation.
 """
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
-from datetime import datetime
 import json
 import pathlib
 import re
 import shutil
+from datetime import datetime
 from random import randrange
 from time import sleep
 from typing import Pattern, Union
