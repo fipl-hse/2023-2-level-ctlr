@@ -331,10 +331,6 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         title = article_soup.find("h1", class_="h1").text
-        # title_strip = title.replace("&nbsp;", '').replace('&#160;', '').replace('&#32;', '').replace('&#x2423;', '')
-        # title_strip = title_strip.replace("&#xA0;", '').replace('&#x20;', '').replace('&#x2420;', '')
-        # title_strip = title_strip.replace('&#9251;', '').replace('&#9248;', '')
-        # title_strip = title_strip.replace(r'&quot;', '"').replace(r'\\', '')
         print(repr(title))
         title_1 = title.split("&#xA0;")
         title_2 = re.split('\xa0', title)
