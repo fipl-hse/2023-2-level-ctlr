@@ -6,7 +6,6 @@ import datetime
 import json
 import pathlib
 import random
-
 from time import sleep
 from typing import Pattern, Union
 import shutil
