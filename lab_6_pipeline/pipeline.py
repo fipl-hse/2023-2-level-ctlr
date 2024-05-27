@@ -4,10 +4,11 @@ Pipeline for CONLL-U formatting.
 # pylint: disable=too-few-public-methods, unused-import, undefined-variable, too-many-nested-blocks
 import pathlib
 
-import spacy
+import networkx as nx
 import spacy_udpipe
 import stanza
 from networkx import DiGraph
+from networkx.algorithms.isomorphism import GraphMatcher
 from stanza.models.common.doc import Document
 from stanza.pipeline.core import Pipeline
 from stanza.utils.conll import CoNLL
@@ -69,9 +70,9 @@ class CorpusManager:
             raise EmptyDirectoryError
 
         meta_files = sorted(self.path_to_raw_txt_data.glob('*_meta.json'),
-                            key=lambda x: get_article_id_from_filepath(x))
+                            key=get_article_id_from_filepath)
         txt_files = sorted(self.path_to_raw_txt_data.glob('*_raw.txt'),
-                           key=lambda x: get_article_id_from_filepath(x))
+                           key=get_article_id_from_filepath)
         if len(txt_files) != len(meta_files):
             raise InconsistentDatasetError
 
@@ -185,7 +186,8 @@ class UDPipeAnalyzer(LibraryWrapper):
             article (Article): Article containing information to save
         """
 
-        with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU), 'w', encoding='utf-8') as annotation_file:
+        with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU),
+                  'w', encoding='utf-8') as annotation_file:
             annotation_file.write(article.get_conllu_info())
             annotation_file.write("\n")
 
@@ -323,6 +325,9 @@ class PatternSearchPipeline(PipelineProtocol):
             analyzer (LibraryWrapper): Analyzer instance
             pos (tuple[str, ...]): Root, Dependency, Child part of speech
         """
+        self._corpus_manager = corpus_manager
+        self._analyzer = analyzer
+        self._node_labels = pos
 
     def _make_graphs(self, doc: CoNLLUDocument) -> list[DiGraph]:
         """
@@ -334,6 +339,21 @@ class PatternSearchPipeline(PipelineProtocol):
         Returns:
             list[DiGraph]: Graphs for the sentences in the document
         """
+        graphs = []
+
+        for sentence in doc.sentences:
+            graph = nx.DiGraph()
+
+            for word in sentence.words:
+                word = word.to_dict()
+                graph.add_node(word['id'], label=word['upos'], text=word['text'])
+
+                if word['head'] != 0:  # Root tokens have a head of 0
+                    graph.add_edge(word['head'], word['id'], label=word['deprel'])
+
+            graphs.append(graph)
+
+        return graphs
 
     def _add_children(
         self, graph: DiGraph, subgraph_to_graph: dict, node_id: int, tree_node: TreeNode
@@ -347,6 +367,22 @@ class PatternSearchPipeline(PipelineProtocol):
             node_id (int): ID of root node of the match
             tree_node (TreeNode): Root node of the match
         """
+        children = tuple(graph.successors(node_id))
+        if not children or tree_node.children or node_id not in subgraph_to_graph.keys():
+            return None
+        target_vertices = {vertex[0] for vertex in subgraph_to_graph.values() if vertex}
+        for child_id in children:
+            if child_id not in target_vertices:
+                    continue
+
+            child_node_info = graph.nodes[child_id]
+            child_node = TreeNode(
+                child_node_info.get('label'),
+                child_node_info.get('text'),
+                []
+            )
+            tree_node.children.append(child_node)
+            self._add_children(graph, subgraph_to_graph, child_id, child_node)
 
     def _find_pattern(self, doc_graphs: list) -> dict[int, list[TreeNode]]:
         """
@@ -372,14 +408,17 @@ def main() -> None:
     corpus_manager = CorpusManager(ASSETS_PATH)
     analyzer = UDPipeAnalyzer()
     pipeline = TextProcessingPipeline(corpus_manager, analyzer)
-    pipeline.run()
+    # pipeline.run()
 
     stanza_analyzer = StanzaAnalyzer()
     pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
-    pipeline.run()
+    # pipeline.run()
 
-    visualizer = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
-    visualizer.run()
+    # visualizer = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
+    # visualizer.run()
+
+    pattern_searcher = PatternSearchPipeline(corpus_manager, stanza_analyzer, ("VERB", "NOUN", "ADP"))
+    pattern_searcher.run()
 
 
 if __name__ == "__main__":
