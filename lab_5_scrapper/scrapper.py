@@ -245,18 +245,20 @@ class Crawler:
         """
 
         link = article_bs.find(class_='mainbar')
-        links = link.find_all('a')
-        links = list(links)
-        url = ''
+        if link:
+            links = link.find_all('a')
+            links = list(links)
+            url = ''
 
-        for link in links:
-            url = self.base_url + link['href']
-            if url in self.get_search_urls():
-                continue
-            if url and url not in self.urls:
-                break
+            for link in links:
+                url = self.base_url + link['href']
+                if url in self.get_search_urls():
+                    continue
+                if url and url not in self.urls:
+                    break
 
-        return url
+            return url
+        return ''
 
     def find_articles(self) -> None:
         """
