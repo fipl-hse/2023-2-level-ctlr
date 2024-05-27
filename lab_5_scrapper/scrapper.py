@@ -6,6 +6,7 @@ import datetime
 import json
 import pathlib
 import random
+import re
 import shutil
 from time import sleep
 from typing import Pattern, Union
@@ -100,20 +101,25 @@ class Config:
         Ensure configuration parameters are not corrupt.
         """
         config_DTO = self._extract_config_content()
-        if not all(seed.startswith('https://antropogenez.ru/news/') for seed in config_DTO.seed_urls):
-            raise Exception('IncorrectSeedURLError')
-        if config_DTO.total_articles < 1 or config_DTO.total_articles > constants.NUM_ARTICLES_UPPER_LIMIT:
-            raise Exception('NumberOfArticlesOutOfRangeError')
-        if not isinstance(config_DTO.total_articles, int):
-            raise Exception('IncorrectNumberOfArticlesError')
-        if not isinstance(config_DTO.headers, dict):
-            raise Exception('IncorrectHeadersError')
-        if not isinstance(config_DTO.encoding, str):
-            raise Exception('IncorrectEncodingError')
-        if config_DTO.timeout <= constants.TIMEOUT_LOWER_LIMIT or config_DTO.timeout > constants.TIMEOUT_UPPER_LIMIT:
-            raise Exception('IncorrectTimeoutError')
-        if not isinstance(config_DTO.headless_mode, bool):
-            raise Exception('IncorrectVerifyError')
+        if not (isinstance(config_DTO.seed_urls, list)
+                and all(re.match(r'https://antropogenez.ru/news/', seed_url)
+                        for seed_url in config_DTO.seed_urls
+                        )
+        ):
+            if not all(seed.startswith('https://antropogenez.ru/news/') for seed in config_DTO.seed_urls):
+                raise Exception('IncorrectSeedURLError')
+            if config_DTO.total_articles < 1 or config_DTO.total_articles > constants.NUM_ARTICLES_UPPER_LIMIT:
+                raise Exception('NumberOfArticlesOutOfRangeError')
+            if not isinstance(config_DTO.total_articles, int):
+                raise Exception('IncorrectNumberOfArticlesError')
+            if not isinstance(config_DTO.headers, dict):
+                raise Exception('IncorrectHeadersError')
+            if not isinstance(config_DTO.encoding, str):
+                raise Exception('IncorrectEncodingError')
+            if config_DTO.timeout <= constants.TIMEOUT_LOWER_LIMIT or config_DTO.timeout > constants.TIMEOUT_UPPER_LIMIT:
+                raise Exception('IncorrectTimeoutError')
+            if not isinstance(config_DTO.headless_mode, bool):
+                raise Exception('IncorrectVerifyError')
 
     def get_seed_urls(self) -> list[str]:
         """
