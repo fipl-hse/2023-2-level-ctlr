@@ -310,7 +310,10 @@ class HTMLParser:
         self.article.title = headline.text
 
         author = article_soup.find("div", class_='news-single-rightbox')
-        self.article.author = [author.text]
+        if not author:
+            self.article.author = ["NOT FOUND"]
+        else:
+            self.article.author = [author.text]
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
