@@ -115,10 +115,11 @@ class Config:
             raise IncorrectHeadersError
         if not isinstance(config_DTO.encoding, str):
             raise IncorrectEncodingError
-
         if config_DTO.timeout <= constants.TIMEOUT_LOWER_LIMIT or config_DTO.timeout > constants.TIMEOUT_UPPER_LIMIT:
             raise IncorrectTimeoutError
         if not isinstance(config_DTO.headless_mode, bool):
+            raise IncorrectVerifyError
+        if not isinstance(config_DTO.should_verify_certificate, bool):
             raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
