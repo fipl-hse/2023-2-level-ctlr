@@ -111,7 +111,7 @@ class Config:
             if not re.match(r"https?://(www.)?vtomske\.ru", seed_url):
                 raise IncorrectSeedURLError
 
-        if not isinstance(config.total_articles, int) or not 1 <= config.total_articles < 150:
+        if config.total_articles > 150:
             raise NumberOfArticlesOutOfRangeError
 
         if not isinstance(config.total_articles, int) or config.total_articles <= 0:
