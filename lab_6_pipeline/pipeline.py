@@ -374,7 +374,7 @@ class PatternSearchPipeline(PipelineProtocol):
         target_vertices = {vertex[0] for vertex in subgraph_to_graph.values() if vertex}
         for child_id in children:
             if child_id not in target_vertices:
-                    continue
+                continue
 
             child_node_info = graph.nodes[child_id]
             child_node = TreeNode(
@@ -384,6 +384,7 @@ class PatternSearchPipeline(PipelineProtocol):
             )
             tree_node.children.append(child_node)
             self._add_children(graph, subgraph_to_graph, child_id, child_node)
+        return None
 
     def _find_pattern(self, doc_graphs: list) -> dict[int, list[TreeNode]]:
         """
@@ -409,16 +410,17 @@ def main() -> None:
     corpus_manager = CorpusManager(ASSETS_PATH)
     analyzer = UDPipeAnalyzer()
     pipeline = TextProcessingPipeline(corpus_manager, analyzer)
-    # pipeline.run()
+    pipeline.run()
 
     stanza_analyzer = StanzaAnalyzer()
     pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
-    # pipeline.run()
+    pipeline.run()
 
-    # visualizer = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
-    # visualizer.run()
+    visualizer = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
+    visualizer.run()
 
-    pattern_searcher = PatternSearchPipeline(corpus_manager, stanza_analyzer, ("VERB", "NOUN", "ADP"))
+    pattern_searcher = PatternSearchPipeline(corpus_manager, stanza_analyzer,
+                                             ("VERB", "NOUN", "ADP"))
     pattern_searcher.run()
 
 
