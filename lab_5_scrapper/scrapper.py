@@ -110,7 +110,7 @@ class Config:
             raise Exception('IncorrectHeadersError')
         if not isinstance(config_DTO.encoding, str):
             raise Exception('IncorrectEncodingError')
-        if config_DTO.timeout < constants.TIMEOUT_LOWER_LIMIT or config_DTO.timeout > constants.TIMEOUT_UPPER_LIMIT:
+        if config_DTO.timeout <= constants.TIMEOUT_LOWER_LIMIT or config_DTO.timeout > constants.TIMEOUT_UPPER_LIMIT:
             raise Exception('IncorrectTimeoutError')
         if not isinstance(config_DTO.headless_mode, bool):
             raise Exception('IncorrectVerifyError')
