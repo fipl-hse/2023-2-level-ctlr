@@ -102,7 +102,7 @@ class Config:
         config_DTO = self._extract_config_content()
         if not all(seed.startswith('https://antropogenez.ru/news/') for seed in config_DTO.seed_urls):
             raise Exception('IncorrectSeedURLError')
-        if config_DTO.total_articles < 1 or config_DTO.total_articles > NUM_ARTICLES_UPPER_LIMIT:
+        if config_DTO.total_articles < 1 or config_DTO.total_articles > constants.NUM_ARTICLES_UPPER_LIMIT:
             raise Exception('NumberOfArticlesOutOfRangeError')
         if not isinstance(config_DTO.total_articles, int):
             raise Exception('IncorrectNumberOfArticlesError')
@@ -110,7 +110,7 @@ class Config:
             raise Exception('IncorrectHeadersError')
         if not isinstance(config_DTO.encoding, str):
             raise Exception('IncorrectEncodingError')
-        if config_DTO.timeout < TIMEOUT_LOWER_LIMIT or config_DTO.timeout > TIMEOUT_UPPER_LIMIT:
+        if config_DTO.timeout < constants.TIMEOUT_LOWER_LIMIT or config_DTO.timeout > constants.TIMEOUT_UPPER_LIMIT:
             raise Exception('IncorrectTimeoutError')
         if not isinstance(config_DTO.headless_mode, bool):
             raise Exception('IncorrectVerifyError')
@@ -350,9 +350,9 @@ def main() -> None:
     """
     Entrypoint for scrapper module.
     """
-    configuration = Config(CRAWLER_CONFIG_PATH)
+    configuration = Config(constants.CRAWLER_CONFIG_PATH)
 
-    prepare_environment(ASSETS_PATH)
+    prepare_environment(constants.ASSETS_PATH)
 
     crawler = Crawler(config=configuration)
     crawler.find_articles()
