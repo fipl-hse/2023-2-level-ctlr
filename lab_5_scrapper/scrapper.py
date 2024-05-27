@@ -330,7 +330,7 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        title = article_soup.find("h1", class_="h1").text  # В&#160;Туле один водитель &#171;прокатил&#187; другого на&#160;капоте - Новости Тулы и области. Криминал
+        title = article_soup.find("h1", class_="h1").text
         # title_strip = title.replace("&nbsp;", '').replace('&#160;', '').replace('&#32;', '').replace('&#x2423;', '')
         # title_strip = title_strip.replace("&#xA0;", '').replace('&#x20;', '').replace('&#x2420;', '')
         # title_strip = title_strip.replace('&#9251;', '').replace('&#9248;', '')
