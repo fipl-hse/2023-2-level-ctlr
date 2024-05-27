@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup
 
 from core_utils.article.article import Article
 from core_utils.config_dto import ConfigDTO
+from core_utils.article.io import to_raw
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH, NUM_ARTICLES_UPPER_LIMIT, TIMEOUT_LOWER_LIMIT, TIMEOUT_UPPER_LIMIT
 
 
@@ -342,6 +343,20 @@ def main() -> None:
     """
     Entrypoint for scrapper module.
     """
+    configuration = Config(CRAWLER_CONFIG_PATH)
+
+    prepare_environment(ASSETS_PATH)
+
+    crawler = Crawler(config=configuration)
+    crawler.find_articles()
+    urls = crawler.urls
+
+    for index, url in enumerate(urls):
+        parser = HTMLParser(full_url=url, article_id=index + 1, config=configuration)
+        article = parser.parse()
+        if isinstance(article, Article):
+            to_raw(article)
+    print("Done")
 
 
 if __name__ == "__main__":
