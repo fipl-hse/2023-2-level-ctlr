@@ -255,7 +255,6 @@ class Crawler:
         else:
             url = ''
 
-        print(url)
         return url
 
     def find_articles(self) -> None:
@@ -271,7 +270,6 @@ class Crawler:
                 article_bs = BeautifulSoup(response.text, 'lxml')
                 urls.append(self._extract_url(article_bs))
             self.urls.extend(urls)
-        print(urls)
 
     def get_search_urls(self) -> list:
         """
@@ -332,12 +330,17 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        title = article_soup.find("h1", class_="h1").text
-        title_strip = title.replace('\xa0', ' ')
-        title_strip = title_strip.replace('«', '')
-        title_strip = title_strip.replace('»', '')
-        if title_strip:
-            self.article.title = title_strip
+        title = article_soup.find("h1", class_="h1").text  # В&#160;Туле один водитель &#171;прокатил&#187; другого на&#160;капоте - Новости Тулы и области. Криминал
+        # title_strip = title.replace("&nbsp;", '').replace('&#160;', '').replace('&#32;', '').replace('&#x2423;', '')
+        # title_strip = title_strip.replace("&#xA0;", '').replace('&#x20;', '').replace('&#x2420;', '')
+        # title_strip = title_strip.replace('&#9251;', '').replace('&#9248;', '')
+        # title_strip = title_strip.replace(r'&quot;', '"').replace(r'\\', '')
+        print(repr(title))
+        title_1 = title.split("&#xA0;")
+        title_2 = re.split('\xa0', title)
+        print(repr(title_1), repr(title_2))
+        if title:
+            self.article.title = title[0]
 
         author_element = article_soup.find(class_="authorDetails")
         author = author_element.find("a")
