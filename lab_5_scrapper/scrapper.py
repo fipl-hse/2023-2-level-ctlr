@@ -290,6 +290,13 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        raw_text = ''
+        text_blocks = article_soup.find_all('p')
+        for text_block in text_blocks:
+            if text_block.string:
+                raw_text += text_block.string
+
+        self.article.text = raw_text
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
