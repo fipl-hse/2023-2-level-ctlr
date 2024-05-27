@@ -278,6 +278,12 @@ class HTMLParser:
             config (Config): Configuration
         """
 
+        self.full_url = full_url
+        self.article_id = article_id
+        self.config = config
+        self.article = Article(self.full_url, self.article_id)
+
+
     def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
         """
         Find text of article.
