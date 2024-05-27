@@ -6,9 +6,9 @@ import datetime
 import json
 import pathlib
 import random
+import shutil
 from time import sleep
 from typing import Pattern, Union
-import shutil
 
 import requests
 from bs4 import BeautifulSoup
