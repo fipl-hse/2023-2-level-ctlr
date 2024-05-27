@@ -109,17 +109,15 @@ class Config:
             raise IncorrectSeedURLError
         if not isinstance(config_DTO.total_articles, int) or config_DTO.total_articles <= 0:
             raise IncorrectNumberOfArticlesError
-        if not (0 < config_DTO.total_articles <= int(constants.NUM_ARTICLES_UPPER_LIMIT)):
+        if not (0 < config_DTO.total_articles <= constants.NUM_ARTICLES_UPPER_LIMIT):
             raise NumberOfArticlesOutOfRangeError
         if not isinstance(config_DTO.headers, dict):
             raise IncorrectHeadersError
         if not isinstance(config_DTO.encoding, str):
             raise IncorrectEncodingError
-        if (not isinstance(config_DTO.timeout, int)
-                or not constants.TIMEOUT_LOWER_LIMIT <= config_DTO.timeout <= constants.TIMEOUT_UPPER_LIMIT):
+
+        if config_DTO.timeout <= constants.TIMEOUT_LOWER_LIMIT or config_DTO.timeout > constants.TIMEOUT_UPPER_LIMIT:
             raise IncorrectTimeoutError
-        if not isinstance(config_DTO.should_verify_certificate, bool):
-            raise IncorrectVerifyError
         if not isinstance(config_DTO.headless_mode, bool):
             raise IncorrectVerifyError
 
