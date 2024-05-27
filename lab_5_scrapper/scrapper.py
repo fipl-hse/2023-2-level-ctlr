@@ -2,7 +2,7 @@
 Crawler implementation.
 """
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
-import datetime
+from datetime import datetime
 import json
 import pathlib
 import re
@@ -18,6 +18,7 @@ from core_utils import constants
 from core_utils.article.article import Article
 from core_utils.article.io import to_meta, to_raw
 from core_utils.config_dto import ConfigDTO
+
 
 class IncorrectSeedURLError(Exception):
     """
@@ -59,7 +60,6 @@ class IncorrectVerifyError(Exception):
     """
     Verification check or Headless mode are not boolean.
     """
-
 
 
 class Config:
@@ -147,6 +147,7 @@ class Config:
             int: Total number of articles to scrape
         """
         return self._num_articles
+
     def get_headers(self) -> dict[str, str]:
         """
         Retrieve headers to use during requesting.
@@ -213,6 +214,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
         verify=config.get_verify_certificate()
     )
 
+
 class Crawler:
     """
     Crawler implementation.
@@ -242,8 +244,8 @@ class Crawler:
             str: Url from HTML
         """
 
-        l = article_bs.find(class_='mainbar')
-        links = l.find_all('a')
+        link = article_bs.find(class_='mainbar')
+        links = link.find_all('a')
         links = list(links)
         url = ''
 
@@ -342,10 +344,11 @@ class HTMLParser:
         else:
             self.article.author.append(author.text.strip())
 
-        date_element = article_soup.find(class_='material-date')
-        if date_element and date_element.get('datetime'):
-            date_str = date_element.get('datetime')
-            self.article.date = self.unify_date_format(date_str)
+        date = article_soup.find('time', class_='material-date')
+        if date:
+            date_str = date.attrs.get('datetime')
+            if isinstance(date_str, str):
+                self.article.date = self.unify_date_format(date_str)
 
         tags = article_soup.find_all(class_='material-tags')
         for tag in tags:
@@ -361,7 +364,8 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
-        return datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S%z')
+        return datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S%z')
+
     def parse(self) -> Union[Article, bool, list]:
         """
         Parse each article.
@@ -375,6 +379,8 @@ class HTMLParser:
             self._fill_article_with_text(article_bs)
             self._fill_article_with_meta_information(article_bs)
         return self.article
+
+
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     """
     Create ASSETS_PATH folder if no created and remove existing folder.
@@ -385,6 +391,7 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     if base_path.exists():
         shutil.rmtree(base_path)
     base_path.mkdir(parents=True)
+
 
 def main() -> None:
     """
@@ -403,6 +410,7 @@ def main() -> None:
             to_raw(article)
             to_meta(article)
             i += 1
+
 
 if __name__ == "__main__":
     main()
