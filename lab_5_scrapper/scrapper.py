@@ -133,6 +133,7 @@ class Config:
         Returns:
             int: Total number of articles to scrape
         """
+        return self.config.total_articles
 
     def get_headers(self) -> dict[str, str]:
         """
@@ -141,6 +142,7 @@ class Config:
         Returns:
             dict[str, str]: Headers
         """
+        return self.config.headers
 
     def get_encoding(self) -> str:
         """
@@ -149,6 +151,7 @@ class Config:
         Returns:
             str: Encoding
         """
+        return self.config.encoding
 
     def get_timeout(self) -> int:
         """
@@ -157,6 +160,7 @@ class Config:
         Returns:
             int: Number of seconds to wait for response
         """
+        return self.config.timeout
 
     def get_verify_certificate(self) -> bool:
         """
@@ -165,6 +169,7 @@ class Config:
         Returns:
             bool: Whether to verify certificate or not
         """
+        return self.config.should_verify_certificate
 
     def get_headless_mode(self) -> bool:
         """
@@ -173,6 +178,7 @@ class Config:
         Returns:
             bool: Whether to use headless mode or not
         """
+        return self.config.headless_mode
 
 
 def make_request(url: str, config: Config) -> requests.models.Response:
@@ -204,6 +210,9 @@ class Crawler:
         Args:
             config (Config): Configuration
         """
+        self.config = config
+        self.urls = []
+        self.url_pattern = 'https://ug.ru/category/all-news/'
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -215,11 +224,32 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
+        url = ""
+        links = article_bs.find_all('a', class_='category-post-card__info__post-title')
+        for link in links:
+            url = self.url_pattern + link.get('href')
+            if url not in self.urls:
+                return url
+        return url
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
+        seed_urls = self.get_search_urls()
+        for seed_url in seed_urls:
+            response = make_request(seed_url, self.config)
+            if not response.ok:
+                continue
+            article_bs = BeautifulSoup(response.text, "lxml")
+            extracted_url = self._extract_url(article_bs)
+            while extracted_url:
+                if len(self.urls) == self.config.get_num_articles():
+                    break
+                self.urls.append(extracted_url)
+                extracted_url = self._extract_url(article_bs)
+            if len(self.urls) == self.config.get_num_articles():
+                break
 
     def get_search_urls(self) -> list:
         """
@@ -228,6 +258,7 @@ class Crawler:
         Returns:
             list: seed_urls param
         """
+        return self.config.get_seed_urls()
 
 
 # 10
@@ -248,6 +279,10 @@ class HTMLParser:
             article_id (int): Article id
             config (Config): Configuration
         """
+        self.full_url = full_url
+        self.article_id = article_id
+        self.config = config
+        self.article = core_utils.article.article.Article(self.full_url, self.article_id)
 
     def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
         """
