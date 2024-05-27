@@ -8,7 +8,6 @@ import networkx as nx
 import spacy_udpipe
 import stanza
 from networkx import DiGraph
-from networkx.algorithms.isomorphism import GraphMatcher
 from stanza.models.common.doc import Document
 from stanza.pipeline.core import Pipeline
 from stanza.utils.conll import CoNLL
@@ -35,7 +34,7 @@ class InconsistentDatasetError(Exception):
 
 class EmptyFileError(Exception):
     """
-    I don't khow for what
+    File is empty
     """
 
 
@@ -88,9 +87,9 @@ class CorpusManager:
         Register each dataset entry.
         """
         txt_files = sorted(self.path_to_raw_txt_data.glob('*_raw.txt'))
-        for raw in txt_files:
-            article_id = get_article_id_from_filepath(raw)
-            self._storage[article_id] = from_raw(path=raw, article=Article(None, article_id))
+        self._storage = {get_article_id_from_filepath(raw):
+                         from_raw(path=raw, article=Article(None, get_article_id_from_filepath(raw)))
+                         for raw in txt_files}
 
     def get_articles(self) -> dict:
         """
