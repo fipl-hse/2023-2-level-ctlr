@@ -115,6 +115,8 @@ class Config:
             raise IncorrectHeadersError
         if not isinstance(config_DTO.encoding, str):
             raise IncorrectEncodingError
+        if not isinstance(config_DTO.timeout, int):
+            raise IncorrectTimeoutError
         if config_DTO.timeout <= constants.TIMEOUT_LOWER_LIMIT or config_DTO.timeout > constants.TIMEOUT_UPPER_LIMIT:
             raise IncorrectTimeoutError
         if not isinstance(config_DTO.headless_mode, bool):
