@@ -107,7 +107,7 @@ class Config:
                         )
                 ):
             raise IncorrectSeedURLError
-        if not isinstance(config_DTO.total_articles, int):
+        if not isinstance(config_DTO.total_articles, int) or config_DTO.total_articles <= 0:
             raise IncorrectNumberOfArticlesError
         if not (0 < config_DTO.total_articles <= constants.NUM_ARTICLES_UPPER_LIMIT):
             raise NumberOfArticlesOutOfRangeError
