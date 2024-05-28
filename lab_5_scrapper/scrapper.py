@@ -240,12 +240,14 @@ class Crawler:
 
         for url in self.get_search_urls():
             response = make_request(url, self.config)
+            if not response.ok:
+                continue
             bs = BeautifulSoup(response.text, 'lxml')
             for tag in bs.find_all(rel="bookmark"):
-                if self._extract_url(tag) not in self.urls:
-                    self.urls.append(self._extract_url(tag))
                 if len(self.urls) == (self.config.get_num_articles()):
                     break
+                if self._extract_url(tag) not in self.urls:
+                    self.urls.append(self._extract_url(tag))
 
     def get_search_urls(self) -> list:
         """
