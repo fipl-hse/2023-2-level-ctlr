@@ -1,9 +1,17 @@
 {
-    "seed_urls": [],
-    "headers": {},
-    "total_articles_to_find_and_parse": 0,
-    "encoding": "",
-    "timeout": 0,
+    "seed_urls": ["https://vse42.ru/", "https://vse42.ru/articles","https://vse42.ru/news",
+        "https://vse42.ru/articles/vse-business",
+        "https://vse42.ru/articles/vse-health",
+        "https://vse42.ru/articles/vse-health/2"],
+    "headers": {"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+      "Cookie": "_ym_uid=171221515114257002; _ym_d=1712215151; _gid=GA1.2.228582562.1713528706; _ym_isad=2; _ym_visorc=w; _ga_FCML9SH5CC=GS1.1.1713528709.18.1.1713528921.59.0.0; _ga=GA1.1.1446361375.1712215151; _ga_3HVRJM3KS4=GS1.1.1713528713.18.1.1713528922.58.0.0",
+      "Accept-Language": "ru,en;q=0.9",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36",
+      "Sec-Fetch-Dest": "document",
+      "Cache-Control": "max-age=0"},
+    "total_articles_to_find_and_parse": 10,
+    "encoding": "utf-8",
+    "timeout": 10,
     "should_verify_certificate": true,
     "headless_mode": true
 }
