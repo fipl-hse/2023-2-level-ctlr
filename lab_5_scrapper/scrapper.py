@@ -317,7 +317,7 @@ class HTMLParser:
         """
         headline = article_soup.find("h1")
         if not headline:
-            self.article.title = ["NOT FOUND"]
+            self.article.title = "NOT FOUND"
         else:
             self.article.title = headline.text
 
@@ -327,10 +327,8 @@ class HTMLParser:
         else:
             self.article.author = [author.text]
 
-        date = article_soup.find('meta', {'name':"date"})['content']
-        if not date:
-            self.article.date = ["NOT FOUND"]
-        else:
+        date = article_soup.find('meta', {'name': "date"})['content']
+        if date:
             self.article.date = self.unify_date_format(date)
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
