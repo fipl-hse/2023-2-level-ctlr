@@ -314,17 +314,17 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        headline = article_soup.find("h1", class_="article_title")
+        headline = article_soup.find("h1")
         if not headline:
             self.article.title = ["NOT FOUND"]
         else:
             self.article.title = headline.text
 
-        author = article_soup.find("div", class_='news-single-rightbox')
+        author = article_soup.find("a", href='/redactor/')
         if not author:
             self.article.author = ["NOT FOUND"]
         else:
-            self.article.author = [author.text]
+            self.article.author = author.text
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
