@@ -339,12 +339,15 @@ class HTMLParser:
             author = elements[0].text
         if ' :' in author:
             author = author[8:].strip().replace('  ', ' ')
+            al = author.split()
+            author = al[-1]
         else:
             author = author[7:]
         if not author:
             author = 'NOT FOUND'
 
         self.article.author = [author]
+        print(self.article.author)
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
