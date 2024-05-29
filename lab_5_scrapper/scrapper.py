@@ -100,28 +100,29 @@ class Config:
         """
         Ensure configuration parameters are not corrupt.
         """
-        config_DTO = self._extract_config_content()
-        if not (isinstance(config_DTO.seed_urls, list)
+        config = self._extract_config_content()
+        if not (isinstance(config.seed_urls, list)
                 and all(re.match(r'https://antropogenez.ru/news/', seed_url)
-                        for seed_url in config_DTO.seed_urls
+                        for seed_url in config.seed_urls
                         )
                 ):
             raise IncorrectSeedURLError
-        if not isinstance(config_DTO.total_articles, int) or config_DTO.total_articles <= 0:
+        if not isinstance(config.total_articles, int) or config.total_articles <= 0:
             raise IncorrectNumberOfArticlesError
-        if not (0 < config_DTO.total_articles <= constants.NUM_ARTICLES_UPPER_LIMIT):
+        if not 0 < config.total_articles <= constants.NUM_ARTICLES_UPPER_LIMIT:
             raise NumberOfArticlesOutOfRangeError
-        if not isinstance(config_DTO.headers, dict):
+        if not isinstance(config.headers, dict):
             raise IncorrectHeadersError
-        if not isinstance(config_DTO.encoding, str):
+        if not isinstance(config.encoding, str):
             raise IncorrectEncodingError
-        if not isinstance(config_DTO.timeout, int):
+        if not isinstance(config.timeout, int):
             raise IncorrectTimeoutError
-        if config_DTO.timeout <= constants.TIMEOUT_LOWER_LIMIT or config_DTO.timeout > constants.TIMEOUT_UPPER_LIMIT:
+        if (config.timeout <= constants.TIMEOUT_LOWER_LIMIT
+                or config.timeout > constants.TIMEOUT_UPPER_LIMIT):
             raise IncorrectTimeoutError
-        if not isinstance(config_DTO.headless_mode, bool):
+        if not isinstance(config.headless_mode, bool):
             raise IncorrectVerifyError
-        if not isinstance(config_DTO.should_verify_certificate, bool):
+        if not isinstance(config.should_verify_certificate, bool):
             raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
@@ -326,8 +327,10 @@ class HTMLParser:
         else:
             self.article.author = [author.text]
 
-        date = article_soup.find('meta', name="date")['content']
-        if date:
+        date = article_soup.find('meta', {'name':"date"})['content']
+        if not date:
+            self.article.date = ["NOT FOUND"]
+        else:
             self.article.date = self.unify_date_format(date)
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
