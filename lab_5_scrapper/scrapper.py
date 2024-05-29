@@ -5,12 +5,16 @@ Crawler implementation.
 import pathlib
 from typing import Pattern, Union
 import json
-from core_utils.config_dto import ConfigDTO
 import re
+import shutil
 import requests
 from bs4 import BeautifulSoup
 import datetime
+
 from core_utils.article.article import Article
+from core_utils.article.io import to_meta, to_raw
+from core_utils.config_dto import ConfigDTO
+from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 
 class IncorrectSeedURLError(Exception):
     """
@@ -206,7 +210,9 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-
+    response = requests.get(url=url, timeout=config.get_timeout(),
+                            headers=config.get_headers(), verify=config.get_verify_certificate())
+    return response
 
 class Crawler:
     """
@@ -222,6 +228,8 @@ class Crawler:
         Args:
             config (Config): Configuration
         """
+        self.config = config
+        self.urls = []
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -233,11 +241,28 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
+        url = article_bs.get('href')
+        return str(url) if url else ''
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
+        for url in self.get_search_urls():
+            response = make_request(url, self.config)
+            if not response.ok:
+                continue
+
+            article_bs = BeautifulSoup(response.text, 'html.parser')
+            for h3 in article_bs.find_all("h3", {'class': "item-title"}):
+                for tag in h3.select('a'):
+                    if len(self.urls) == self.config.get_num_articles():
+                        break
+
+                    url = self._extract_url(tag)
+                    if url != '' and url not in self.urls:
+                        self.urls.append(url)
+
 
     def get_search_urls(self) -> list:
         """
@@ -246,6 +271,7 @@ class Crawler:
         Returns:
             list: seed_urls param
         """
+        return self.config.get_seed_urls()
 
 
 # 10
@@ -266,6 +292,11 @@ class HTMLParser:
             article_id (int): Article id
             config (Config): Configuration
         """
+        self.full_url = full_url
+        self.article_id = article_id
+        self.config = config
+        self.article = Article(full_url, article_id)
+
 
     def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
         """
@@ -274,6 +305,17 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        all_body = article_soup.find('div', class_='wp-content')
+
+        texts = []
+        if all_body:
+            paragraphs = all_body.find_all('p')
+            for p in paragraphs:
+                if p.find('strong'):
+                    break
+                texts.append(p.text)
+        self.article.text = '\n'.join(texts).replace(' ', ' ')
+
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -282,6 +324,35 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        title = article_soup.find("h1", class_="title")
+        self.article.title = title.text
+        date = article_soup.find('span', class_='date').text
+        self.article.date = self.unify_date_format(date)
+
+        author = ''
+        after_text = False
+        author_list = []
+        elements = article_soup.find_all('strong')
+        if len(elements) > 1:
+            for el in elements:
+                el_text = el.text
+                if 'Текст' in el_text:
+                    after_text = True
+                if after_text:
+                    author_list.append(el_text.strip())
+            author = ' '.join(author_list)
+
+        else:
+            author = elements[0].text
+        if ' :' in author:
+            author = author[8:].strip().replace('  ', ' ')
+        else:
+            author = author[7:]
+        if not author:
+            author = 'NOT FOUND'
+
+        self.article.author = [author]
+
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -293,6 +364,13 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
+        converter = {'января': '01', 'февраля': '02', 'марта': '03', 'апреля': '04', 'мая': '05',
+                     'июня': '06', 'июля': '07', 'августа': '08', 'сентября': '09',
+                     'октября': '10', 'ноября': '11', 'декабря': '12'}
+        date = date_str.split()
+        month = converter[date[1]]
+        date[1] = month
+        return datetime.datetime.strptime(" ".join(date), '%d %m %Y')
 
     def parse(self) -> Union[Article, bool, list]:
         """
@@ -301,6 +379,13 @@ class HTMLParser:
         Returns:
             Union[Article, bool, list]: Article instance
         """
+        response = make_request(self.full_url, self.config)
+        if response.ok:
+            article_bs = BeautifulSoup(response.text, 'html.parser')
+            self._fill_article_with_text(article_bs)
+            self._fill_article_with_meta_information(article_bs)
+
+        return self.article
 
 
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
@@ -310,13 +395,25 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
+    if base_path.exists():
+        shutil.rmtree(base_path)
+    base_path.mkdir(parents=True)
 
 
 def main() -> None:
     """
     Entrypoint for scrapper module.
     """
-
+    config = Config(path_to_config=CRAWLER_CONFIG_PATH)
+    prepare_environment(ASSETS_PATH)
+    crawler = Crawler(config=config)
+    crawler.find_articles()
+    for i, url in enumerate(crawler.urls):
+        parser = HTMLParser(full_url=url, article_id=i + 1, config=config)
+        text = parser.parse()
+        if isinstance(text, Article):
+            to_raw(text)
+            to_meta(text)
 
 if __name__ == "__main__":
     main()
