@@ -315,7 +315,10 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         headline = article_soup.find("h1", class_="article_title")
-        self.article.title = headline.text
+        if not headline:
+            self.article.title = ["NOT FOUND"]
+        else:
+            self.article.title = headline.text
 
         author = article_soup.find("div", class_='news-single-rightbox')
         if not author:
