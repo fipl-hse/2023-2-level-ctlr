@@ -324,7 +324,7 @@ class HTMLParser:
         if not author:
             self.article.author = ["NOT FOUND"]
         else:
-            self.article.author = author.text
+            self.article.author = [author.text]
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
