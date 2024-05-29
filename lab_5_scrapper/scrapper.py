@@ -112,7 +112,7 @@ class Config:
                 or config['total_articles_to_find_and_parse'] <= 0):
             raise IncorrectNumberOfArticlesError
 
-        if not (0 < config['total_articles_to_find_and_parse'] < 151):
+        if not 0 < config['total_articles_to_find_and_parse'] < 151:
             raise NumberOfArticlesOutOfRangeError
 
         if not isinstance(config['headers'], dict):
@@ -121,7 +121,7 @@ class Config:
         if not isinstance(config['encoding'], str):
             raise IncorrectEncodingError
 
-        if not isinstance(config['timeout'], int) or not(0 < config['timeout'] < 60):
+        if not isinstance(config['timeout'], int) or not 0 < config['timeout'] < 60:
             raise IncorrectTimeoutError
 
         if not isinstance(config['should_verify_certificate'], bool):
