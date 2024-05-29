@@ -323,8 +323,6 @@ class HTMLParser:
         self.article.date = self.unify_date_format(date)
 
         author = ''
-        after_text = False
-        author_list = []
         elements = article_soup.find_all('strong')
         if len(elements) > 1:
             al = elements[-1].text.strip()
