@@ -327,27 +327,22 @@ class HTMLParser:
         author_list = []
         elements = article_soup.find_all('strong')
         if len(elements) > 1:
-            for el in elements:
-                el_text = el.text
-                if 'Текст' in el_text:
-                    after_text = True
-                if after_text:
-                    author_list.append(el_text.strip())
-            author = ' '.join(author_list)
+            al = elements[-1].text.strip()
+            if not al.isalpha():
+                author = elements[-2].text.strip()
+            else:
+                author = al
 
         else:
-            author = elements[0].text
-        if ' :' in author:
-            author = author[8:].strip().replace('  ', ' ')
-            al = author.split()
-            author = al[-1]
-        else:
-            author = author[7:]
+            author = elements[0].text.strip()
+
         if not author:
             author = 'NOT FOUND'
 
+        if 'Текст' in author:
+            author = author[7:]
+
         self.article.author = [author]
-        print(self.article.author)
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
