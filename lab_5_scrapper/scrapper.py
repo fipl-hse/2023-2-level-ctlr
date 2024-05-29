@@ -4,9 +4,9 @@ Crawler implementation.
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
 import datetime
 import json
+import pathlib
 import re
 import shutil
-import pathlib
 from typing import Pattern, Union
 
 import requests
