@@ -17,6 +17,7 @@ from core_utils.article.io import to_meta, to_raw
 from core_utils.config_dto import ConfigDTO
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 
+
 class IncorrectSeedURLError(Exception):
     """
     Seed URL does not match standard pattern.
@@ -82,7 +83,6 @@ class Config:
         self._should_verify_certificate = self._configuration.should_verify_certificate
         self._headless_mode = self._configuration.headless_mode
 
-
     def _extract_config_content(self) -> ConfigDTO:
         """
         Get config values.
@@ -129,7 +129,6 @@ class Config:
         if not isinstance(config['headless_mode'], bool):
             raise IncorrectVerifyError
 
-
     def get_seed_urls(self) -> list[str]:
         """
         Retrieve seed urls.
@@ -138,7 +137,6 @@ class Config:
             list[str]: Seed urls
         """
         return self._configuration.seed_urls
-
 
     def get_num_articles(self) -> int:
         """
@@ -149,7 +147,6 @@ class Config:
         """
         return self._configuration.total_articles
 
-
     def get_headers(self) -> dict[str, str]:
         """
         Retrieve headers to use during requesting.
@@ -158,7 +155,6 @@ class Config:
             dict[str, str]: Headers
         """
         return self._configuration.headers
-
 
     def get_encoding(self) -> str:
         """
@@ -169,7 +165,6 @@ class Config:
         """
         return self._configuration.encoding
 
-
     def get_timeout(self) -> int:
         """
         Retrieve number of seconds to wait for response.
@@ -179,7 +174,6 @@ class Config:
         """
         return self._configuration.timeout
 
-
     def get_verify_certificate(self) -> bool:
         """
         Retrieve whether to verify certificate.
@@ -188,7 +182,6 @@ class Config:
             bool: Whether to verify certificate or not
         """
         return self._configuration.should_verify_certificate
-
 
     def get_headless_mode(self) -> bool:
         """
@@ -214,6 +207,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     response = requests.get(url=url, timeout=config.get_timeout(),
                             headers=config.get_headers(), verify=config.get_verify_certificate())
     return response
+
 
 class Crawler:
     """
@@ -264,7 +258,6 @@ class Crawler:
                     if url != '' and url not in self.urls:
                         self.urls.append(url)
 
-
     def get_search_urls(self) -> list:
         """
         Get seed_urls param.
@@ -298,7 +291,6 @@ class HTMLParser:
         self.config = config
         self.article = Article(full_url, article_id)
 
-
     def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
         """
         Find text of article.
@@ -316,7 +308,6 @@ class HTMLParser:
                     break
                 texts.append(p.text)
         self.article.text = '\n'.join(texts).replace(' ', ' ')
-
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -353,7 +344,6 @@ class HTMLParser:
             author = 'NOT FOUND'
 
         self.article.author = [author]
-
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
