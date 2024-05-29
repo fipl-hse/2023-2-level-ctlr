@@ -332,7 +332,6 @@ class HTMLParser:
                 author = elements[-2].text.strip()
             else:
                 author = al
-
         else:
             author = elements[0].text.strip()
 
