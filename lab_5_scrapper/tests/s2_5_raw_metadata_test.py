@@ -7,8 +7,8 @@ import shutil
 import unittest
 
 import pytest
+from admin_utils.test_params import TEST_PATH
 
-from config.test_params import TEST_PATH
 from core_utils.constants import CRAWLER_CONFIG_PATH
 from lab_5_scrapper.scrapper import Config, make_request
 from lab_5_scrapper.tests.utils import scrapper_setup
@@ -110,7 +110,7 @@ class RawMediumDataValidator(unittest.TestCase):
         # open and prepare metadata
         self.metadata = []
         for file_name in TEST_PATH.iterdir():
-            if file_name.name.endswith(".json"):
+            if file_name.name.endswith("_meta.json"):
                 with file_name.open(encoding='utf-8') as file:
                     config = json.load(file)
                     self.metadata.append((config['id'], config))
@@ -196,7 +196,7 @@ class RawAdvancedDataValidator(unittest.TestCase):
         # open and prepare metadata
         self.metadata = []
         for file_name in TEST_PATH.iterdir():
-            if file_name.name.endswith(".json"):
+            if file_name.name.endswith("_meta.json"):
                 with file_name.open(encoding='utf-8') as file:
                     config = json.load(file)
                     self.metadata.append((config['id'], config))
