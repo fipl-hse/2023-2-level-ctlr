@@ -7,6 +7,7 @@ import json
 import pathlib
 import random
 import re
+import shutil
 import time
 from typing import Pattern, Union
 
@@ -193,7 +194,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-    period = random.randrange(2)
+    period = random.randrange(5)
     time.sleep(period)
 
     response = requests.get(url=url, timeout=config.get_timeout(),
@@ -218,7 +219,8 @@ class Crawler:
         """
         self.urls = []
         self.config = config
-        self.url_pattern = 'https://vse42.ru/news'
+        self.url_pattern = 'https://elementy.ru/novosti_nauki'
+        #self.url_pattern = 'https://vse42.ru/articles'
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -230,9 +232,14 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        link = article_bs.find('a', class_='btn btn-link').get('href')
-        url = self.url_pattern + link[len('/news')::]
-        return url
+
+        #link = article_bs.find('a').get('href')
+        #url = self.url_pattern + link[len('/articles')::]
+        #print(url)
+
+        link = article_bs.find('a', class_='nohover').get('href')
+        url = self.url_pattern + link[len('/novosti_nauki')::]
+        print(url)
 
     def find_articles(self) -> None:
         """
@@ -246,13 +253,18 @@ class Crawler:
                 continue
 
             article_bs = BeautifulSoup(response.text, 'html.parser')
-
-            for link in article_bs.find(class_='categories__container').find_all(class_='articles__categories categories'):
+            for link in article_bs.find(class_='clblock newslist').find_all(class_='img_block32'):
                 if len(self.urls) == self.config.get_num_articles():
                     break
                 if self._extract_url(link) and self._extract_url(link) not in self.urls:
                     self.urls.append(self._extract_url(link))
 
+            #for link in article_bs.find(class_='').find_all(class_='list-item'):
+            #    if len(self.urls) == self.config.get_num_articles():
+            #        break
+            #    if self._extract_url(link) and self._extract_url(link) not in self.urls:
+            #        self.urls.append(self._extract_url(link))
+#
     def get_search_urls(self) -> list:
         """
         Get seed_urls param.
@@ -323,7 +335,6 @@ class HTMLParser:
         Returns:
             Union[Article, bool, list]: Article instance
         """
-
         response = make_request(self.full_url, self.config)
         if response.ok:
             soup = BeautifulSoup(response.text, 'html.parser')
@@ -355,12 +366,6 @@ def main() -> None:
     base_path = constants.ASSETS_PATH
     prepare_environment(base_path)
     crawler.find_articles()
-
-    #config_path = pathlib.Path('path/to/config.json')
-    #config = Config(config_path)
-    #prepare_environment('articles')
-    #crawler = Crawler(config)
-    #crawler.find_articles()
 
 
 if __name__ == "__main__":
