@@ -14,6 +14,7 @@ from typing import Pattern, Union
 import requests
 from bs4 import BeautifulSoup
 
+from core_utils import constants
 from core_utils.article.article import Article
 from core_utils.article.io import to_meta, to_raw
 from core_utils.config_dto import ConfigDTO
@@ -304,7 +305,6 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
 
-
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
         Unify date format.
@@ -351,12 +351,17 @@ def main() -> None:
     """
     Entrypoint for scrapper module.
     """
-    config_path = pathlib.Path('path/to/config.json')
-    config = Config(config_path)
-    prepare_environment('articles')
-    crawler = Crawler(config)
+    configuration = Config(path_to_config=constants.CRAWLER_CONFIG_PATH)
+    crawler = Crawler(configuration)
+    base_path = constants.ASSETS_PATH
+    prepare_environment(base_path)
     crawler.find_articles()
 
+    #config_path = pathlib.Path('path/to/config.json')
+    #config = Config(config_path)
+    #prepare_environment('articles')
+    #crawler = Crawler(config)
+    #crawler.find_articles()
 
 
 if __name__ == "__main__":
