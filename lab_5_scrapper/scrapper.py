@@ -304,7 +304,7 @@ class HTMLParser:
         """
         self.article.author.append('NOT FOUND')
 
-        self.article.topics.append(article_soup.find_all('h1')[0].text)
+        self.article.title = article_soup.find_all('h1')[0].text
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -357,7 +357,7 @@ def main() -> None:
 
     crawler.find_articles()
     i = 1
-    for url in enumerate(crawler.urls, 1):
+    for index, url in enumerate(crawler.urls, 1):
         parser = HTMLParser(url, index, config)
         article = parser.parse()
         if isinstance(article, Article):
