@@ -42,7 +42,6 @@ class IncorrectHeadersError(Exception):
 
 
 class IncorrectEncodingError(Exception):
-
     """
     Encoding must be specified as a string.
     """
@@ -59,6 +58,7 @@ class IncorrectVerifyError(Exception):
     Verify certificate value must either be True or False.
     """
 
+
 class Config:
     """
     Class for unpacking and validating configurations.
@@ -71,11 +71,16 @@ class Config:
         Args:
             path_to_config (pathlib.Path): Path to configuration.
         """
-        self.CRAWLER_CONFIG_PATH = path_to_config
+        self.path_to_config = path_to_config
         self.config_DTO = self._extract_config_content()
         self._validate_config_content()
+        self._num_articles = self.config_DTO.total_articles
         self._seed_urls = self.get_seed_urls()
-        prepare_environment(ASSETS_PATH)
+        self._headers = self.config_DTO.headers
+        self._encoding = self.config_DTO.encoding
+        self._timeout = self.config_DTO.timeout
+        self._should_verify_certificate = self.config_DTO.should_verify_certificate
+        self._headless_mode = self.config_DTO.headless_mode
 
     def _extract_config_content(self) -> ConfigDTO:
         """
@@ -84,7 +89,7 @@ class Config:
         Returns:
             ConfigDTO: Config values
         """
-        config = json.load(self.CRAWLER_CONFIG_PATH.open())
+        config = json.load(self.path_to_config.open())
         config_DTO = ConfigDTO(**config)
 
         return config_DTO
@@ -93,7 +98,8 @@ class Config:
         """
         Ensure configuration parameters are not corrupt.
         """
-        if not isinstance(self.config_DTO.seed_urls, list) or not all(seed.startswith('https://xn--80ady2a0c.xn--p1ai/calendar/2024/') for seed in self.config_DTO.seed_urls):
+        if not isinstance(self.config_DTO.seed_urls, list) or not all(
+                seed.startswith('https://xn--80ady2a0c.xn--p1ai/calendar/2024/') for seed in self.config_DTO.seed_urls):
             raise IncorrectSeedURLError
         if not isinstance(self.config_DTO.total_articles, int) or self.config_DTO.total_articles < 1:
             raise IncorrectNumberOfArticlesError
@@ -103,9 +109,10 @@ class Config:
             raise IncorrectHeadersError
         if not isinstance(self.config_DTO.encoding, str):
             raise IncorrectEncodingError
-        if not isinstance(self.config_DTO.timeout, int) or  self.config_DTO.timeout < 1 or self.config_DTO.timeout > 60:
+        if not isinstance(self.config_DTO.timeout, int) or self.config_DTO.timeout < 1 or self.config_DTO.timeout > 60:
             raise IncorrectTimeoutError
-        if not isinstance(self.config_DTO.headless_mode, bool):
+        if not isinstance(self.config_DTO.headless_mode, bool) \
+                or not isinstance(self.config_DTO.should_verify_certificate, bool):
             raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
@@ -187,8 +194,8 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     return requests.get(url=url,
                         headers=config.get_headers(),
                         timeout=config.get_timeout()
-                        #verify = config.get_verify_certificate()
-    )
+                        # verify = config.get_verify_certificate()
+                        )
 
 
 class Crawler:
@@ -283,9 +290,10 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        self.article.text = article_soup.get_text()[article_soup.get_text().find("печати") + 6:article_soup.get_text().find(
-        "Если Вы заметили ошибку в тексте, выделите её и нажмите Ctrl+Enter, чтобы отослать информацию редактору. Спасибо!")].replace(
-        "\n", " ").replace(".", "\n.").replace(" ", ' ')
+        self.article.text = article_soup.get_text()[
+                            article_soup.get_text().find("печати") + 6:article_soup.get_text().find(
+                                "Если Вы заметили ошибку в тексте, выделите её и нажмите Ctrl+Enter, чтобы отослать информацию редактору. Спасибо!")].replace(
+            "\n", " ").replace(".", "\n.").replace(" ", ' ')
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -326,6 +334,7 @@ class HTMLParser:
 
         return self.article
 
+
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     """
     Create ASSETS_PATH folder if no created and remove existing folder.
@@ -355,7 +364,6 @@ def main() -> None:
             to_raw(article)
             to_meta(article)
         print('Done')
-
 
 
 if __name__ == "__main__":

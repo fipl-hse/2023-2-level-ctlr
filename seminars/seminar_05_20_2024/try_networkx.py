@@ -59,6 +59,10 @@ def simple_graph_task() -> nx.DiGraph:
         nx.DiGraph: graph as in [/images/task_1_simple_graph.png]
     """
     # YOUR CODE GOES HERE
+    simple_graph = nx.DiGraph()
+    for node in (2, 3, 4, 5):
+        simple_graph.add_node(node)
+    for from
 
 
 def family_graph_example() -> nx.DiGraph:
