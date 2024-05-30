@@ -3,10 +3,9 @@ Crawler implementation.
 """
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
 import pathlib
-from typing import Pattern, Union
+import shutil
 import datetime
 import json
-import pathlib
 import random
 import re
 import time
@@ -289,6 +288,10 @@ class HTMLParser:
             article_id (int): Article id
             config (Config): Configuration
         """
+        self.full_url = full_url
+        self.article_id = article_id
+        self.config = config
+        self.article = Article(self.full_url, self.article_id)
 
     def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
         """
@@ -297,6 +300,8 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        paragraphs = article_soup.find_all('p')
+        self.article_text = "\n".join([p.get_text() for p in paragraphs])
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -305,6 +310,7 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -316,6 +322,7 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
+        return datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S')
 
     def parse(self) -> Union[Article, bool, list]:
         """
@@ -325,6 +332,14 @@ class HTMLParser:
             Union[Article, bool, list]: Article instance
         """
 
+        response = make_request(self.full_url, self.config)
+        if response.ok:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            self._fill_article_with_text(soup)
+            self._fill_article_with_meta_information(soup)
+
+        return self.article
+
 
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     """
@@ -333,12 +348,22 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
+    base_path = pathlib.Path(base_path)
+    if base_path.exists():
+        shutil.rmtree(base_path)
+    base_path.mkdir(parents=True, exist_ok=True)
 
 
 def main() -> None:
     """
     Entrypoint for scrapper module.
     """
+    config_path = pathlib.Path('path/to/config.json')
+    config = Config(config_path)
+    prepare_environment('articles')
+    crawler = Crawler(config)
+    crawler.find_articles()
+
 
 
 if __name__ == "__main__":
