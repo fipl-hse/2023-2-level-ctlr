@@ -84,7 +84,6 @@ class Config:
             config = json.load(f)
         return ConfigDTO(**config)
 
-
     def _validate_config_content(self) -> None:
         """
         Ensure configuration parameters are not corrupt.
@@ -127,7 +126,6 @@ class Config:
             list[str]: Seed urls
         """
         return self._seed_urls
-
 
     def get_num_articles(self) -> int:
         """
