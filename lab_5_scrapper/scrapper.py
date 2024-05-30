@@ -2,10 +2,9 @@
 Crawler implementation.
 """
 # pylint: disable=too-many-arguments, too-many-instance-attributes, unused-import, undefined-variable
-import pathlib
-import shutil
 import datetime
 import json
+import pathlib
 import random
 import re
 import time
