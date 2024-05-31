@@ -334,6 +334,9 @@ class HTMLParser:
             date_example = '2024-01-01'
             self.article.date = self.unify_date_format(date_example)
 
+        topics = article_soup.find_all(class_="news-obj-wide__info news-obj-wide__rubric news-obj-wide__info_left news-obj-wide__info-link waves-effect")
+        self.article.topics = [topic.text.strip() for topic in topics]
+
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
         Unify date format.
