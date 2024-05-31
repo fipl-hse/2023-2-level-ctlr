@@ -5,6 +5,7 @@ Crawler implementation.
 import datetime
 import json
 import pathlib
+import pytz
 import random
 import re
 import time
@@ -95,7 +96,8 @@ class Config:
             raise IncorrectSeedURLError
 
         if not (isinstance(config['seed_urls'], list)
-                and all(re.match(r'https?://(www.)?', seed_url) for seed_url in config['seed_urls'])):
+                and all(re.match(r'https?://(www.)?', seed_url)
+                        for seed_url in config['seed_urls'])):
             raise IncorrectSeedURLError
 
         if (not isinstance(config['total_articles_to_find_and_parse'], int) or
@@ -233,7 +235,7 @@ class Crawler:
         links = article_bs.find_all('a', class_="card-big")
         for link in links:
             url = link.get('href')
-            url = self.url_pattern + url[len('/articles')::]
+            url = str(self.url_pattern + url[len('/articles')::])
             if url not in self.urls:
                 return url
         return ''
@@ -327,14 +329,18 @@ class HTMLParser:
         self.article.title = str(article_soup.find('h1').string).strip()
 
         date = article_soup.find("time")
+
         if date:
-            d = date.get("datetime")[:-6]
+            d = date.get("datetime")
             self.article.date = self.unify_date_format(str(d))
         else:
             date_example = '2024-01-01'
             self.article.date = self.unify_date_format(date_example)
 
-        topics = article_soup.find_all(class_="news-obj-wide__info news-obj-wide__rubric news-obj-wide__info_left news-obj-wide__info-link waves-effect")
+        topics = article_soup.find_all(
+            class_="news-obj-wide__info news-obj-wide__rubric news-obj-wide__info_left "
+                   "news-obj-wide__info-link waves-effect"
+        )
         self.article.topics = [topic.text.strip() for topic in topics]
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
@@ -347,7 +353,7 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
-        return datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S')
+        return datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S%z')
 
     def parse(self) -> Union[Article, bool, list]:
         """
