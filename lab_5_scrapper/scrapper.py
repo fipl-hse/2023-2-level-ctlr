@@ -5,7 +5,6 @@ Crawler implementation.
 import datetime
 import json
 import pathlib
-import pytz
 import random
 import re
 import time
@@ -235,9 +234,9 @@ class Crawler:
         links = article_bs.find_all('a', class_="card-big")
         for link in links:
             url = link.get('href')
-            url = str(self.url_pattern + url[len('/articles')::])
+            url = self.url_pattern + url[len('/articles')::]
             if url not in self.urls:
-                return url
+                return str(url)
         return ''
 
     def find_articles(self) -> None:
