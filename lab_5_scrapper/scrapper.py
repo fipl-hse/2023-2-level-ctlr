@@ -61,7 +61,7 @@ class Config:
         Args:
             path_to_config (pathlib.Path): Path to configuration.
         """
-        self._path_to_config = path_to_config
+        self.path_to_config = path_to_config
         self._validate_config_content()
         self.config_dto = self._extract_config_content()
 
@@ -80,7 +80,7 @@ class Config:
         Returns:
             ConfigDTO: Config values
         """
-        with open(self._path_to_config, 'r', encoding='utf-8') as f:
+        with open(self.path_to_config, 'r', encoding='utf-8') as f:
             config = json.load(f)
         return ConfigDTO(**config)
 
@@ -88,33 +88,35 @@ class Config:
         """
         Ensure configuration parameters are not corrupt.
         """
-        config = self._extract_config_content()
+        with open(self.path_to_config, 'r', encoding='utf-8') as f:
+            config = json.load(f)
 
-        if not (isinstance(config.seed_urls, list)
-                and all(re.match(r"https?://(www)?", seed_url)
-                        for seed_url in config.seed_urls
-                        )
-        ):
+        if not isinstance(config['seed_urls'], list):
             raise IncorrectSeedURLError
 
-        if not isinstance(config.total_articles, int) or config.total_articles <= 0:
+        if not (isinstance(config['seed_urls'], list)
+                and all(re.match(r'https?://(www.)?', seed_url) for seed_url in config['seed_urls'])):
+            raise IncorrectSeedURLError
+
+        if (not isinstance(config['total_articles_to_find_and_parse'], int) or
+                config['total_articles_to_find_and_parse'] <= 0):
             raise IncorrectNumberOfArticlesError
-        if config.total_articles > 150:
+
+        if not 0 < config['total_articles_to_find_and_parse'] <= 150:
             raise NumberOfArticlesOutOfRangeError
 
-        if not isinstance(config.headers, dict):
+        if not isinstance(config['headers'], dict):
             raise IncorrectHeadersError
 
-        if not isinstance(config.encoding, str):
+        if not isinstance(config['encoding'], str):
             raise IncorrectEncodingError
 
-        if not isinstance(config.should_verify_certificate, bool) \
-                or not isinstance(config.headless_mode, bool):
-            raise IncorrectVerifyError
-
-        if not isinstance(config.timeout, int) \
-                or config.timeout > 60 or config.timeout < 0:
+        if not isinstance(config['timeout'], int) or not 0 < config['timeout'] < 60:
             raise IncorrectTimeoutError
+
+        if (not isinstance(config['should_verify_certificate'], bool) or
+                not isinstance(config['headless_mode'], bool)):
+            raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
         """
