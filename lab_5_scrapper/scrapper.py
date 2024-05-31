@@ -63,15 +63,15 @@ class Config:
         """
         self._path_to_config = path_to_config
         self._validate_config_content()
-        self._config_dto = self._extract_config_content()
+        self.config_dto = self._extract_config_content()
 
-        self._seed_urls = self._config_dto.seed_urls
-        self._num_articles = self._config_dto.total_articles
-        self._headers = self._config_dto.headers
-        self._encoding = self._config_dto.encoding
-        self._timeout = self._config_dto.timeout
-        self._should_verify_certificate = self._config_dto.should_verify_certificate
-        self._headless_mode = self._config_dto.headless_mode
+        self._seed_urls = self.config_dto.seed_urls
+        self._num_articles = self.config_dto.total_articles
+        self._headers = self.config_dto.headers
+        self._encoding = self.config_dto.encoding
+        self._timeout = self.config_dto.timeout
+        self._should_verify_certificate = self.config_dto.should_verify_certificate
+        self._headless_mode = self.config_dto.headless_mode
 
     def _extract_config_content(self) -> ConfigDTO:
         """
@@ -215,7 +215,7 @@ class Crawler:
             config (Config): Configuration
         """
         self.urls = []
-        self._config = config
+        self.config = config
         self.url_pattern = 'https://vse42.ru/articles'
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
@@ -242,7 +242,7 @@ class Crawler:
         """
         seed_urls = self.get_search_urls()
         for seed_url in seed_urls:
-            response = make_request(seed_url, self._config)
+            response = make_request(seed_url, self.config)
             if not response.ok:
                 continue
 
@@ -250,12 +250,12 @@ class Crawler:
 
             extracted_url = self._extract_url(article_bs)
             while extracted_url:
-                if len(self.urls) == self._config.get_num_articles():
+                if len(self.urls) == self.config.get_num_articles():
                     break
                 self.urls.append(extracted_url)
                 extracted_url = self._extract_url(article_bs)
 
-            if len(self.urls) == self._config.get_num_articles():
+            if len(self.urls) == self.config.get_num_articles():
                 break
 
     def get_search_urls(self) -> list:
@@ -265,7 +265,7 @@ class Crawler:
         Returns:
             list: seed_urls param
         """
-        return self._config.get_seed_urls()
+        return self.config.get_seed_urls()
 
 
 # 10
