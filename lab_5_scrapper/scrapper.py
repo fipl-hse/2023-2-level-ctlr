@@ -219,8 +219,7 @@ class Crawler:
         """
         self.urls = []
         self.config = config
-        self.url_pattern = 'https://elementy.ru/novosti_nauki'
-        #self.url_pattern = 'https://vse42.ru/articles'
+        self.url_pattern = 'https://vse42.ru/articles'
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -232,39 +231,54 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
+        link = article_bs.find('a', class_="card-big").get('href')
+        url = self.url_pattern + link[len('/articles')::]
+        return url
 
-        #link = article_bs.find('a').get('href')
-        #url = self.url_pattern + link[len('/articles')::]
-        #print(url)
-
-        link = article_bs.find('a', class_='nohover').get('href')
-        url = self.url_pattern + link[len('/novosti_nauki')::]
-        print(url)
+        #link_tag = article_bs.find('a', class_='card-big')
+        #if link_tag and 'href' in link_tag.attrs:
+        #    link = link_tag['href']
+        #    url = self.url_pattern + link[len('/articles'):]
+        #    return url
 
     def find_articles(self) -> None:
         """
         Find articles.
         """
+        #seed_urls = self.get_search_urls()
+        #for seed_url in seed_urls:
+        #    response = make_request(seed_url, self.config)
+#
+        #    if not response.ok:
+        #        continue
+#
+        #    article_bs = BeautifulSoup(response.text, 'html.parser')
+#
+        #    for link in article_bs.find(class_="col-md-7").find_all(class_='articles__list'):
+        #        if len(self.urls) == self.config.get_num_articles():
+        #            break
+        #        if self._extract_url(link) and self._extract_url(link) not in self.urls:
+        #            self.urls.append(self._extract_url(link))
+
         seed_urls = self.get_search_urls()
         for seed_url in seed_urls:
             response = make_request(seed_url, self.config)
-
             if not response.ok:
                 continue
 
             article_bs = BeautifulSoup(response.text, 'html.parser')
-            for link in article_bs.find(class_='clblock newslist').find_all(class_='img_block32'):
-                if len(self.urls) == self.config.get_num_articles():
+            articles = article_bs.find_all('div', class_='col-md-7')
+            for article in articles:
+                links = article.find_all('div', class_='articles__list')
+                for link in links:
+                    extracted_url = self._extract_url(link)
+                    if extracted_url and extracted_url not in self.urls:
+                        self.urls.append(extracted_url)
+                    if len(self.urls) >= self.config.get_num_articles():
+                        break
+                if len(self.urls) >= self.config.get_num_articles():
                     break
-                if self._extract_url(link) and self._extract_url(link) not in self.urls:
-                    self.urls.append(self._extract_url(link))
 
-            #for link in article_bs.find(class_='').find_all(class_='list-item'):
-            #    if len(self.urls) == self.config.get_num_articles():
-            #        break
-            #    if self._extract_url(link) and self._extract_url(link) not in self.urls:
-            #        self.urls.append(self._extract_url(link))
-#
     def get_search_urls(self) -> list:
         """
         Get seed_urls param.
@@ -305,8 +319,20 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        paragraphs = article_soup.find_all('p')
-        self.article_text = "\n".join([p.get_text() for p in paragraphs])
+
+        #all_div = article_soup.find('div', class_='paragraph-block__text')
+        #full_text = ''
+        #all_p_tags = all_div.find_all('p')
+        #for p in all_p_tags:
+        #    full_text += p.text + '\n'
+        #self.article.text = full_text
+
+        text = article_soup.find(class_="paragraph-block__text")
+
+        paragraphs = text.find_all('p')
+        texts = [p.text for p in paragraphs]
+
+        self.article.text = '\n'.join(texts)
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -351,10 +377,10 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     Args:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
-    base_path = pathlib.Path(base_path)
-    if base_path.exists():
-        shutil.rmtree(base_path)
     base_path.mkdir(parents=True, exist_ok=True)
+
+    for file in base_path.iterdir():
+        file.unlink(missing_ok=True)
 
 
 def main() -> None:
@@ -366,6 +392,13 @@ def main() -> None:
     base_path = constants.ASSETS_PATH
     prepare_environment(base_path)
     crawler.find_articles()
+
+    for i, full_url in enumerate(crawler.urls, 1):
+        parser = HTMLParser(full_url=full_url, article_id=i, config=configuration)
+        article = parser.parse()
+        if isinstance(article, Article):
+            to_raw(article)
+            to_meta(article)
 
 
 if __name__ == "__main__":
