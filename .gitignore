@@ -153,4 +153,4 @@ dictionary.dic
 config/website/test_sphinx_project/_build
 
 # final project
-data
+/data
