@@ -6,12 +6,13 @@ import pathlib
 import spacy_udpipe
 import stanza
 from networkx import DiGraph
+from stanza.models.common.doc import Document
+from stanza.pipeline.core import Pipeline
 from stanza.utils.conll import CoNLL
 
-from admin_utils.stubs.stanza.models.common.doc import Document
-from admin_utils.stubs.stanza.pipeline.core import Pipeline
-from core_utils.article.article import get_article_id_from_filepath, Article, ArtifactType
-from core_utils.article.io import from_raw, to_cleaned, from_meta, to_meta
+from core_utils.article.article import (Article, ArtifactType,
+                                        get_article_id_from_filepath)
+from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
 from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
