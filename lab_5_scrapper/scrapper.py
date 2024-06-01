@@ -71,15 +71,15 @@ class Config:
             path_to_config (pathlib.Path): Path to configuration.
         """
         self.path_to_config = path_to_config
-        self._config = self._extract_config_content()
+        self.config = self._extract_config_content()
         self._validate_config_content()
-        self._seed_urls = self._config.seed_urls
-        self._num_articles = self._config.total_articles
-        self._headers = self._config.headers
-        self._encoding = self._config.encoding
-        self._timeout = self._config.timeout
-        self._should_verify_certificate = self._config.should_verify_certificate
-        self._headless_mode = self._config.headless_mode
+        self._seed_urls = self.config.seed_urls
+        self._num_articles = self.config.total_articles
+        self._headers = self.config.headers
+        self._encoding = self.config.encoding
+        self._timeout = self.config.timeout
+        self._should_verify_certificate = self.config.should_verify_certificate
+        self._headless_mode = self.config.headless_mode
 
     def _extract_config_content(self) -> ConfigDTO:
         """
@@ -88,7 +88,7 @@ class Config:
         Returns:
             ConfigDTO: Config values
         """
-        with open(file=self.path_to_config, mode='r', encoding='utf-8') as file:
+        with open(self.path_to_config, 'r', encoding='utf-8') as file:
             config = json.load(file)
         return ConfigDTO(**config)
 
@@ -103,19 +103,19 @@ class Config:
         if self._num_articles > 150 or self._num_articles < 1:
             raise NumberOfArticlesOutOfRangeError
 
-        if self._config.total_articles <= 0 or not isinstance(self._config.total_articles, int):
+        if self.config.total_articles <= 0 or not isinstance(self.config.total_articles, int):
             raise IncorrectNumberOfArticlesError
 
-        if not isinstance(self._config.headers, dict):
+        if not isinstance(self.config.headers, dict):
             raise IncorrectHeadersError
 
-        if not isinstance(self._config.encoding, str):
+        if not isinstance(self.config.encoding, str):
             raise IncorrectEncodingError
 
-        if self._config.timeout > 60 or self._config.timeout < 0:
+        if self.config.timeout > 60 or self.config.timeout < 0:
             raise IncorrectTimeoutError
 
-        if not isinstance(self._config.should_verify_certificate, bool) or not isinstance (self._config.headless_mode, bool):
+        if not isinstance(self.config.should_verify_certificate, bool) or not isinstance (self.config.headless_mode, bool):
             raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
@@ -284,8 +284,8 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         texts = []
-        allNews = article_soup.findAll(itemprop="articleBody")
-        for paragraph in allNews:
+        allnews = article_soup.findAll(itemprop="articleBody")
+        for paragraph in allnews:
             texts.append(paragraph.text)
             self.article.text = ''.join(texts)
 
@@ -333,13 +333,24 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
         base_path (Union[pathlib.Path, str]): Path where articles stores
     """
     if base_path.exists():
-        shutil.rmtree(base_path.parent)
+        shutil.rmtree(base_path)
     base_path.mkdir(parents=True)
 
 def main() -> None:
     """
     Entrypoint for scrapper module.
     """
+conf = Config(CRAWLER_CONFIG_PATH)
+prepare_environment(ASSETS_PATH)
+crawler = Crawler(conf)
+crawler.find_articles()
+
+
+for i, url in enumerate(crawler.urls, 1):
+    parser = HTMLParser(url, i, conf)
+    article = parser.parse()
+    to_raw(article)
+    to_meta(article)
 
 if __name__ == "__main__":
     main()
