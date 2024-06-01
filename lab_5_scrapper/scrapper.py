@@ -100,7 +100,7 @@ class Config:
             if not (isinstance(self.config.seed_urls, list) and seed_url.startswith('https://donday.ru/')):
                 raise IncorrectSeedURLError
 
-        if self._num_articles > 150 or self._num_articles < 1:
+        if self.config.total_articles > 150 or self.config.total_articles < 1:
             raise NumberOfArticlesOutOfRangeError
 
         if self.config.total_articles <= 0 or not isinstance(self.config.total_articles, int):
