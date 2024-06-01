@@ -99,9 +99,10 @@ class Config:
         Ensure configuration parameters are not corrupt.
         """
         if not isinstance(self.config_DTO.seed_urls, list) or not all(
-                seed.startswith('https://xn--80ady2a0c.xn--p1ai/calendar/') for seed in self.config_DTO.seed_urls):
+            seed.startswith('https://xn--80ady2a0c.xn--p1ai/calendar/') for seed in self.config_DTO.seed_urls):
             raise IncorrectSeedURLError
-        if not isinstance(self.config_DTO.total_articles, int) or self.config_DTO.total_articles < 1:
+        if (not isinstance(self.config_DTO.total_articles, int)
+                or self.config_DTO.total_articles < 1):
             raise IncorrectNumberOfArticlesError
         if self.config_DTO.total_articles < 1 or self.config_DTO.total_articles > 150:
             raise NumberOfArticlesOutOfRangeError
@@ -109,7 +110,8 @@ class Config:
             raise IncorrectHeadersError
         if not isinstance(self.config_DTO.encoding, str):
             raise IncorrectEncodingError
-        if not isinstance(self.config_DTO.timeout, int) or self.config_DTO.timeout < 1 or self.config_DTO.timeout > 60:
+        if (not isinstance(self.config_DTO.timeout, int) or
+            self.config_DTO.timeout < 1 or self.config_DTO.timeout > 60):
             raise IncorrectTimeoutError
         if not isinstance(self.config_DTO.headless_mode, bool) \
                 or not isinstance(self.config_DTO.should_verify_certificate, bool):
@@ -300,7 +302,7 @@ class HTMLParser:
         """
         self.article.text = article_soup.get_text()[
                             article_soup.get_text().find("печати") + 6:article_soup.get_text().find(
-                                "Если Вы заметили ошибку в тексте, выделите её и нажмите Ctrl+Enter, чтобы отослать информацию редактору. Спасибо!")].replace(
+                                "Если Вы заметили ошибку в тексте")].replace(
             "\n", " ").replace(".", "\n.").replace(" ", ' ')
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
@@ -317,7 +319,6 @@ class HTMLParser:
         date = str(article_soup.find_all("div", {"class": "sh_tb_0"})[0])
         date = date[date.find('>')+1:date.find(' ·'):1]
         self.article.date = self.unify_date_format(date)
-
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -338,7 +339,6 @@ class HTMLParser:
             good_data_string[2] = good_data_string[0] + ' ' + good_data_string[2] + ':00'
             good_data_string[0] ='2024-'
             return datetime.datetime.strptime(''.join(good_data_string), '%Y-%m-%d %H:%M:%S')
-
 
     def parse(self) -> Union[Article, bool, list]:
         """
