@@ -206,7 +206,8 @@ def make_request(url: str, config: Config) -> requests.models.Response:
         url=url,
         timeout=config.get_timeout(),
         headers=config.get_headers(),
-        verify=config.get_verify_certificate()
+        verify=config.get_verify_certificate(),
+        encoding=config.get_encoding()
     )
 
 
@@ -329,7 +330,8 @@ class HTMLParser:
 
         found_date = article_soup.find('meta', {'name': "date"})
         date = found_date['content']
-        self.article.date = self.unify_date_format(date)
+        if date:
+            self.article.date = self.unify_date_format(date)
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
