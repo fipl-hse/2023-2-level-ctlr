@@ -292,7 +292,7 @@ class HTMLParser:
         """
         self.full_url = full_url
         self.article_id = article_id
-        self.config = config
+        self._config = config
         self.article = Article(url=full_url, article_id=article_id)
 
     def _fill_article_with_text(self, article_soup: BeautifulSoup) -> None:
@@ -350,7 +350,7 @@ class HTMLParser:
         Returns:
             Union[Article, bool, list]: Article instance
         """
-        response = make_request(url=self.full_url, config=self.config)
+        response = make_request(url=self.full_url, config=self._config)
         if not response.ok:
             return False
         article_bs = BeautifulSoup(response.text, features="lxml")
@@ -370,7 +370,7 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     """
     if base_path.exists():
         shutil.rmtree(base_path)
-    base_path.mkdir(exist_ok=True, parents=True)
+    base_path.mkdir()
 
 
 def main() -> None:
