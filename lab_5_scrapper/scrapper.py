@@ -99,7 +99,7 @@ class Config:
         Ensure configuration parameters are not corrupt.
         """
         if not isinstance(self.config_DTO.seed_urls, list) or not all(
-                seed.startswith('https://xn--80ady2a0c.xn--p1ai/calendar/2024/') for seed in self.config_DTO.seed_urls):
+                seed.startswith('https://xn--80ady2a0c.xn--p1ai/calendar/') for seed in self.config_DTO.seed_urls):
             raise IncorrectSeedURLError
         if not isinstance(self.config_DTO.total_articles, int) or self.config_DTO.total_articles < 1:
             raise IncorrectNumberOfArticlesError
@@ -231,6 +231,11 @@ class Crawler:
         for div in divs_news_from_site:
             div.find_next('a').select_one("div").decompose()
             url_page_from_site = str(div.find_next('a'))[9:-6]
+            div.find_next('a').decompose()
+            if str(div) == '<div class="news"></div>':
+                div.decompose()
+            break
+
 
         return url_page_from_site
 
@@ -247,8 +252,11 @@ class Crawler:
                     continue
 
                 article_bs = BeautifulSoup(response.text, "lxml")
-                extracted = self._extract_url(article_bs)
-                self.urls.append(extracted)
+                extracted = []
+                for i in range(self.config.get_num_articles()):
+                    extracted.append(self._extract_url(article_bs))
+                for url in extracted:
+                    self.urls.append(url)
 
     def get_search_urls(self) -> list:
         """
@@ -306,6 +314,11 @@ class HTMLParser:
 
         self.article.title = article_soup.find_all('h1')[0].text
 
+        date = str(article_soup.find_all("div", {"class": "sh_tb_0"})[0])
+        date = date[date.find('>')+1:date.find(' ·'):1]
+        self.article.date = self.unify_date_format(date)
+
+
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
         Unify date format.
@@ -316,6 +329,16 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
+        if date_str[0:1] == 'П':
+            return datetime.datetime.strptime('2000-01-01 01:01:01', '%Y-%m-%d %H:%M:%S')
+        else:
+            mounts = {'января,': '01', 'февраля,': '02', 'марта,': '03', 'апреля,': '04', 'мая,': '05'}
+            good_data_string = date_str.split()
+            good_data_string[1] = mounts[good_data_string[1]] + '-'
+            good_data_string[2] = good_data_string[0] + ' ' + good_data_string[2] + ':00'
+            good_data_string[0] ='2024-'
+            return datetime.datetime.strptime(''.join(good_data_string), '%Y-%m-%d %H:%M:%S')
+
 
     def parse(self) -> Union[Article, bool, list]:
         """
