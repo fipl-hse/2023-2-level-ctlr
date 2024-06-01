@@ -198,7 +198,6 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     return requests.get(url=url,
                         headers=config.get_headers(),
                         timeout=config.get_timeout()
-                        # verify = config.get_verify_certificate()
                         )
 
 
