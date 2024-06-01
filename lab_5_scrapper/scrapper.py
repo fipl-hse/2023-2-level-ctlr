@@ -125,7 +125,7 @@ class Config:
             raise IncorrectTimeoutError('timeout value must be a positive integer less than 60')
 
         if (not isinstance(self.config_dto.should_verify_certificate, bool) or not
-                isinstance(self.config_dto.headless_mode, bool)):
+        isinstance(self.config_dto.headless_mode, bool)):
             raise IncorrectVerifyError('verify certificate value must either be True or False')
 
     def get_seed_urls(self) -> list[str]:
@@ -298,8 +298,8 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         article_soup_list = article_soup.find('article').find_all(['p', 'h4'],
-                                                             style=["text-align:justify",
-                                                                    "text-align:center"])
+                                                                  style=["text-align:justify",
+                                                                         "text-align:center"])
         text_list = []
         for el in article_soup_list:
             text_list.append(el.text)
@@ -320,7 +320,6 @@ class HTMLParser:
         topics = article_soup.find('a', class_='label')
         if topics:
             self.article.topics = [article_soup.find('a', class_='label').text]
-
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -353,7 +352,8 @@ class HTMLParser:
         my_date_format = "%d %B %Y года, %H:%M"
 
         for rus_month, eng_month in months_dict.items():
-            date1 = date_str.replace(rus_month, eng_month)
+            if rus_month in date_str:
+                date1 = date_str.replace(rus_month, eng_month)
 
         date1 = date1[:date_str.index(':') + 3]
         return datetime.datetime.strptime(date1, my_date_format)
