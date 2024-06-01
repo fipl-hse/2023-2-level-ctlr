@@ -193,7 +193,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-    return requests.get(url = url, timeout = config.get_timeout(), headers = config.get_headers(), verify = config.get_verify_certificate())
+    return requests.get(url=url, timeout=config.get_timeout(), headers=config.get_headers(), verify=config.get_verify_certificate())
 
 class Crawler:
     """
