@@ -341,6 +341,5 @@ def main() -> None:
     Entrypoint for scrapper module.
     """
 
-
 if __name__ == "__main__":
     main()
