@@ -72,15 +72,15 @@ class Config:
             path_to_config (pathlib.Path): Path to configuration.
         """
         self.path_to_config = path_to_config
-        self.config_DTO = self._extract_config_content()
+        self.config = self._extract_config_content()
         self._validate_config_content()
-        self._num_articles = self.config_DTO.total_articles
+        self._num_articles = self.config.total_articles
         self._seed_urls = self.get_seed_urls()
-        self._headers = self.config_DTO.headers
-        self._encoding = self.config_DTO.encoding
-        self._timeout = self.config_DTO.timeout
-        self._should_verify_certificate = self.config_DTO.should_verify_certificate
-        self._headless_mode = self.config_DTO.headless_mode
+        self._headers = self.config.headers
+        self._encoding = self.config.encoding
+        self._timeout = self.config.timeout
+        self._should_verify_certificate = self.config.should_verify_certificate
+        self._headless_mode = self.config.headless_mode
 
     def _extract_config_content(self) -> ConfigDTO:
         """
@@ -90,31 +90,33 @@ class Config:
             ConfigDTO: Config values
         """
         config = json.load(self.path_to_config.open())
-        config_DTO = ConfigDTO(**config)
+        config = ConfigDTO(**config)
 
-        return config_DTO
+        return config
 
     def _validate_config_content(self) -> None:
         """
         Ensure configuration parameters are not corrupt.
         """
-        if not isinstance(self.config_DTO.seed_urls, list) or not all(
-            seed.startswith('https://xn--80ady2a0c.xn--p1ai/calendar/') for seed in self.config_DTO.seed_urls):
+        if not isinstance(self.config.seed_urls, list) or not all(
+            seed.startswith('https://xn--80ady2a0c.xn--p1ai/calendar/')
+            for seed in self.config.seed_urls
+        ):
             raise IncorrectSeedURLError
-        if (not isinstance(self.config_DTO.total_articles, int)
-                or self.config_DTO.total_articles < 1):
+        if (not isinstance(self.config.total_articles, int)
+                or self.config.total_articles < 1):
             raise IncorrectNumberOfArticlesError
-        if self.config_DTO.total_articles < 1 or self.config_DTO.total_articles > 150:
+        if self.config.total_articles < 1 or self.config.total_articles > 150:
             raise NumberOfArticlesOutOfRangeError
-        if not isinstance(self.config_DTO.headers, dict):
+        if not isinstance(self.config.headers, dict):
             raise IncorrectHeadersError
-        if not isinstance(self.config_DTO.encoding, str):
+        if not isinstance(self.config.encoding, str):
             raise IncorrectEncodingError
-        if (not isinstance(self.config_DTO.timeout, int) or
-            self.config_DTO.timeout < 1 or self.config_DTO.timeout > 60):
+        if (not isinstance(self.config.timeout, int) or
+            self.config.timeout < 1 or self.config.timeout > 60):
             raise IncorrectTimeoutError
-        if not isinstance(self.config_DTO.headless_mode, bool) \
-                or not isinstance(self.config_DTO.should_verify_certificate, bool):
+        if not isinstance(self.config.headless_mode, bool) \
+                or not isinstance(self.config.should_verify_certificate, bool):
             raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
@@ -125,7 +127,7 @@ class Config:
             list[str]: Seed urls
         """
 
-        return self.config_DTO.seed_urls
+        return self.config.seed_urls
 
     def get_num_articles(self) -> int:
         """
@@ -134,7 +136,7 @@ class Config:
         Returns:
             int: Total number of articles to scrape
         """
-        return self.config_DTO.total_articles
+        return self.config.total_articles
 
     def get_headers(self) -> dict[str, str]:
         """
@@ -143,7 +145,7 @@ class Config:
         Returns:
             dict[str, str]: Headers
         """
-        return self.config_DTO.headers
+        return self.config.headers
 
     def get_encoding(self) -> str:
         """
@@ -152,7 +154,7 @@ class Config:
         Returns:
             str: Encoding
         """
-        return self.config_DTO.encoding
+        return self.config.encoding
 
     def get_timeout(self) -> int:
         """
@@ -161,7 +163,7 @@ class Config:
         Returns:
             int: Number of seconds to wait for response
         """
-        return self.config_DTO.timeout
+        return self.config.timeout
 
     def get_verify_certificate(self) -> bool:
         """
@@ -170,7 +172,7 @@ class Config:
         Returns:
             bool: Whether to verify certificate or not
         """
-        return self.config_DTO.should_verify_certificate
+        return self.config.should_verify_certificate
 
     def get_headless_mode(self) -> bool:
         """
@@ -179,7 +181,7 @@ class Config:
         Returns:
             bool: Whether to use headless mode or not
         """
-        return self.config_DTO.headless_mode
+        return self.config.headless_mode
 
 
 def make_request(url: str, config: Config) -> requests.models.Response:
@@ -255,7 +257,7 @@ class Crawler:
 
                 article_bs = BeautifulSoup(response.text, "lxml")
                 extracted = []
-                for i in range(self.config.get_num_articles()):
+                for _ in range(self.config.get_num_articles()):
                     extracted.append(self._extract_url(article_bs))
                 for url in extracted:
                     self.urls.append(url)
@@ -332,13 +334,14 @@ class HTMLParser:
         """
         if date_str[0:1] == 'П':
             return datetime.datetime.strptime('2000-01-01 01:01:01', '%Y-%m-%d %H:%M:%S')
-        else:
-            mounts = {'января,': '01', 'февраля,': '02', 'марта,': '03', 'апреля,': '04', 'мая,': '05'}
-            good_data_string = date_str.split()
-            good_data_string[1] = mounts[good_data_string[1]] + '-'
-            good_data_string[2] = good_data_string[0] + ' ' + good_data_string[2] + ':00'
-            good_data_string[0] ='2024-'
-            return datetime.datetime.strptime(''.join(good_data_string), '%Y-%m-%d %H:%M:%S')
+
+        mounts = {'января,': '01', 'февраля,': '02', 'марта,': '03',
+                  'апреля,': '04', 'мая,': '05'}
+        good_data_string = date_str.split()
+        good_data_string[1] = mounts[good_data_string[1]] + '-'
+        good_data_string[2] = good_data_string[0] + ' ' + good_data_string[2] + ':00'
+        good_data_string[0] ='2024-'
+        return datetime.datetime.strptime(''.join(good_data_string), '%Y-%m-%d %H:%M:%S')
 
     def parse(self) -> Union[Article, bool, list]:
         """
@@ -350,10 +353,10 @@ class HTMLParser:
         response = make_request(url=self.full_url, config=self.config)
         if not response.ok:
             return False
-        егоarticle_bs = BeautifulSoup(response.text, features="lxml")
+        article_bs = BeautifulSoup(response.text, features="lxml")
 
-        self._fill_article_with_text(егоarticle_bs)
-        self._fill_article_with_meta_information(егоarticle_bs)
+        self._fill_article_with_text(article_bs)
+        self._fill_article_with_meta_information(article_bs)
 
         return self.article
 
@@ -379,7 +382,6 @@ def main() -> None:
     prepare_environment(ASSETS_PATH)
 
     crawler.find_articles()
-    i = 1
     for index, url in enumerate(crawler.urls, 1):
         parser = HTMLParser(url, index, config)
         article = parser.parse()
