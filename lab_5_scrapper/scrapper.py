@@ -90,9 +90,9 @@ class Config:
             ConfigDTO: Config values
         """
         config = json.load(self.path_to_config.open())
-        config = ConfigDTO(**config)
+        config_dto = ConfigDTO(**config)
 
-        return config
+        return config_dto
 
     def _validate_config_content(self) -> None:
         """
