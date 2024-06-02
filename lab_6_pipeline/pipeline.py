@@ -306,7 +306,7 @@ class POSFrequencyPipeline:
             dict[str, int]: POS frequencies
         """
         pos_dict = {}
-        for pos_tag in self.analyzer.from_conllu(article).get('upos'):
+        for pos_tag in self._analyzer.from_conllu(article).get('upos'):
             pos_dict[pos_tag] = pos_dict.get(pos_tag, 0) + 1
         return pos_dict
 
