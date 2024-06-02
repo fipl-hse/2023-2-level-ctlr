@@ -259,7 +259,8 @@ class Crawler:
                 continue
             soup = BeautifulSoup(response.text, "html.parser")
             contents = soup.find_all('div', id='dle-content')
-            for content in contents:
+            max_articles = self.config.get_num_articles()
+            for content in contents[:max_articles]:
                 for item in content.find_all('h3', class_='btl'):
                     url_news = self._extract_url(item)
                     if url_news not in self.urls:
