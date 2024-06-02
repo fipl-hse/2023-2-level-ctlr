@@ -88,9 +88,9 @@ class Config:
         Returns:
             ConfigDTO: Config values
         """
-        with open(self.path_to_config, 'r', encoding='utf-8') as file:
-            config = json.load(file)
-        return ConfigDTO(**config)
+        file_config = json.load(open(self.path_to_config))
+        config = ConfigDTO(**file_config)
+        return config
 
     def _validate_config_content(self) -> None:
         """
@@ -193,7 +193,10 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-    return requests.get(url=url, timeout=config.get_timeout(), headers=config.get_headers(), verify=config.get_verify_certificate())
+    return requests.get(url=url,
+                        timeout=config.get_timeout(),
+                        headers=config.get_headers()
+                        )
 
 class Crawler:
     """
@@ -211,7 +214,7 @@ class Crawler:
         """
         self.config = config
         self.urls = []
-        self.url_pattern = 'https://donday.ru/lenta'
+        self.url_pattern = 'https://donday.ru/'
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -224,7 +227,7 @@ class Crawler:
             str: Url from HTML
         """
         url = ""
-        all_news = article_bs.find_all('h3')
+        all_news = article_bs.find_all('div', class_="news")
         for news in all_news:
             url = news.find('a')['href']
             if url not in self.urls:
@@ -288,6 +291,7 @@ class HTMLParser:
         for paragraph in allnews:
             texts.append(paragraph.text)
             self.article.text = ''.join(texts)
+        print(self.article.text)
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -340,17 +344,18 @@ def main() -> None:
     """
     Entrypoint for scrapper module.
     """
-conf = Config(CRAWLER_CONFIG_PATH)
+config = Config(path_to_config=CRAWLER_CONFIG_PATH)
+crawler = Crawler(config)
 prepare_environment(ASSETS_PATH)
-crawler = Crawler(conf)
+
 crawler.find_articles()
-
-
-for i, url in enumerate(crawler.urls, 1):
-    parser = HTMLParser(url, i, conf)
+for index, url in enumerate(crawler.urls, 1):
+    parser = HTMLParser(url, index, config)
     article = parser.parse()
-    to_raw(article)
-    to_meta(article)
+    if isinstance(article, Article):
+        to_raw(article)
+        to_meta(article)
+
 
 if __name__ == "__main__":
     main()
