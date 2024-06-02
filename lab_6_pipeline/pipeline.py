@@ -305,14 +305,10 @@ class POSFrequencyPipeline:
         Returns:
             dict[str, int]: POS frequencies
         """
-        pos_freq = {}
-        for sentence in self._analyzer.from_conllu(article).sentences:
-            words = []
-            for word in sentence.words:
-                words.append(word.to_dict().get('upos'))
-            for word in set(words):
-                pos_freq[word] = pos_freq.get(word, 0) + words.count(word)
-        return pos_freq
+        pos_dict = {}
+        for pos_tag in self.analyzer.from_conllu(article).get('upos'):
+            pos_dict[pos_tag] = pos_dict.get(pos_tag, 0) + 1
+        return pos_dict
 
 
 class PatternSearchPipeline(PipelineProtocol):
