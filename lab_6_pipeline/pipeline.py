@@ -63,12 +63,12 @@ class CorpusManager:
             raise NotADirectoryError
         if not any(self.path_to_raw_txt_data.iterdir()):
             raise EmptyDirectoryError
-        text = sorted(list(self.path_to_raw_txt_data.glob("*_raw.txt")),
-                      key=get_article_id_from_filepath)
-        meta = sorted(list(self.path_to_raw_txt_data.glob("*_meta.json")),
-                      key=get_article_id_from_filepath)
+        text = list(self.path_to_raw_txt_data.glob("*_raw.txt"))
+        meta = list(self.path_to_raw_txt_data.glob("*_meta.json"))
         if len(text) != len(meta):
             raise InconsistentDatasetError()
+        text = sorted(text, key=get_article_id_from_filepath)
+        meta = sorted(meta, key=get_article_id_from_filepath)
         for i, (raw, meta) in enumerate(zip(text, meta)):
             if i + 1 != get_article_id_from_filepath(raw) \
                     or i + 1 != get_article_id_from_filepath(meta) \
