@@ -230,7 +230,6 @@ class Crawler:
         """
         self.config = config
         self.urls = []
-        self.url_pattern = 'https://donday.ru/'
 
     def _extract_url(self, article_bs: BeautifulSoup) -> str:
         """
@@ -256,13 +255,13 @@ class Crawler:
                 response = make_request(url, self.config)
                 if not response.ok:
                     continue
-                soup = BeautifulSoup(response.text, "lxml")
+                soup = BeautifulSoup(response.text, "html.parser")
                 contents = soup.find_all('div', id='dle-content')
                 for content in contents:
                     for item in content.find_all('h3', class_='btl'):
                         url_news = self._extract_url(item)
                         if url_news not in self.urls:
-                            self.urls.append(url_news)
+                            self.urls.extend(url_news)
 
     def get_search_urls(self) -> list:
         """
