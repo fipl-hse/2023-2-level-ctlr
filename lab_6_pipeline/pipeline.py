@@ -87,9 +87,10 @@ class CorpusManager:
         Register each dataset entry.
         """
         txt_files = sorted(self.path_to_raw_txt_data.glob('*_raw.txt'))
-        self._storage = {get_article_id_from_filepath(raw):
-                         from_raw(path=raw, article=Article(None, get_article_id_from_filepath(raw)))
-                         for raw in txt_files}
+        self._storage = {
+            get_article_id_from_filepath(raw):
+            from_raw(path=raw, article=Article(None, get_article_id_from_filepath(raw)))
+            for raw in txt_files}
 
     def get_articles(self) -> dict:
         """
@@ -123,17 +124,17 @@ class TextProcessingPipeline(PipelineProtocol):
         """
         Perform basic preprocessing and write processed text to files.
         """
+
         articles = self._corpus.get_articles().values()
-        doc_conllu = []
+        doc_conllu = [article.text for article in articles]
         if self.analyzer:
-            doc_conllu = self.analyzer.analyze([article.text for article in articles])
+            doc_conllu = self.analyzer.analyze(doc_conllu)
 
-        for index, article in enumerate(articles):
+        for article, doc in zip(articles, doc_conllu if doc_conllu else []):
             to_cleaned(article)
-            if self.analyzer and doc_conllu:
-                article.set_conllu_info(doc_conllu[index])
+            if self.analyzer and doc:
+                article.set_conllu_info(doc)
                 self.analyzer.to_conllu(article)
-
 
 class UDPipeAnalyzer(LibraryWrapper):
     """
