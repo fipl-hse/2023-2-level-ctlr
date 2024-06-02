@@ -263,7 +263,7 @@ class Crawler:
                 for item in content.find_all('h3', class_='btl'):
                     url_news = self._extract_url(item)
                     if url_news not in self.urls:
-                        self.urls.extend(url_news)
+                        self.urls.append(url_news)
 
     def get_search_urls(self) -> list:
         """
@@ -371,7 +371,7 @@ def main() -> None:
         article = parser.parse()
         to_raw(article)
         to_meta(article)
-
+    print('Done')
 
 if __name__ == "__main__":
     main()
