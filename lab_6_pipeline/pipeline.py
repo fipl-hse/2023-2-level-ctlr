@@ -10,7 +10,9 @@ except ImportError:  # pragma: no cover
     DiGraph = None  # type: ignore
     print('No libraries installed. Failed to import.')
 
-from core_utils.article.article import Article
+from core_utils.article.article import Article, get_article_id_from_filepath, split_by_sentence
+from core_utils.article.io import from_raw, to_cleaned
+from core_utils.constants import ASSETS_PATH
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
 
@@ -18,6 +20,18 @@ from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, Library
 class InconsistentDatasetError(Exception):
     """
     IDs contain slips, number of meta and raw files is not equal, files are empty
+    """
+
+
+class EmptyDirectoryError(Exception):
+    """
+    Directory is empty
+    """
+
+
+class EmptyFileError(Exception):
+    """
+    Article file is empty
     """
 
 
@@ -42,25 +56,34 @@ class CorpusManager:
         """
         Validate folder with assets.
         """
-        if not self.path_to_raw_txt_data.exists:
+        if not self.path_to_raw_txt_data.exists():
             raise FileNotFoundError
-        if not self.path_to_raw_txt_data.is_dir:
+        if not self.path_to_raw_txt_data.is_dir():
             raise NotADirectoryError
         if not any(self.path_to_raw_txt_data.iterdir()):
             raise InconsistentDatasetError
 
-        raw_t = list(self.path_to_raw_txt_data.glob("*_raw.txt")))
-        meta_t = list(self.path_to_raw_txt_data.glob("*_meta.txt")))
-        if len(raw_t) != len(meta_t):
+        raw_files = [i for i in self.path_to_raw_txt_data.glob('*_raw.txt')]
+        meta_files = [i for i in self.path_to_raw_txt_data.glob('*_meta.json')]
+        if len(raw_files) != len(meta_files):
             raise InconsistentDatasetError
 
+        sorted_raw_files = sorted(raw_files, key=get_article_id_from_filepath)
+        sorted_meta_files = sorted(meta_files, key=get_article_id_from_filepath)
+
+        for index, (raw_file, meta_file) in enumerate(zip(sorted_raw_files, sorted_meta_files), 1):
+            if (index != get_article_id_from_filepath(raw_file) or index != get_article_id_from_filepath(meta_file)
+                    or raw_file.stat().st_size == 0 or meta_file.stat().st_size == 0):
+                raise InconsistentDatasetError
 
     def _scan_dataset(self) -> None:
         """
         Register each dataset entry.
         """
-
-
+        for file in self.path_to_raw_txt_data.glob('*_raw.txt'):
+            article_id = get_article_id_from_filepath(file)
+            article_text = from_raw(path=file, article=Article(url=None, article_id=article_id))
+            self._storage[article_id] = article_text
 
     def get_articles(self) -> dict:
         """
@@ -69,6 +92,7 @@ class CorpusManager:
         Returns:
             dict: Storage params
         """
+        return self._storage
 
 
 class TextProcessingPipeline(PipelineProtocol):
@@ -86,11 +110,20 @@ class TextProcessingPipeline(PipelineProtocol):
             corpus_manager (CorpusManager): CorpusManager instance
             analyzer (LibraryWrapper | None): Analyzer instance
         """
+        self._corpus_manager = corpus_manager
+        self._analyzer = analyzer
 
     def run(self) -> None:
         """
         Perform basic preprocessing and write processed text to files.
         """
+        for article in self._corpus_manager.get_articles().values():
+            to_cleaned(article)
+            if self._analyzer:
+                texts = split_by_sentence(article.text)
+                text_analyze = self._analyzer.analyze(texts)
+                article.set_conllu_info(text_analyze)
+                self._analyzer.to_conllu(article)
 
 
 class UDPipeAnalyzer(LibraryWrapper):
@@ -277,7 +310,11 @@ def main() -> None:
     """
     Entrypoint for pipeline module.
     """
-
+    corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
+    analyzer = UDPipeAnalyzer()
+    pipeline = TextProcessingPipeline(corpus_manager, analyzer)
+    pipeline.run()
+    print('done')
 
 if __name__ == "__main__":
     main()
