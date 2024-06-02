@@ -142,7 +142,6 @@ class Config:
         """
         return self._seed_urls
 
-
     def get_num_articles(self) -> int:
         """
         Retrieve total number of articles to scrape.
@@ -214,6 +213,7 @@ def make_request(url: str, config: Config) -> requests.models.Response:
                         verify=config.get_verify_certificate())
     return res
 
+
 class Crawler:
     """
     Crawler implementation.
@@ -272,6 +272,7 @@ class Crawler:
         """
         return self.config.get_seed_urls()
 
+
 # 10
 # 4, 6, 8, 10
 
@@ -316,7 +317,6 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
 
-
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
         Unify date format.
@@ -342,6 +342,7 @@ class HTMLParser:
 
         return self.article
 
+
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     """
     Create ASSETS_PATH folder if no created and remove existing folder.
@@ -352,6 +353,7 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     if base_path.exists():
         shutil.rmtree(base_path)
     base_path.mkdir(parents=True)
+
 
 def main() -> None:
     """
@@ -368,6 +370,7 @@ def main() -> None:
         to_raw(article)
         to_meta(article)
 #test
+
 
 if __name__ == "__main__":
     main()
