@@ -287,11 +287,11 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        texts = []
-        allnews = article_soup.findAll(itemprop="articleBody")
-        for paragraph in allnews:
-            texts.append(paragraph.text)
-            self.article.text = ''.join(texts)
+        allnews = article_soup.find(itemprop="articleBody")
+        text_split = allnews.text.replace('\n', '').split()
+        text = ' '.join(text_split)
+        clear_text = '. '.join(text.split('. ')[:-2])
+        self.article.text = clear_text
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
@@ -320,6 +320,11 @@ class HTMLParser:
         Returns:
             Union[Article, bool, list]: Article instance
         """
+        response = make_request(self.full_url, self.config)
+        if response.ok:
+            article_bs = BeautifulSoup(response.text, features='html.parser')
+            self._fill_article_with_text(article_bs)
+        return self.article
 
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     """
@@ -336,17 +341,16 @@ def main() -> None:
     """
     Entrypoint for scrapper module.
     """
-    config = Config(path_to_config=CRAWLER_CONFIG_PATH)
-    crawler = Crawler(config)
+    config = Config(CRAWLER_CONFIG_PATH)
     prepare_environment(ASSETS_PATH)
-
+    crawler = Crawler(config)
     crawler.find_articles()
-    for index, url in enumerate(crawler.urls, 1):
-        parser = HTMLParser(url, index, config)
-        article = parser.parse()
-        if isinstance(article, Article):
-            to_raw(article)
-            to_meta(article)
+    for i, url in enumerate(crawler.urls):
+        parser = HTMLParser(url, i + 1, config)
+        text = parser.parse()
+        if isinstance(text, Article):
+            to_raw(text)
+            to_meta(text)
 #test
 
 if __name__ == "__main__":
