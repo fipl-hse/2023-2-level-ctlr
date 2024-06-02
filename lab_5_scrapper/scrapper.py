@@ -326,7 +326,7 @@ class HTMLParser:
         topics = article_soup.find(class_="argcat")
         self.article.topics = topics.text.replace('\n', '')
         time = article_soup.find('time', itemprop="datePublished")
-        self.article.time = time.text.replace('\n', '')
+        self.article.time = self.unify_date_format(time.attrs.get('datetime'))
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -338,6 +338,7 @@ class HTMLParser:
         Returns:
             datetime.datetime: Datetime object
         """
+
 
     def parse(self) -> Union[Article, bool, list]:
         """
