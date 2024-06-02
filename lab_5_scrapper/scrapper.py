@@ -318,10 +318,10 @@ class HTMLParser:
         title = article_soup.find('h1', {'class': 'doc_header__name js-search-mark'}).text
         if title:
             self.article.title = title
-        author = article_soup.find('p', {'class': 'doc__text document_authors'}).text
+        author = article_soup.find('p', {'class': 'doc__text document_authors'})
         if author:
-            self.article.author.append(author)
-        if not author:
+            self.article.author.append(author.text)
+        else:
             self.article.author.append('NOT FOUND')
         date_bs = article_soup.find('div', {'class': 'doc_header__time'}).get('datetime')
         if isinstance(date_bs, str):
