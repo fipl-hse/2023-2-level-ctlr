@@ -185,7 +185,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         with open(article.get_file_path(
                 kind=ArtifactType.UDPIPE_CONLLU), 'w', encoding='utf-8') as annotation_file:
             annotation_file.writelines(article.get_conllu_info())
-            annotation_file.write("\n")
+            # annotation_file.write("\n")
 
 
 class StanzaAnalyzer(LibraryWrapper):
