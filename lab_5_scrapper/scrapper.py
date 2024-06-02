@@ -227,7 +227,8 @@ class Crawler:
             str: Url from HTML
         """
 
-        return str(article_bs['href'])
+        article_url = article_bs.find('a').get('href')
+        return article_url
 
     def find_articles(self) -> None:
         """
@@ -240,9 +241,12 @@ class Crawler:
                 if not response.ok:
                     continue
                 soup = BeautifulSoup(response.text, "lxml")
-                for link in soup.find_all('a'):
-                    if self._extract_url(link) not in self.urls:
-                        self.urls.append(self._extract_url(link))
+                contents = soup.find_all('div', id='dle-content')
+                for content in contents:
+                    for item in content.find_all('h3', class_='btl'):
+                        url_news = self._extract_url(item)
+                        if url_news not in self.urls:
+                            self.urls.append(url_news)
 
     def get_search_urls(self) -> list:
         """
@@ -296,6 +300,7 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """

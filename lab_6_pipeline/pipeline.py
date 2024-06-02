@@ -15,6 +15,12 @@ from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, Library
                                  PipelineProtocol, StanzaDocument, TreeNode)
 
 
+class InconsistentDatasetError(Exception):
+    """
+    IDs contain slips, number of meta and raw files is not equal, files are empty
+    """
+
+
 class CorpusManager:
     """
     Work with articles and store them.
@@ -27,16 +33,34 @@ class CorpusManager:
         Args:
             path_to_raw_txt_data (pathlib.Path): Path to raw txt data
         """
+        self.path_to_raw_txt_data = path_to_raw_txt_data
+        self._storage = {}
+        self._validate_dataset()
+        self._scan_dataset()
 
     def _validate_dataset(self) -> None:
         """
         Validate folder with assets.
         """
+        if not self.path_to_raw_txt_data.exists:
+            raise FileNotFoundError
+        if not self.path_to_raw_txt_data.is_dir:
+            raise NotADirectoryError
+        if not any(self.path_to_raw_txt_data.iterdir()):
+            raise InconsistentDatasetError
+
+        raw_t = list(self.path_to_raw_txt_data.glob("*_raw.txt")))
+        meta_t = list(self.path_to_raw_txt_data.glob("*_meta.txt")))
+        if len(raw_t) != len(meta_t):
+            raise InconsistentDatasetError
+
 
     def _scan_dataset(self) -> None:
         """
         Register each dataset entry.
         """
+
+
 
     def get_articles(self) -> dict:
         """
@@ -53,7 +77,7 @@ class TextProcessingPipeline(PipelineProtocol):
     """
 
     def __init__(
-        self, corpus_manager: CorpusManager, analyzer: LibraryWrapper | None = None
+            self, corpus_manager: CorpusManager, analyzer: LibraryWrapper | None = None
     ) -> None:
         """
         Initialize an instance of the TextProcessingPipeline class.
@@ -197,7 +221,7 @@ class PatternSearchPipeline(PipelineProtocol):
     """
 
     def __init__(
-        self, corpus_manager: CorpusManager, analyzer: LibraryWrapper, pos: tuple[str, ...]
+            self, corpus_manager: CorpusManager, analyzer: LibraryWrapper, pos: tuple[str, ...]
     ) -> None:
         """
         Initialize an instance of the PatternSearchPipeline class.
@@ -220,7 +244,7 @@ class PatternSearchPipeline(PipelineProtocol):
         """
 
     def _add_children(
-        self, graph: DiGraph, subgraph_to_graph: dict, node_id: int, tree_node: TreeNode
+            self, graph: DiGraph, subgraph_to_graph: dict, node_id: int, tree_node: TreeNode
     ) -> None:
         """
         Add children to TreeNode.
