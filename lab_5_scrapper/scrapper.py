@@ -71,8 +71,8 @@ class Config:
             path_to_config (pathlib.Path): Path to configuration.
         """
         self.path_to_config = path_to_config
-        self.config = self._extract_config_content()
         self._validate_config_content()
+        self.config = self._extract_config_content()
         self._seed_urls = self.config.seed_urls
         self._num_articles = self.config.total_articles
         self._headers = self.config.headers
@@ -88,35 +88,50 @@ class Config:
         Returns:
             ConfigDTO: Config values
         """
-        with open(self.path_to_config, encoding='utf-8') as file:
+        with open(self.path_to_config, 'r', encoding='utf-8') as file:
             config = json.load(file)
-        return ConfigDTO(**config)
+        return ConfigDTO(
+            seed_urls=config["seed_urls"],
+            total_articles_to_find_and_parse=config["total_articles_to_find_and_parse"],
+            headers=config["headers"],
+            encoding=config["encoding"],
+            timeout=config["timeout"],
+            should_verify_certificate=config["should_verify_certificate"],
+            headless_mode=config["headless_mode"]
+        )
 
     def _validate_config_content(self) -> None:
         """
         Ensure configuration parameters are not corrupt.
         """
-        for seed_url in self.config.seed_urls:
-            if not re.match(r"https?://(www.)?donday\.ru", seed_url):
+        with open(self.path_to_config, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+
+            if not isinstance(config['seed_urls'], list):
                 raise IncorrectSeedURLError
 
-        if self.config.total_articles > 150 or self.config.total_articles < 1:
-            raise NumberOfArticlesOutOfRangeError
+            if not all(seed_url.startswith('https://donday.ru/') for seed_url in config['seed_urls']):
+                raise IncorrectSeedURLError
 
-        if self.config.total_articles <= 0 or not isinstance(self.config.total_articles, int):
-            raise IncorrectNumberOfArticlesError
+            if (not isinstance(config['total_articles_to_find_and_parse'], int) or
+                    config['total_articles_to_find_and_parse'] <= 0):
+                raise IncorrectNumberOfArticlesError
 
-        if not isinstance(self.config.headers, dict):
-            raise IncorrectHeadersError
+            if not 1 < config['total_articles_to_find_and_parse'] <= 150:
+                raise NumberOfArticlesOutOfRangeError
 
-        if not isinstance(self.config.encoding, str):
-            raise IncorrectEncodingError
+            if not isinstance(config['headers'], dict):
+                raise IncorrectHeadersError
 
-        if self.config.timeout > 60 or self.config.timeout < 0:
-            raise IncorrectTimeoutError
+            if not isinstance(config['encoding'], str):
+                raise IncorrectEncodingError
 
-        if not isinstance(self.config.should_verify_certificate, bool) or not isinstance (self.config.headless_mode, bool):
-            raise IncorrectVerifyError
+            if not isinstance(config['timeout'], int) or not 0 < config['timeout'] < 60:
+                raise IncorrectTimeoutError
+
+            if (not isinstance(config['should_verify_certificate'], bool) or
+                    not isinstance(config['headless_mode'], bool)):
+                raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
         """
@@ -193,10 +208,11 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-    return requests.get(url=url,
+    res = requests.get(url=url,
                         timeout=config.get_timeout(),
-                        headers=config.get_headers()
-                        )
+                        headers=config.get_headers(),
+                        verify=config.get_verify_certificate())
+    return res
 
 class Crawler:
     """
@@ -322,8 +338,9 @@ class HTMLParser:
         """
         response = make_request(self.full_url, self.config)
         if response.ok:
-            article_bs = BeautifulSoup(response.text, features='html.parser')
+            article_bs = BeautifulSoup(response.text, features='lxml')
             self._fill_article_with_text(article_bs)
+
         return self.article
 
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
@@ -341,16 +358,16 @@ def main() -> None:
     """
     Entrypoint for scrapper module.
     """
-    config = Config(CRAWLER_CONFIG_PATH)
+    conf = Config(CRAWLER_CONFIG_PATH)
     prepare_environment(ASSETS_PATH)
-    crawler = Crawler(config)
+    crawler = Crawler(conf)
     crawler.find_articles()
-    for i, url in enumerate(crawler.urls):
-        parser = HTMLParser(url, i + 1, config)
-        text = parser.parse()
-        if isinstance(text, Article):
-            to_raw(text)
-            to_meta(text)
+
+    for i, url in enumerate(crawler.urls, 1):
+        parser = HTMLParser(url, i, conf)
+        article = parser.parse()
+        to_raw(article)
+        to_meta(article)
 #test
 
 if __name__ == "__main__":
