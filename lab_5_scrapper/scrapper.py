@@ -319,6 +319,14 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
+        title_find = article_soup.find(itemprop="headline")
+        self.article.title = title_find.text.replace('\n', '')
+        author = article_soup.find(class_="argauthor")
+        self.article.author = author.text.replace('\n', '').strip()
+        topics = article_soup.find(class_="argcat")
+        self.article.topics = topics.text.replace('\n', '')
+        time = article_soup.find('time', itemprop="datePublished")
+        self.article.time = time.text.replace('\n', '')
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
@@ -342,6 +350,7 @@ class HTMLParser:
         if response.ok:
             article_bs = BeautifulSoup(response.text, features='lxml')
             self._fill_article_with_text(article_bs)
+            self._fill_article_with_meta_information(article_bs)
 
         return self.article
 
