@@ -110,19 +110,21 @@ class TextProcessingPipeline(PipelineProtocol):
             analyzer (LibraryWrapper | None): Analyzer instance
         """
         self._corpus = corpus_manager
-        self._analyzer = analyzer
+        self.analyzer = analyzer
 
     def run(self) -> None:
         """
         Perform basic preprocessing and write processed text to files.
         """
-        docs = self._analyzer.analyze([article.text for article in
-                                       self._corpus.get_articles().values()])
-        for i, article in enumerate(self._corpus.get_articles().values()):
+        articles = self._corpus.get_articles()
+        conllu_articles = []
+        if self.analyzer:
+            conllu_articles = self.analyzer.analyze([article.text for article in articles.values()])
+        for i, article in enumerate(articles.values()):
             to_cleaned(article)
-            if self._analyzer and docs:
-                article.set_conllu_info(docs[i])
-                self._analyzer.to_conllu(article)
+            if self.analyzer and conllu_articles:
+                article.set_conllu_info(conllu_articles[i])
+                self.analyzer.to_conllu(article)
 
 
 class UDPipeAnalyzer(LibraryWrapper):
