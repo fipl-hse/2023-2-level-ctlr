@@ -253,18 +253,17 @@ class Crawler:
         Find articles.
         """
 
-        while len(self.get_search_urls()) < self.config.get_num_articles():
-            for url in self.get_search_urls():
-                response = make_request(url, self.config)
-                if not response.ok:
-                    continue
-                soup = BeautifulSoup(response.text, "html.parser")
-                contents = soup.find_all('div', id='dle-content')
-                for content in contents:
-                    for item in content.find_all('h3', class_='btl'):
-                        url_news = self._extract_url(item)
-                        if url_news not in self.urls:
-                            self.urls.extend(url_news)
+        for url in self.get_search_urls():
+            response = make_request(url, self.config)
+            if not response.ok:
+                continue
+            soup = BeautifulSoup(response.text, "html.parser")
+            contents = soup.find_all('div', id='dle-content')
+            for content in contents:
+                for item in content.find_all('h3', class_='btl'):
+                    url_news = self._extract_url(item)
+                    if url_news not in self.urls:
+                        self.urls.extend(url_news)
 
     def get_search_urls(self) -> list:
         """
