@@ -17,6 +17,7 @@ from core_utils.article.io import to_meta, to_raw
 from core_utils.config_dto import ConfigDTO
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 
+
 class IncorrectSeedURLError(Exception):
     """
     Seed URL does not match standard pattern.
@@ -57,6 +58,7 @@ class IncorrectVerifyError(Exception):
     """
     verify certificate value must either be True or False.
     """
+
 
 class Config:
     """
@@ -195,6 +197,7 @@ class Config:
             bool: Whether to use headless mode or not
         """
         return self._headless_mode
+
 
 def make_request(url: str, config: Config) -> requests.models.Response:
     """
@@ -369,7 +372,6 @@ def main() -> None:
         article = parser.parse()
         to_raw(article)
         to_meta(article)
-#test
 
 
 if __name__ == "__main__":
