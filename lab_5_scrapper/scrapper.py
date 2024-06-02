@@ -71,8 +71,8 @@ class Config:
             path_to_config (pathlib.Path): Path to configuration.
         """
         self.path_to_config = path_to_config
-        self.config = self._extract_config_content()
         self._validate_config_content()
+        self.config = self._extract_config_content()
         self._seed_urls = self.config.seed_urls
         self._num_articles = self.config.total_articles
         self._headers = self.config.headers
@@ -88,19 +88,19 @@ class Config:
         Returns:
             ConfigDTO: Config values
         """
-        file_config = json.load(open(self.path_to_config))
-        config = ConfigDTO(**file_config)
-        return config
+        with open(file=self.path_to_config, mode='r', encoding='utf-8') as file:
+            config = json.load(file)
+        return ConfigDTO(**config)
 
     def _validate_config_content(self) -> None:
         """
         Ensure configuration parameters are not corrupt.
         """
         for seed_url in self.config.seed_urls:
-            if not (isinstance(self.config.seed_urls, list) and seed_url.startswith('https://donday.ru/')):
+            if not isinstance(config.seed_urls, list) and not all(re.match('https?://(www.)?donday.ru/proisshestviya/', seed_url)):
                 raise IncorrectSeedURLError
 
-        if self.config.total_articles > 150 or self.config.total_articles < 1:
+        if self.config.total_articles > 150:
             raise NumberOfArticlesOutOfRangeError
 
         if self.config.total_articles <= 0 or not isinstance(self.config.total_articles, int):
@@ -115,7 +115,7 @@ class Config:
         if self.config.timeout > 60 or self.config.timeout < 0:
             raise IncorrectTimeoutError
 
-        if not isinstance(self.config.should_verify_certificate, bool) or not isinstance (self.config.headless_mode, bool):
+        if not isinstance(self.config.should_verify_certificate, bool) or not isinstance(self.config.headless_mode, bool):
             raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
@@ -195,7 +195,8 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     """
     return requests.get(url=url,
                         timeout=config.get_timeout(),
-                        headers=config.get_headers()
+                        headers=config.get_headers(),
+                        verify=config.get_verify_certificate()
                         )
 
 class Crawler:
