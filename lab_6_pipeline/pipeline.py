@@ -5,7 +5,6 @@ Pipeline for CONLL-U formatting.
 import pathlib
 
 import spacy_udpipe
-from networkx import DiGraph
 
 from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
                                         split_by_sentence)
