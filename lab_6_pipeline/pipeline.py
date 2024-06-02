@@ -32,6 +32,7 @@ class CorpusManager:
         """
         Validate folder with assets.
         """
+        .
 
     def _scan_dataset(self) -> None:
         """
