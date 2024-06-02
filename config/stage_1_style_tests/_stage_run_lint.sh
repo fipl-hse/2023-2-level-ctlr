@@ -39,7 +39,6 @@ for LAB_NAME in $LABS; do
 
   if [[ ${LAB_NAME} == 'lab_6_pipeline' ]]; then
     export PYTHONPATH=${PYTHONPATH}:lab_6_pipeline/universal_dependencies
-    cat lab_6_pipeline/pipeline.py
   fi
 
   IGNORE_OPTION=""
