@@ -226,10 +226,8 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        urls = []
-        for link in article_bs.find_all('a'):
-            print(link.get('href'))
 
+        return str(article_bs['href'])
 
     def find_articles(self) -> None:
         """
@@ -237,11 +235,14 @@ class Crawler:
         """
 
         while len(self.get_search_urls()) < self.config.get_num_articles():
-            for seed_url in self.get_search_urls():
-                response = make_request(seed_url, self.config)
+            for url in self.get_search_urls():
+                response = make_request(url, self.config)
                 if not response.ok:
                     continue
-                self.urls.append(self._extract_url(BeautifulSoup(response.text, "lxml")))
+                soup = BeautifulSoup(response.text, "lxml")
+                for link in soup.find_all('a'):
+                    if self._extract_url(link) not in self.urls:
+                        self.urls.append(self._extract_url(link))
 
     def get_search_urls(self) -> list:
         """
