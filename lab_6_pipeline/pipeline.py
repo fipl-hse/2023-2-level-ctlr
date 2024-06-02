@@ -6,7 +6,8 @@ import pathlib
 
 import spacy_udpipe
 import stanza
-from stanza import Document, Pipeline
+from stanza.models.common.doc import Document
+from stanza.pipeline.core import Pipeline
 from stanza.utils.conll import CoNLL
 
 from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
