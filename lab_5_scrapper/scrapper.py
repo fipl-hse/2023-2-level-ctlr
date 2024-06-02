@@ -304,7 +304,7 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        article_body = article_soup.find('p', {'class': 'doc__text'}).stripped_strings
+        article_body = article_soup.find('div', {'class': 'article_text_wrapper js-search-mark'}).stripped_strings
         art_text = ' '.join(i for i in article_body)
         self.article.text = art_text
 
