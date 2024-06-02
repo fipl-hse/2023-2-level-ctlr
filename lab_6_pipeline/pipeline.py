@@ -17,7 +17,8 @@ from stanza.utils.conll import CoNLL
 from core_utils.article.article import Article, ArtifactType, get_article_id_from_filepath
 from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
 from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
-from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper, PipelineProtocol, StanzaDocument, TreeNode)
+from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
+                                 PipelineProtocol, StanzaDocument, TreeNode)
 from core_utils.visualizer import visualize
 
 
