@@ -354,7 +354,7 @@ class HTMLParser:
             Union[Article, bool, list]: Article instance
         """
         soup = make_request(self.full_url, self.config)
-        article_bs = BeautifulSoup(soup.text, 'lxml')
+        article_bs = BeautifulSoup(soup.text, 'html.parser')
         self._fill_article_with_text(article_bs)
         self._fill_article_with_meta_information(article_bs)
         return self.article
