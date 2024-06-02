@@ -64,8 +64,9 @@ class CorpusManager:
         if not self.path_to_raw_txt_data.is_dir():
             raise NotADirectoryError
 
-        if not any(self.path_to_raw_txt_data.iterdir()):
-            raise EmptyDirectoryError
+        for child in self.path_to_raw_txt_data.iterdir():
+            if not any(child.iterdir()):
+                raise EmptyDirectoryError
 
         meta_files = list(self.path_to_raw_txt_data.glob('*_meta.json'))
         raw_files = list(self.path_to_raw_txt_data.glob('*_raw.txt'))
