@@ -1,3 +1,10 @@
 beautifulsoup4==4.12.3
 bs4==0.0.2
-requests==2.32.3
+requests~=2.31.0
+pydantic~=2.7.2
+DateTime~=5.5
+stanza~=1.8.2
+spacy~=3.7.4
+networkx~=3.2.1
+pillow~=10.3.0
+matplotlib~=3.8.4
