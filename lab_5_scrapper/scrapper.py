@@ -255,7 +255,7 @@ class Crawler:
         for url in self.seed_urls:
             response = make_request(url, self.config)
             res_bs = BeautifulSoup(response.text, 'lxml')
-            for link in res_bs.find_all('a'):
+            for link in res_bs.find_all('article'):
                 if len(self.urls) >= self.config.get_num_articles():
                     return
                 article_url = self._extract_url(link)
@@ -354,7 +354,7 @@ class HTMLParser:
             Union[Article, bool, list]: Article instance
         """
         soup = make_request(self.full_url, self.config)
-        article_bs = BeautifulSoup(soup.text, 'html.parser')
+        article_bs = BeautifulSoup(soup.text, 'lxml')
         self._fill_article_with_text(article_bs)
         self._fill_article_with_meta_information(article_bs)
         return self.article
