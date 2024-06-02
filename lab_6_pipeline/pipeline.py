@@ -6,9 +6,8 @@ import pathlib
 from dataclasses import asdict
 
 import spacy_udpipe
-from networkx import to_dict_of_lists
-from networkx.algorithms.isomorphism.vf2userfunc import GraphMatcher
-from networkx.classes.digraph import DiGraph
+from networkx import DiGraph, to_dict_of_lists
+from networkx.algorithms.isomorphism import GraphMatcher
 from stanza import download
 from stanza.models.common.doc import Document
 from stanza.pipeline.core import Pipeline
