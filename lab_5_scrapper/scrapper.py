@@ -17,7 +17,6 @@ from core_utils.article.io import to_meta, to_raw
 from core_utils.config_dto import ConfigDTO
 from core_utils.constants import ASSETS_PATH, CRAWLER_CONFIG_PATH
 
-
 class IncorrectSeedURLError(Exception):
     """
     Seed URL does not match standard pattern.
@@ -59,7 +58,6 @@ class IncorrectVerifyError(Exception):
     verify certificate value must either be True or False.
     """
 
-
 class Config:
     """
     Class for unpacking and validating configurations.
@@ -73,8 +71,8 @@ class Config:
             path_to_config (pathlib.Path): Path to configuration.
         """
         self.path_to_config = path_to_config
-        self._validate_config_content()
         self.config = self._extract_config_content()
+        self._validate_config_content()
         self._seed_urls = self.config.seed_urls
         self._num_articles = self.config.total_articles
         self._headers = self.config.headers
@@ -90,20 +88,19 @@ class Config:
         Returns:
             ConfigDTO: Config values
         """
-        with open(file=self.path_to_config, mode='r', encoding='utf-8') as file:
-            config = json.load(file)
-        return ConfigDTO(**config)
+        file_config = json.load(open(self.path_to_config))
+        config = ConfigDTO(**file_config)
+        return config
 
     def _validate_config_content(self) -> None:
         """
         Ensure configuration parameters are not corrupt.
         """
         for seed_url in self.config.seed_urls:
-            if not isinstance(config.seed_urls, list) and not all(
-                    re.match('https?://(www.)?donday.ru/proisshestviya/', seed_url)):
+            if not (isinstance(self.config.seed_urls, list) and seed_url.startswith('https://donday.ru/')):
                 raise IncorrectSeedURLError
 
-        if self.config.total_articles > 150:
+        if self.config.total_articles > 150 or self.config.total_articles < 1:
             raise NumberOfArticlesOutOfRangeError
 
         if self.config.total_articles <= 0 or not isinstance(self.config.total_articles, int):
@@ -118,8 +115,7 @@ class Config:
         if self.config.timeout > 60 or self.config.timeout < 0:
             raise IncorrectTimeoutError
 
-        if not isinstance(self.config.should_verify_certificate, bool) or not isinstance(self.config.headless_mode,
-                                                                                         bool):
+        if not isinstance(self.config.should_verify_certificate, bool) or not isinstance (self.config.headless_mode, bool):
             raise IncorrectVerifyError
 
     def get_seed_urls(self) -> list[str]:
@@ -130,6 +126,7 @@ class Config:
             list[str]: Seed urls
         """
         return self._seed_urls
+
 
     def get_num_articles(self) -> int:
         """
@@ -185,7 +182,6 @@ class Config:
         """
         return self._headless_mode
 
-
 def make_request(url: str, config: Config) -> requests.models.Response:
     """
     Deliver a response from a request with given configuration.
@@ -199,10 +195,8 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     """
     return requests.get(url=url,
                         timeout=config.get_timeout(),
-                        headers=config.get_headers(),
-                        verify=config.get_verify_certificate()
+                        headers=config.get_headers()
                         )
-
 
 class Crawler:
     """
@@ -240,6 +234,7 @@ class Crawler:
                 break
         return url
 
+
     def find_articles(self) -> None:
         """
         Find articles.
@@ -260,7 +255,6 @@ class Crawler:
             list: seed_urls param
         """
         return self.config.get_seed_urls()
-
 
 # 10
 # 4, 6, 8, 10
@@ -335,7 +329,6 @@ class HTMLParser:
 
         return self.article
 
-
 def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
     """
     Create ASSETS_PATH folder if no created and remove existing folder.
@@ -347,13 +340,10 @@ def prepare_environment(base_path: Union[pathlib.Path, str]) -> None:
         shutil.rmtree(base_path)
     base_path.mkdir(parents=True)
 
-
 def main() -> None:
     """
     Entrypoint for scrapper module.
     """
-
-
 config = Config(path_to_config=CRAWLER_CONFIG_PATH)
 crawler = Crawler(config)
 prepare_environment(ASSETS_PATH)
@@ -365,6 +355,7 @@ for index, url in enumerate(crawler.urls, 1):
     if isinstance(article, Article):
         to_raw(article)
         to_meta(article)
+
 
 if __name__ == "__main__":
     main()
