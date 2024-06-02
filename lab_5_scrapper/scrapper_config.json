@@ -1,12 +1,12 @@
 {
-    "seed_urls": ["https://donday.ru/"],
+    "seed_urls": ["https://donday.ru/proisshestviya/page/2/, https://donday.ru/proisshestviya/page/3/, https://donday.ru/proisshestviya/page/4/"],
     "headers": {
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
         "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
         "accept-Language" : "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7"},
     "total_articles_to_find_and_parse": 3,
     "encoding": "utf-8",
-    "timeout": 10,
+    "timeout": 4,
     "should_verify_certificate": true,
     "headless_mode": true
 }

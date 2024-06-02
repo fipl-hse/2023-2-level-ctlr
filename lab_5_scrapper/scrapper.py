@@ -227,7 +227,7 @@ class Crawler:
             str: Url from HTML
         """
         url = ""
-        all_news = article_bs.find_all('div', class_="news")
+        all_news = article_bs.find_all('span', itemprop="articleBody")
         for news in all_news:
             url = news.find('a')['href']
             if url not in self.urls:
