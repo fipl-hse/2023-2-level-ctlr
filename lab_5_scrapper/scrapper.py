@@ -133,7 +133,7 @@ class Config:
         if not isinstance(config.encoding, str):
             raise IncorrectEncodingError
 
-        if not isinstance(config.timeout, int) or not (0 <= config.timeout < 60):
+        if not isinstance(config.timeout, int) or not 0 <= config.timeout < 60:
             raise IncorrectTimeoutError
 
         if not isinstance(config.should_verify_certificate, bool):
@@ -217,10 +217,8 @@ def make_request(url: str, config: Config) -> requests.models.Response:
     Returns:
         requests.models.Response: A response from a request
     """
-    headers = config.get_headers()
-    timeout = config.get_timeout()
-    verify = config.get_verify_certificate()
-    response = requests.get(url, headers=headers, timeout=timeout, verify=verify)
+    response = requests.get(url, headers=config.get_headers(), timeout=config.get_timeout(),
+                            verify=config.get_verify_certificate())
     response.encoding = config.get_encoding()
     return response
 
