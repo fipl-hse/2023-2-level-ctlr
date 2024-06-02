@@ -97,7 +97,7 @@ class Config:
         Ensure configuration parameters are not corrupt.
         """
         for seed_url in self.config.seed_urls:
-            if not (isinstance(self.config.seed_urls, list) and seed_url.startswith('https://donday.ru/')):
+            if not re.match(r"https?://(www.)?donday\.ru", seed_url):
                 raise IncorrectSeedURLError
 
         if self.config.total_articles > 150 or self.config.total_articles < 1:
