@@ -74,7 +74,6 @@ class CorpusManager:
         meta_f = list(self.path_to_raw_txt_data.glob("*_meta.json"))
         if len(raw_f) != len(meta_f):
             raise InconsistentDatasetError
-
         sorted_raw_files = sorted(raw_f, key=get_article_id_from_filepath)
         sorted_meta_files = sorted(meta_f, key=get_article_id_from_filepath)
 
