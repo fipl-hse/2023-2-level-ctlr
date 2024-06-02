@@ -21,6 +21,7 @@ from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, Library
                                  PipelineProtocol, StanzaDocument, TreeNode)
 from core_utils.visualizer import visualize
 
+
 class EmptyDirectoryError(Exception):
     """
     Directory is empty
@@ -32,21 +33,12 @@ class InconsistentDatasetError(Exception):
     Dataset contains slips in IDs of raw files or files are empty
     """
 
-try:
-    from networkx import DiGraph
-except ImportError:  # pragma: no cover
-    DiGraph = None  # type: ignore
-    print('No libraries installed. Failed to import.')
-
-from core_utils.article.article import Article
-from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
-                                 PipelineProtocol, StanzaDocument, TreeNode)
-
 
 class EmptyFileError(Exception):
     """
     File is empty
     """
+
 
 class CorpusManager:
     """
@@ -111,6 +103,7 @@ class CorpusManager:
         """
         return self._storage
 
+
 class TextProcessingPipeline(PipelineProtocol):
     """
     Preprocess and morphologically annotate sentences into the CONLL-U format.
@@ -154,6 +147,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         Initialize an instance of the UDPipeAnalyzer class.
         """
         self._analyzer = self._bootstrap()
+
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
         Load and set up the UDPipe model.
@@ -171,6 +165,7 @@ class UDPipeAnalyzer(LibraryWrapper):
             config={"conversion_maps": {"XPOS": {"": "_"}}, "include_headers": True},
         )
         return model
+
     def analyze(self, texts: list[str]) -> list[StanzaDocument | str]:
         """
         Process texts into CoNLL-U formatted markup.
@@ -182,6 +177,7 @@ class UDPipeAnalyzer(LibraryWrapper):
             list[StanzaDocument | str]: List of documents
         """
         return [self._analyzer(text)._.conll_str for text in texts]
+
     def to_conllu(self, article: Article) -> None:
         """
         Save content to ConLLU format.
@@ -192,6 +188,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU),
                   'w', encoding='utf-8') as f:
             f.write(article.get_conllu_info())
+
 
 class StanzaAnalyzer(LibraryWrapper):
     """
@@ -205,6 +202,7 @@ class StanzaAnalyzer(LibraryWrapper):
         Initialize an instance of the StanzaAnalyzer class.
         """
         self._analyzer = self._bootstrap()
+
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
         Load and set up the Stanza model.
@@ -212,8 +210,6 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
-        language = "ru"
-        processors = "tokenize,pos,lemma,depparse"
         stanza.download(lang="ru", processors="tokenize,pos,lemma,depparse", logging_level="INFO")
         model = Pipeline(
             lang="ru",
@@ -246,6 +242,7 @@ class StanzaAnalyzer(LibraryWrapper):
             doc=article.get_conllu_info(),
             filename=article.get_file_path(kind=ArtifactType.STANZA_CONLLU),
         )
+
     def from_conllu(self, article: Article) -> CoNLLUDocument:
         """
         Load ConLLU content from article stored on disk.
@@ -362,6 +359,7 @@ class PatternSearchPipeline(PipelineProtocol):
                                label=word["deprel"])
             graphs.append(graph)
         return graphs
+
     def _add_children(
         self, graph: DiGraph, subgraph_to_graph: dict, node_id: int, tree_node: TreeNode
     ) -> None:
@@ -453,6 +451,7 @@ class PatternSearchPipeline(PipelineProtocol):
                             for sentence_id, matches in pattern_matches.items()}
             article.set_patterns_info(dict_matches)
             to_meta(article)
+
 
 def main() -> None:
     """
