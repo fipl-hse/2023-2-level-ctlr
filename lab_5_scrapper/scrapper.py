@@ -322,7 +322,7 @@ class HTMLParser:
         title_find = article_soup.find(itemprop="headline")
         self.article.title = title_find.text.replace('\n', '')
         author = article_soup.find(class_="argauthor")
-        self.article.author = author.text.replace('\n', '').strip()
+        self.article.author = [author.text.replace('\n', '').strip()]
         topics = article_soup.find(class_="argcat")
         self.article.topics = topics.text.replace('\n', '')
         time = article_soup.find('time', itemprop="datePublished")
