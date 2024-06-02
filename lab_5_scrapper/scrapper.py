@@ -226,13 +226,9 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        url = ""
-        all_news = article_bs.find_all('span', itemprop="articleBody")
-        for news in all_news:
-            url = news.find('a')['href']
-            if url not in self.urls:
-                break
-        return url
+        urls = []
+        for link in article_bs.find_all('a'):
+            print(link.get('href'))
 
 
     def find_articles(self) -> None:
