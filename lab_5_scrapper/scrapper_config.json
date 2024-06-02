@@ -2,7 +2,7 @@
     "seed_urls": ["https://donday.ru/"],
     "headers": {},
     "total_articles_to_find_and_parse": 3,
-    "encoding": "utf-8",
+    "encoding": "",
     "timeout": 10,
     "should_verify_certificate": true,
     "headless_mode": true
