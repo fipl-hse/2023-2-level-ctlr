@@ -304,9 +304,11 @@ class HTMLParser:
         Args:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
-        article_body = article_soup.find('div', {'class': 'article_text_wrapper js-search-mark'})
-        art_text = ' '.join(i for i in article_body.stripped_strings)
-        self.article.text = art_text
+
+        article = article_soup.find('div', {'class': 'article_text_wrapper js-search-mark'})
+        article_list = article.find_all('p')
+        paragraphs = [i.text for i in article_list]
+        self.article.text = '\n'.join(paragraphs)
 
     def _fill_article_with_meta_information(self, article_soup: BeautifulSoup) -> None:
         """
