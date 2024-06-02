@@ -22,21 +22,21 @@ from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, Library
 from core_utils.visualizer import visualize
 
 
-class EmptyDirectoryError(Exception):
-    """
-    Directory is empty
-    """
-
-
 class InconsistentDatasetError(Exception):
     """
-    Dataset contains slips in IDs of raw files or files are empty
+    IDs contain slips, number of meta and raw files is not equal, files are empty.
+    """
+
+
+class EmptyDirectoryError(Exception):
+    """
+    Directory is empty.
     """
 
 
 class EmptyFileError(Exception):
     """
-    File is empty
+    File is empty.
     """
 
 
@@ -63,25 +63,20 @@ class CorpusManager:
         """
         if not self.path_to_raw_txt_data.exists():
             raise FileNotFoundError
-
         if not self.path_to_raw_txt_data.is_dir():
             raise NotADirectoryError
-
         if not any(self.path_to_raw_txt_data.iterdir()):
             raise EmptyDirectoryError
-
-        raw_f = list(self.path_to_raw_txt_data.glob("*_raw.txt"))
-        meta_f = list(self.path_to_raw_txt_data.glob("*_meta.json"))
-        if len(raw_f) != len(meta_f):
+        raw_files = list(self.path_to_raw_txt_data.glob("*_raw.txt"))
+        meta_files = list(self.path_to_raw_txt_data.glob("*_meta.json"))
+        if len(raw_files) != len(meta_files):
             raise InconsistentDatasetError
-
-        sorted_raw_files = sorted(raw_f, key=get_article_id_from_filepath)
-        sorted_meta_files = sorted(meta_f, key=get_article_id_from_filepath)
-
-        for index, (meta, raw) in enumerate(zip(sorted_meta_files, sorted_raw_files), 1):
-            if index != get_article_id_from_filepath(meta) \
-                    or index != get_article_id_from_filepath(raw) \
-                    or not meta.stat().st_size or not raw.stat().st_size:
+        sorted_raw = sorted(raw_files, key=lambda x: int(get_article_id_from_filepath(x)))
+        sorted_meta = sorted(meta_files, key=lambda x: int(get_article_id_from_filepath(x)))
+        for id_num, (meta, raw) in enumerate(zip(sorted_meta, sorted_raw)):
+            if id_num + 1 != get_article_id_from_filepath(meta) or \
+                    id_num + 1 != get_article_id_from_filepath(raw) or \
+                    raw.stat().st_size == 0 or meta.stat().st_size == 0:
                 raise InconsistentDatasetError
 
     def _scan_dataset(self) -> None:
@@ -89,9 +84,9 @@ class CorpusManager:
         Register each dataset entry.
         """
         self._storage = {
-            get_article_id_from_filepath(file_name):
-            from_raw(file_name, Article(None, get_article_id_from_filepath(file_name)))
-            for file_name in self.path_to_raw_txt_data.glob("*_raw.txt")
+            get_article_id_from_filepath(file):
+                from_raw(file, Article(url=None, article_id=get_article_id_from_filepath(file)))
+            for file in list(self.path_to_raw_txt_data.glob("*_raw.txt"))
         }
 
     def get_articles(self) -> dict:
@@ -127,12 +122,12 @@ class TextProcessingPipeline(PipelineProtocol):
         Perform basic preprocessing and write processed text to files.
         """
         articles = self._corpus.get_articles().values()
-        documents = [article.text for article in articles]
-        analyzed_documents = self.analyzer.analyze(documents)
-        for article, analyzed_document in zip(articles, analyzed_documents):
-            to_cleaned(article)
-            article.set_conllu_info(analyzed_document)
-            self.analyzer.to_conllu(article)
+        docs = self.analyzer.analyze([article.text for article in articles])
+        if docs:
+            for article, doc in zip(articles, docs):
+                to_cleaned(article)
+                article.set_conllu_info(doc)
+                self.analyzer.to_conllu(article)
 
 
 class UDPipeAnalyzer(LibraryWrapper):
@@ -164,6 +159,7 @@ class UDPipeAnalyzer(LibraryWrapper):
             last=True,
             config={"conversion_maps": {"XPOS": {"": "_"}}, "include_headers": True},
         )
+
         return model
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument | str]:
@@ -176,6 +172,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument | str]: List of documents
         """
+
         return [self._analyzer(text)._.conll_str for text in texts]
 
     def to_conllu(self, article: Article) -> None:
@@ -185,10 +182,10 @@ class UDPipeAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
-        with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU),
-                  'w', encoding='utf-8') as annotation_file:
-            annotation_file.writelines(article.get_conllu_info())
-            annotation_file.write('\n')
+        with open(article.get_file_path(ArtifactType.UDPIPE_CONLLU), 'w',
+                  encoding='utf-8') as annotation_file:
+            annotation_file.write(article.get_conllu_info())
+            annotation_file.write("\n")
 
 
 class StanzaAnalyzer(LibraryWrapper):
@@ -211,12 +208,10 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
-        language = "ru"
-        processors = "tokenize,pos,lemma,depparse"
-        stanza.download(lang=language, processors=processors, logging_level="INFO")
+        stanza.download(lang="ru", processors="tokenize,pos,lemma,depparse", logging_level="INFO")
         model = Pipeline(
-            lang=language,
-            processors=processors,
+            lang="ru",
+            processors="tokenize,pos,lemma,depparse",
             logging_level="INFO",
             download_method=None
         )
@@ -243,7 +238,7 @@ class StanzaAnalyzer(LibraryWrapper):
         """
         CoNLL.write_doc2conll(
             doc=article.get_conllu_info(),
-            filename=article.get_file_path(kind=ArtifactType.STANZA_CONLLU),
+            filename=article.get_file_path(ArtifactType.STANZA_CONLLU),
         )
 
     def from_conllu(self, article: Article) -> CoNLLUDocument:
@@ -256,7 +251,7 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             CoNLLUDocument: Document ready for parsing
         """
-        return CoNLL.conll2doc(input_file=article.get_file_path(kind=ArtifactType.STANZA_CONLLU))
+        return CoNLL.conll2doc(input_file=article.get_file_path(ArtifactType.STANZA_CONLLU))
 
 
 class POSFrequencyPipeline:
@@ -279,16 +274,14 @@ class POSFrequencyPipeline:
         """
         Visualize the frequencies of each part of speech.
         """
-        for article_id, article in self._corpus.get_articles().items():
-            if not article.get_file_path(kind=ArtifactType.STANZA_CONLLU).stat().st_size:
+        for id_num, article in self._corpus.get_articles().items():
+            if article.get_file_path(kind=ArtifactType.STANZA_CONLLU).stat().st_size == 0:
                 raise EmptyFileError
-
             from_meta(article.get_meta_file_path(), article)
             article.set_pos_info(self._count_frequencies(article))
             to_meta(article)
             visualize(article=article,
-                      path_to_save=self._corpus.path_to_raw_txt_data /
-                      f'{article_id}_image.png')
+                      path_to_save=self._corpus.path_to_raw_txt_data / f'{id_num}_image.png')
 
     def _count_frequencies(self, article: Article) -> dict[str, int]:
         """
@@ -300,12 +293,14 @@ class POSFrequencyPipeline:
         Returns:
             dict[str, int]: POS frequencies
         """
-        pos_frequencies = {}
-        for conllu_sentence in self._analyzer.from_conllu(article).sentences:
+        ud_info = self._analyzer.from_conllu(article).sentences
+        pos = {}
+        for conllu_sentence in ud_info:
             for word in conllu_sentence.words:
-                word_feature = word.to_dict().get('upos')
-                pos_frequencies[word_feature] = pos_frequencies.get(word_feature, 0) + 1
-        return pos_frequencies
+                pos_tag = word.to_dict().get('upos')
+                if pos_tag:
+                    pos[pos_tag] = pos.get(pos_tag, 0) + 1
+        return pos
 
 
 class PatternSearchPipeline(PipelineProtocol):
@@ -353,8 +348,7 @@ class PatternSearchPipeline(PipelineProtocol):
             graphs.append(graph)
         return graphs
 
-
-def _add_children(
+    def _add_children(
         self, graph: DiGraph, subgraph_to_graph: dict, node_id: int, tree_node: TreeNode
     ) -> None:
         """
@@ -382,8 +376,7 @@ def _add_children(
             self._add_children(graph, subgraph_to_graph, child_num, child_node)
         return
 
-
-def _find_pattern(self, doc_graphs: list) -> dict[int, list[TreeNode]]:
+    def _find_pattern(self, doc_graphs: list) -> dict[int, list[TreeNode]]:
         """
         Search for the required pattern.
 
@@ -418,18 +411,21 @@ def _find_pattern(self, doc_graphs: list) -> dict[int, list[TreeNode]]:
                 needed_pat[sent_id] = pnodes
         return needed_pat
 
-
-def run(self) -> None:
+    def run(self) -> None:
         """
         Search for a pattern in documents and writes found information to JSON file.
         """
         for article in self._corpus.get_articles().values():
-            pattern_matches = self._find_pattern(self._make_graphs
-                                                 (self._analyzer.from_conllu(article)))
-            article.set_patterns_info({
-                sent_id: [asdict(pattern) for pattern in patterns]
-                for sent_id, patterns in pattern_matches.items()
-            })
+            conllu = self._analyzer.from_conllu(article)
+            graphs = self._make_graphs(conllu)
+            p_matches = self._find_pattern(graphs)
+            dict_with_matches = {}
+            for sent_id, matches in p_matches.items():
+                temp_list = []
+                for match in matches:
+                    temp_list.append(asdict(match))
+                dict_with_matches[sent_id] = temp_list
+            article.set_patterns_info(dict_with_matches)
             to_meta(article)
 
 
@@ -441,18 +437,15 @@ def main() -> None:
     udpipe_analyzer = UDPipeAnalyzer()
     pipeline = TextProcessingPipeline(corpus_manager, udpipe_analyzer)
     pipeline.run()
-
-    corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
     stanza_analyzer = StanzaAnalyzer()
     pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
     pipeline.run()
-
-    visualizer = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
-    visualizer.run()
-
-    visualizer_patterns = PatternSearchPipeline(corpus_manager, stanza_analyzer,
-                                                ("VERB", "NOUN", "ADP"))
-    visualizer_patterns.run()
+    visualizer_pos = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
+    visualizer_pos.run()
+    visualizer_pat = PatternSearchPipeline(corpus_manager,
+                                           stanza_analyzer,
+                                           ("VERB", "NOUN", "ADP"))
+    visualizer_pat.run()
 
 
 if __name__ == "__main__":
