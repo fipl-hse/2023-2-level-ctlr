@@ -1,9 +1,23 @@
 {
-    "seed_urls": [],
-    "headers": {},
-    "total_articles_to_find_and_parse": 0,
-    "encoding": "",
-    "timeout": 0,
+    "seed_urls": ["https://74.ru/text/format/mention/",
+        "https://74.ru/text/format/mention/?page=2",
+        "https://74.ru/text/format/mention/?page=3",
+        "https://74.ru/text/format/mention/?page=4",
+        "https://74.ru/text/format/mention/?page=5",
+        "https://74.ru/text/format/mention/?page=6",
+        "https://74.ru/text/format/mention/?page=7",
+        "https://74.ru/text/format/mention/?page=8",
+        "https://74.ru/text/format/mention/?page=9",
+        "https://74.ru/text/format/mention/?page=10"],
+    "headers": {
+        "cookie" : "stg_returning_visitor=Mon%2C%2008%20Apr%202024%2009:30:34%20GMT; stg_traffic_source_priority=1; _ga_KLCW8G3CY6=GS1.1.1717361661.1.0.1717361661.0.0.0; _ga=GA1.1.562201468.1717361661; stg_last_interaction=Sun%2C%2002%20Jun%202024%2020:54:22%20GMT",
+        "accept" : "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "accept-language" : "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+        "user-agent" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+    },
+    "total_articles_to_find_and_parse": 100,
+    "encoding": "utf-8",
+    "timeout": 15,
     "should_verify_certificate": true,
     "headless_mode": true
 }
