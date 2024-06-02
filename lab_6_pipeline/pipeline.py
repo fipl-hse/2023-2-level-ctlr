@@ -6,10 +6,10 @@ import pathlib
 from dataclasses import asdict
 
 import spacy_udpipe
-import stanza
 from networkx import to_dict_of_lists
 from networkx.algorithms.isomorphism.vf2userfunc import GraphMatcher
 from networkx.classes.digraph import DiGraph
+from stanza import download
 from stanza.models.common.doc import Document
 from stanza.pipeline.core import Pipeline
 from stanza.utils.conll import CoNLL
@@ -208,7 +208,7 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
-        stanza.download(lang="ru", processors="tokenize,pos,lemma,depparse", logging_level="INFO")
+        download(lang="ru", processors="tokenize,pos,lemma,depparse", logging_level="INFO")
         model = Pipeline(
             lang="ru",
             processors="tokenize,pos,lemma,depparse",
