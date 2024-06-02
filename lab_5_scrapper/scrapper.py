@@ -242,7 +242,7 @@ class Crawler:
         Returns:
             str: Url from HTML
         """
-        href = article_bs.get('href')
+        href = article_bs.find_next('a').get('href')
         if href and isinstance(href, str) \
                 and re.fullmatch(r'/doc/\d+', href):
             return href
@@ -325,7 +325,7 @@ class HTMLParser:
             self.article.author.append(author.text)
         else:
             self.article.author.append('NOT FOUND')
-        date_bs = article_soup.find('div', {'class': 'doc_header__time'}).get('datetime')
+        date_bs = article_soup.find('time', {'class': 'doc_header__publish_time'}).get('datetime')
         if isinstance(date_bs, str):
             date_and_time = re.search(r'\d{4}-\d{2}-\d{2}', date_bs).group() + \
                             ' ' + re.search(r'\d{2}:\d{2}:\d{2}', date_bs).group()
