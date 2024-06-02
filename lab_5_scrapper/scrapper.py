@@ -337,7 +337,8 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         self.article.article_id = self.article_id
-        self.article.title = article_soup.find('h1', class_="page__title").text
+        head_tag = article_soup.find('head').text
+        self.article.title = head_tag.find('title')
         self.article.author = []
         authors = article_soup.find_all(class_="b_subtitle_name article_detail__authors")
         if authors:
