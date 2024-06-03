@@ -77,14 +77,14 @@ class Config:
 
         self.path_to_config = path_to_config
         self._validate_config_content()
-        self.config = self._extract_config_content()
-        self._seed_urls = self.config.seed_urls
-        self._num_articles = self.config.total_articles
-        self._headers = self.config.headers
-        self._encoding = self.config.encoding
-        self._timeout = self.config.timeout
-        self._should_verify_certificate = self.config.should_verify_certificate
-        self._headless_mode = self.config.headless_mode
+        self._config = self._extract_config_content()
+        self._seed_urls = self._config.seed_urls
+        self._num_articles = self._config.total_articles
+        self._headers = self._config.headers
+        self._encoding = self._config.encoding
+        self._timeout = self._config.timeout
+        self._should_verify_certificate = self._config.should_verify_certificate
+        self._headless_mode = self._config.headless_mode
 
     def _extract_config_content(self) -> ConfigDTO:
         """
@@ -207,7 +207,6 @@ def make_request(url: str, config: Config) -> requests.models.Response:
         timeout=config.get_timeout(),
         headers=config.get_headers(),
         verify=config.get_verify_certificate(),
-        encoding=config.get_encoding()
     )
 
 
@@ -225,7 +224,7 @@ class Crawler:
         Args:
             config (Config): Configuration
         """
-        self.config = config
+        self._config = config
         self.urls = []
         self.url_pattern = 'https://antropogenez.ru/news/'
 
@@ -253,9 +252,9 @@ class Crawler:
         """
         seed_urls = self.get_search_urls()
 
-        while len(self.urls) < self.config.get_num_articles():
+        while len(self.urls) < self._config.get_num_articles():
             for seed_url in seed_urls:
-                response = make_request(seed_url, self.config)
+                response = make_request(seed_url, self._config)
                 if not response.ok:
                     continue
                 self.urls.append(self._extract_url(BeautifulSoup(response.text, "lxml")))
@@ -267,7 +266,7 @@ class Crawler:
         Returns:
             list: seed_urls param
         """
-        return self.config.get_seed_urls()
+        return self._config.get_seed_urls()
 
 
 # 10
@@ -329,9 +328,9 @@ class HTMLParser:
             self.article.author = [author.text]
 
         found_date = article_soup.find('meta', {'name': "date"})
-        date = found_date['content']
-        if date:
-            self.article.date = self.unify_date_format(date)
+        if found_date:
+            date = found_date['content']
+            self.article.date = self.unify_date_format(str(date))
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
         """
