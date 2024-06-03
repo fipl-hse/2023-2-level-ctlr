@@ -68,7 +68,8 @@ class CorpusManager:
                       key=get_article_id_from_filepath)
         meta = sorted(list(self.path_to_raw_txt_data.glob("*_meta.json")),
                       key=get_article_id_from_filepath)
-
+        if len(text) != len(meta):
+            raise InconsistentDatasetError
         for i, (raw, meta) in enumerate(zip(text, meta)):
             if i + 1 != get_article_id_from_filepath(raw) \
                     or i + 1 != get_article_id_from_filepath(meta) \
