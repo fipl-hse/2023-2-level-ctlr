@@ -122,13 +122,9 @@ class TextProcessingPipeline(PipelineProtocol):
         """
         Perform basic preprocessing and write processed text to files.
         """
-        for article in self._corpus.get_articles().values():
+        articles = self._corpus.get_articles().values()
+        for article in articles:
             to_cleaned(article)
-            if self._analyzer:
-                texts = split_by_sentence(article.text)
-                text_analyze = self._analyzer.analyze(texts)
-                article.set_conllu_info(text_analyze)
-                self._analyzer.to_conllu(article)
 
 
 class UDPipeAnalyzer(LibraryWrapper):
@@ -142,6 +138,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         """
         Initialize an instance of the UDPipeAnalyzer class.
         """
+
 
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
@@ -169,7 +166,6 @@ class UDPipeAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
-
 
 class StanzaAnalyzer(LibraryWrapper):
     """
