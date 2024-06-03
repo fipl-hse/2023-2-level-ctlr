@@ -188,9 +188,9 @@ class UDPipeAnalyzer(LibraryWrapper):
             article (Article): Article containing information to save
         """
         with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU),
-                  'w', encoding='utf-8') as f:
-            f.write(article.get_conllu_info())
-
+                  'w', encoding='utf-8') as annotation_file:
+            annotation_file.writelines(article.get_conllu_info())
+            annotation_file.write('\n')
 
 class StanzaAnalyzer(LibraryWrapper):
     """
