@@ -1,5 +1,5 @@
 {
-    "seed_urls": ["https://donday.ru/"],
+    "seed_urls": ["https://donday.ru/page/2/"],
     "headers": {},
     "total_articles_to_find_and_parse": 3,
     "encoding": "",
