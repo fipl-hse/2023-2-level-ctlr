@@ -117,7 +117,7 @@ class TextProcessingPipeline(PipelineProtocol):
             analyzer (LibraryWrapper | None): Analyzer instance
         """
         self._corpus = corpus_manager
-        self.analyzer = analyzer
+        self._analyzer = analyzer
 
     def run(self) -> None:
         """
@@ -139,7 +139,6 @@ class UDPipeAnalyzer(LibraryWrapper):
         """
         Initialize an instance of the UDPipeAnalyzer class.
         """
-
 
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
@@ -317,6 +316,7 @@ def main() -> None:
     udpipe_analyzer = UDPipeAnalyzer()
     pipeline = TextProcessingPipeline(corpus_manager, udpipe_analyzer)
     pipeline.run()
+
 
 if __name__ == "__main__":
     main()
