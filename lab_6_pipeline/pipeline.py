@@ -11,12 +11,9 @@ except ImportError:  # pragma: no cover
     print('No libraries installed. Failed to import.')
 
 import pathlib
-import spacy_udpipe
 
-from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
-                                        split_by_sentence)
+from core_utils.article.article import (Article, get_article_id_from_filepath)
 from core_utils.article.io import from_raw, to_cleaned
-from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
 
@@ -137,7 +134,6 @@ class UDPipeAnalyzer(LibraryWrapper):
         """
         Initialize an instance of the UDPipeAnalyzer class.
         """
-
 
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
