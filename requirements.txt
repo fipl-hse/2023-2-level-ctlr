@@ -1,2 +1,11 @@
 beautifulsoup4==4.12.3
 requests==2.31.0
+datetime==5.5
+isort==5.13.2
+lxml==5.2.1
+matplotlib==3.8.4
+networkx==3.2.1
+spacy-conll==3.4.0
+spacy-udpipe==1.0.0
+spacy==3.7.4
+stanza==1.8.2
