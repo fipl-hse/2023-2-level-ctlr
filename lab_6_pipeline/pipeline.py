@@ -125,13 +125,16 @@ class TextProcessingPipeline(PipelineProtocol):
         """
         Perform basic preprocessing and write processed text to files.
         """
-        articles = self._corpus.get_articles().values()
-        documents = [article.text for article in articles]
-        analyzed_documents = self.analyzer.analyze(documents)
-        for article, analyzed_document in zip(articles, analyzed_documents):
+        documents = []
+        if self.analyzer:
+            documents = self.analyzer.analyze([article.text for article
+                                               in self._corpus.get_articles().values()])
+
+        for num, article in enumerate(self._corpus.get_articles().values()):
             to_cleaned(article)
-            article.set_conllu_info(analyzed_document)
-            self.analyzer.to_conllu(article)
+            if self.analyzer and documents:
+                article.set_conllu_info(documents[num])
+                self.analyzer.to_conllu(article)
 
 
 class UDPipeAnalyzer(LibraryWrapper):
