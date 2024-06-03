@@ -382,6 +382,10 @@ def main() -> None:
     pipeline_stanza = TextProcessingPipeline(corpus_manager, StanzaAnalyzer())
     pipeline_stanza.run()
 
+    # pos frequency data
+    pos_pipeline = POSFrequencyPipeline(corpus_manager, StanzaAnalyzer())
+    pos_pipeline.run()
+
 
 if __name__ == "__main__":
     main()
