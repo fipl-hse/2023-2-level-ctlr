@@ -20,10 +20,6 @@ except ImportError:  # pragma: no cover
     DiGraph = None  # type: ignore
     print('No libraries installed. Failed to import.')
 
-from core_utils.article.article import Article
-from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
-                                 PipelineProtocol, StanzaDocument, TreeNode)
-
 
 class InconsistentDatasetError(Exception):
     """
@@ -55,10 +51,10 @@ class CorpusManager:
         Args:
             path_to_raw_txt_data (pathlib.Path): Path to raw txt data
         """
-    self.path_to_raw_txt_data = path_to_raw_txt_data
-    self._storage = {}
-    self._validate_dataset()
-    self._scan_dataset()
+        self.path_to_raw_txt_data = path_to_raw_txt_data
+        self._storage = {}
+        self._validate_dataset()
+        self._scan_dataset()
 
     def _validate_dataset(self) -> None:
         """
@@ -191,7 +187,8 @@ class UDPipeAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
-        with open(article.get_file_path(ArtifactType.UDPIPE_CONLLU), 'w', encoding='utf-8') as annotation_file:
+        with open(article.get_file_path(ArtifactType.UDPIPE_CONLLU), 'w', encoding='utf-8') \
+                as annotation_file:
             annotation_file.writelines(article.get_conllu_info())
             annotation_file.write("\n")
 
