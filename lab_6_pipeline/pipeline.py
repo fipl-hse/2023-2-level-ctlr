@@ -67,9 +67,9 @@ class CorpusManager:
         if not any(self.path_to_raw_txt_data.iterdir()):
             raise EmptyDirectoryError
 
-        raw_files = [i for i in self.path_to_raw_txt_data.glob('*_raw.txt')]
-        meta_files = [i for i in self.path_to_raw_txt_data.glob('*_meta.json')]
-        if len(raw_files) != len(meta_files):
+        meta_files = list(self.path_to_raw_txt_data.glob("*_meta.json"))
+        raw_files = list(self.path_to_raw_txt_data.glob("*_raw.txt"))
+        if len(meta_files) != len(raw_files):
             raise InconsistentDatasetError
 
         sorted_raw_files = sorted(raw_files, key=get_article_id_from_filepath)
@@ -116,7 +116,6 @@ class TextProcessingPipeline(PipelineProtocol):
             analyzer (LibraryWrapper | None): Analyzer instance
         """
         self._corpus = corpus_manager
-        self._analyzer = analyzer
 
     def run(self) -> None:
         """
@@ -311,11 +310,7 @@ def main() -> None:
     """
     Entrypoint for pipeline module.
     """
-    corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
-    analyzer = UDPipeAnalyzer()
-    pipeline = TextProcessingPipeline(corpus_manager, analyzer)
-    pipeline.run()
-    print('done')
+
 
 if __name__ == "__main__":
     main()
