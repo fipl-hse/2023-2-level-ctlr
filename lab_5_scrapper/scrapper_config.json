@@ -1,5 +1,5 @@
 {
-    "seed_urls": ["https://74.ru/text/format/mention/",
+    "seed_urls": ["https://74.ru/text/format/mention/?page=1",
         "https://74.ru/text/format/mention/?page=2",
         "https://74.ru/text/format/mention/?page=3",
         "https://74.ru/text/format/mention/?page=4",
