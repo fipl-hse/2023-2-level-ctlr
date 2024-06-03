@@ -327,8 +327,8 @@ class HTMLParser:
         else:
             self.article.author = [author.text]
 
-        found_date = article_soup.find('meta', {'name': "date"}).attrs['content']
-        if found_date:
+        date = article_soup.find('meta', {'name': "date"}).attrs['content']
+        if date:
             self.article.date = self.unify_date_format(str(date))
 
     def unify_date_format(self, date_str: str) -> datetime.datetime:
