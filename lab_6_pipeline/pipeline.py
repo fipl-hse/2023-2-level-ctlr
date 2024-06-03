@@ -11,9 +11,12 @@ except ImportError:  # pragma: no cover
     print('No libraries installed. Failed to import.')
 
 import pathlib
+import spacy_udpipe
 
-from core_utils.article.article import (Article, get_article_id_from_filepath)
+from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath,
+                                        split_by_sentence)
 from core_utils.article.io import from_raw, to_cleaned
+from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
 
@@ -135,6 +138,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         Initialize an instance of the UDPipeAnalyzer class.
         """
 
+
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
         Load and set up the UDPipe model.
@@ -161,6 +165,7 @@ class UDPipeAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
+
 
 class StanzaAnalyzer(LibraryWrapper):
     """
@@ -306,7 +311,10 @@ def main() -> None:
     """
     Entrypoint for pipeline module.
     """
-
+    corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
+    udpipe_analyzer = UDPipeAnalyzer()
+    pipeline = TextProcessingPipeline(corpus_manager, udpipe_analyzer)
+    pipeline.run()
 
 if __name__ == "__main__":
     main()
