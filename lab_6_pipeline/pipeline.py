@@ -210,13 +210,12 @@ class StanzaAnalyzer(LibraryWrapper):
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
         stanza.download(lang="ru", processors="tokenize,pos,lemma,depparse", logging_level="INFO")
-        model = Pipeline(
+        return Pipeline(
             lang="ru",
             processors="tokenize,pos,lemma,depparse",
             logging_level="INFO",
             download_method=None
         )
-        return model
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument]:
         """
@@ -345,18 +344,23 @@ class PatternSearchPipeline(PipelineProtocol):
             list[DiGraph]: Graphs for the sentences in the document
         """
         graphs = []
-        for sentence in doc.sentences:
-            graph = DiGraph()
-            for word in sentence.words:
+        for conllu_sent in doc.sentences:
+            digraph = DiGraph()
+            for word in conllu_sent.words:
                 word = word.to_dict()
-                graph.add_node(word["id"],
-                               label=word["upos"],
-                               text=word["text"])
+                digraph.add_node(
+                    word['id'],
+                    label=word['upos'],
+                    text=word['text'],
+                )
 
-                graph.add_edge(word["head"],
-                               word["id"],
-                               label=word["deprel"])
-            graphs.append(graph)
+                digraph.add_edge(
+                    word['head'],
+                    word['id'],
+                    label=word["deprel"]
+                )
+
+            graphs.append(digraph)
         return graphs
 
     def _add_children(
@@ -398,44 +402,25 @@ class PatternSearchPipeline(PipelineProtocol):
             dict[int, list[TreeNode]]: A dictionary with pattern matches
         """
         found_patterns = {}
-        for sent_id, graph in enumerate(doc_graphs):
-            ideal_graph = DiGraph()
-
-            for i in range(1, len(list(graph.nodes))):
-                if graph.nodes[i].get('label') in self._node_labels:
-                    ideal_graph.add_node(i, label=graph.nodes[i].get('label'))
-
-            for edge in graph.edges():
-                if edge[0] in ideal_graph.nodes and edge[1] in ideal_graph.nodes:
-                    ideal_graph.add_edge(edge[0], edge[1])
-
-            matcher = GraphMatcher(graph, ideal_graph,
+        for (sentence_id, graph) in enumerate(doc_graphs):
+            matcher = GraphMatcher(graph, self.ideal_graph,
                                    node_match=lambda n1, n2:
-                                   n1.get('label', '') == n2.get('label'))
-
-            patterns = []
-            added_base_nodes = []
+                                   n1.get('label', '') == n2['label'])
+            pattern_nodes = []
             for isograph in matcher.subgraph_isomorphisms_iter():
-                base_nodes = [node for node in graph.subgraph(isograph.keys()).nodes
-                              if not tuple(graph.subgraph(isograph.keys()).predecessors(node))]
+                digraph = graph.subgraph(isograph.keys()).copy()
+                base_nodes = [node for node in digraph.nodes
+                              if not tuple(digraph.predecessors(node))]
 
-                if base_nodes not in added_base_nodes:
-                    added_base_nodes.append(base_nodes)
+                for node_id in base_nodes:
+                    tree_node = TreeNode(graph.nodes[node_id].get('label'),
+                                         graph.nodes[node_id].get('text'),
+                                         [])
+                    self._add_children(graph, to_dict_of_lists(digraph), node_id, tree_node)
+                    pattern_nodes.append(tree_node)
 
-                    for node in base_nodes:
-                        if len(graph.out_edges(node)) >= 2:
-                            tree_node = TreeNode(graph.nodes[node].get('label'),
-                                                 graph.nodes[node].get('text'),
-                                                 [])
-                            self._add_children(graph,
-                                               to_dict_of_lists(graph.subgraph(isograph.keys())),
-                                               node,
-                                               tree_node)
-                            patterns.append(tree_node)
-
-            if patterns:
-                found_patterns.update({sent_id: patterns})
-
+            if pattern_nodes:
+                found_patterns[int(sentence_id)] = pattern_nodes
         return found_patterns
 
     def run(self) -> None:
