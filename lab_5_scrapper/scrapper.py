@@ -224,6 +224,7 @@ class Crawler:
         Args:
             config (Config): Configuration
         """
+
         self._config = config
         self.urls = []
         self.url_pattern = 'https://antropogenez.ru/news/'
