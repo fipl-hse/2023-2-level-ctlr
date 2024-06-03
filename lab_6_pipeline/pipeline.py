@@ -53,6 +53,7 @@ class CorpusManager:
         """
         self.path_to_raw_txt_data = path_to_raw_txt_data
         self._storage = {}
+
         self._validate_dataset()
         self._scan_dataset()
 
@@ -116,6 +117,7 @@ class TextProcessingPipeline(PipelineProtocol):
             analyzer (LibraryWrapper | None): Analyzer instance
         """
         self._corpus = corpus_manager
+        self.analyzer = analyzer
 
     def run(self) -> None:
         """
