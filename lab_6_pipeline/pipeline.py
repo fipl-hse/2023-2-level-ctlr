@@ -81,7 +81,6 @@ class CorpusManager:
 
             meta_id = get_article_id_from_filepath(meta)
             raw_id = get_article_id_from_filepath(raw)
-
             if meta_id != i or raw_id != i:
                 raise InconsistentDatasetError
 
