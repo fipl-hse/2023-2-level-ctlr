@@ -378,6 +378,9 @@ def main() -> None:
     pipeline = TextProcessingPipeline(corpus_manager, udpipe_analyzer)
     pipeline.run()
 
+    pipeline = TextProcessingPipeline(corpus_manager, stanza_analyzer)
+    pipeline.run()
+
     visualizer = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
     visualizer.run()
 
