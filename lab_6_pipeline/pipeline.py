@@ -11,11 +11,16 @@ except ImportError:  # pragma: no cover
     print('No libraries installed. Failed to import.')
 
 import spacy_udpipe
+import stanza
 from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath)
-from core_utils.article.io import from_raw, to_cleaned
+from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
 from core_utils.constants import (ASSETS_PATH, UDPIPE_MODEL_PATH)
 from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
                                  PipelineProtocol, StanzaDocument, TreeNode)
+from core_utils.visualizer import visualize
+from stanza.models.common.doc import Document
+from stanza.pipeline.core import Pipeline
+from stanza.utils.conll import CoNLL
 
 
 class InconsistentDatasetError(Exception):
@@ -181,7 +186,7 @@ class UDPipeAnalyzer(LibraryWrapper):
             article (Article): Article containing information to save
         """
         with open(article.get_file_path(kind=ArtifactType.UDPIPE_CONLLU),
-                'w', encoding='utf-8') as annotation_file:
+                  'w', encoding='utf-8') as annotation_file:
             annotation_file.writelines(article.get_conllu_info())
             annotation_file.write('\n')
 
@@ -197,6 +202,7 @@ class StanzaAnalyzer(LibraryWrapper):
         """
         Initialize an instance of the StanzaAnalyzer class.
         """
+        self._analyzer = self._bootstrap()
 
     def _bootstrap(self) -> AbstractCoNLLUAnalyzer:
         """
@@ -205,6 +211,16 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             AbstractCoNLLUAnalyzer: Analyzer instance
         """
+        language = "ru"
+        processors = "tokenize,pos,lemma,depparse"
+        stanza.download(lang=language, processors=processors, logging_level="INFO")
+        model = Pipeline(
+            lang=language,
+            processors=processors,
+            logging_level="INFO",
+            download_method=None
+        )
+        return model
 
     def analyze(self, texts: list[str]) -> list[StanzaDocument]:
         """
@@ -216,6 +232,7 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument]: List of documents
         """
+        return [self._analyzer.process(Document([], text=text)) for text in texts]
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -224,6 +241,10 @@ class StanzaAnalyzer(LibraryWrapper):
         Args:
             article (Article): Article containing information to save
         """
+        CoNLL.write_doc2conll(
+            doc=article.get_conllu_info(),
+            filename=article.get_file_path(kind=ArtifactType.STANZA_CONLLU),
+        )
 
     def from_conllu(self, article: Article) -> CoNLLUDocument:
         """
@@ -235,6 +256,7 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             CoNLLUDocument: Document ready for parsing
         """
+        return CoNLL.conll2doc(input_file=article.get_file_path(kind=ArtifactType.STANZA_CONLLU))
 
 
 class POSFrequencyPipeline:
@@ -250,11 +272,23 @@ class POSFrequencyPipeline:
             corpus_manager (CorpusManager): CorpusManager instance
             analyzer (LibraryWrapper): Analyzer instance
         """
+        self._corpus = corpus_manager
+        self._analyzer = analyzer
 
     def run(self) -> None:
         """
         Visualize the frequencies of each part of speech.
         """
+        for article_id, article in self._corpus.get_articles().items():
+            if not article.get_file_path(kind=ArtifactType.STANZA_CONLLU).stat().st_size:
+                raise EmptyFileError
+
+            from_meta(article.get_meta_file_path(), article)
+            article.set_pos_info(self._count_frequencies(article))
+            to_meta(article)
+            visualize(article=article,
+                      path_to_save=self._corpus.path_to_raw_txt_data /
+                      f'{article_id}_image.png')
 
     def _count_frequencies(self, article: Article) -> dict[str, int]:
         """
@@ -266,6 +300,12 @@ class POSFrequencyPipeline:
         Returns:
             dict[str, int]: POS frequencies
         """
+        pos_freqs = {}
+        for sentence in self._analyzer.from_conllu(article).sentences:
+            for word in sentence.words:
+                upos = word.to_dict().get('upos')
+                pos_freqs[upos] = pos_freqs.get(upos, 0) + 1
+        return pos_freqs
 
 
 class PatternSearchPipeline(PipelineProtocol):
@@ -331,8 +371,13 @@ def main() -> None:
     Entrypoint for pipeline module.
     """
     corpus_manager = CorpusManager(path_to_raw_txt_data=ASSETS_PATH)
-    pipeline = TextProcessingPipeline(corpus_manager)
     udpipe_analyzer = UDPipeAnalyzer()
+    stanza_analyzer = StanzaAnalyzer()
+
+    pipeline = TextProcessingPipeline(corpus_manager, udpipe_analyzer)
+    pipeline.run()
+
+    visualizer = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
 
 
 if __name__ == "__main__":
