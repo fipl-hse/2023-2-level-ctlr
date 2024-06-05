@@ -12,15 +12,16 @@ except ImportError:  # pragma: no cover
 
 import spacy_udpipe
 import stanza
-from core_utils.article.article import (Article, ArtifactType, get_article_id_from_filepath)
-from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
-from core_utils.constants import (ASSETS_PATH, UDPIPE_MODEL_PATH)
-from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
-                                 PipelineProtocol, StanzaDocument, TreeNode)
-from core_utils.visualizer import visualize
 from stanza.models.common.doc import Document
 from stanza.pipeline.core import Pipeline
 from stanza.utils.conll import CoNLL
+
+from core_utils.article.article import Article, ArtifactType, get_article_id_from_filepath
+from core_utils.article.io import from_meta, from_raw, to_cleaned, to_meta
+from core_utils.constants import ASSETS_PATH, UDPIPE_MODEL_PATH
+from core_utils.pipeline import (AbstractCoNLLUAnalyzer, CoNLLUDocument, LibraryWrapper,
+                                 PipelineProtocol, StanzaDocument, TreeNode)
+from core_utils.visualizer import visualize
 
 
 class InconsistentDatasetError(Exception):
@@ -232,7 +233,7 @@ class StanzaAnalyzer(LibraryWrapper):
         Returns:
             list[StanzaDocument]: List of documents
         """
-        return [self._analyzer.process(Document([], text=text)) for text in texts]
+        return self._analyzer.process([Document([], text=text) for text in texts])
 
     def to_conllu(self, article: Article) -> None:
         """
@@ -378,6 +379,7 @@ def main() -> None:
     pipeline.run()
 
     visualizer = POSFrequencyPipeline(corpus_manager, stanza_analyzer)
+    visualizer.run()
 
 
 if __name__ == "__main__":
